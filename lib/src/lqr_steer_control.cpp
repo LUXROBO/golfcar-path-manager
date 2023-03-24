@@ -2,6 +2,7 @@
 #include <cmath>
 #include <algorithm>
 #include <stdio.h>
+#include <iostream>
 
 // #include "//ESP_LOg.h"
 
@@ -71,13 +72,16 @@ int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<P
     const int N_IND_SEARCH = 20;
     double min = 10000;
     uint32_t min_point_index = 0;
-    for (int i = pind; i < (pind + N_IND_SEARCH); i++) {
+    for (uint32_t i = pind; i < (pind + N_IND_SEARCH); i++) {
         double dx = state.x - points[i].x;
         double dy = state.y - points[i].y;
         double distance_2 = dx * dx + dy * dy;
         if (min > distance_2) {
             min = distance_2;
             min_point_index = i;
+        }
+        if (i >= (points.size() - 1)) {
+            break;
         }
     }
 
@@ -211,21 +215,26 @@ bool lqr_steer_control::update(double dt) {
     if (dt == 0) {
         return false;
     }
-    uint32_t closest_point_index = lqr_steering_control(this->state, calculated_steer, pe, pth_e);
+    try {
+        uint32_t closest_point_index =lqr_steering_control (this->state, calculated_steer, pe, pth_e);
+        // PID로 가속도 값 계산
+        this->path_pid.set_target(this->points[closest_point_index].speed);
 
-    // PID로 가속도 값 계산
-    this->path_pid.set_target(this->points[closest_point_index].speed);
-    double calculated_accel = this->path_pid.calculate(this->state.v);
+        double calculated_accel = this->path_pid.calculate(this->state.v);
+        // state update
+        this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
 
-    // state update
-    this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
-
-    double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
-    if (state_to_goal_distance < 1 && (closest_point_index > this->points.size()/2)) {
-        // finish
+        double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
+    
+        if (state_to_goal_distance < 1 && (closest_point_index > this->points.size()/2)) {
+            // finish
+            return true;
+        }
+        return false;
+    } catch (const std::exception &e) {
+        std::cout << "error occur " << e.what() << std::endl;
         return true;
     }
-    return false;
 }
 
 double lqr_steer_control::calculate_error()
