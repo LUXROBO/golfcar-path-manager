@@ -10,7 +10,7 @@
 CubicSpline1D::CubicSpline1D(std::vector<double> x, std::vector<double> y)
 {
     std::vector<double> diff_x;
-    for (int i = 0; i < x.size() - 1; i++) {
+    for (uint32_t i = 0; i < x.size() - 1; i++) {
         double diff = x[i + 1] - x[i];
         diff_x.push_back(diff);
         if (diff < 0) {
@@ -27,7 +27,7 @@ CubicSpline1D::CubicSpline1D(std::vector<double> x, std::vector<double> y)
     ModelMatrix coeff_b = this->calculate_b(diff_x, this->a);
     this->c = coeff_a.inverse(0.001) * coeff_b;
 
-    for (int i = 0; i < this->x.size() - 1; i++) {
+    for (uint32_t i = 0; i < this->x.size() - 1; i++) {
         double d_temp = (this->c.get(i + 1, 0) - this->c.get(i, 0)) / (3.0 * diff_x[i]);
         double b_temp = 1.0 / diff_x[i] * (this->a[i + 1] - this->a[i]) - diff_x[i] / 3.0 * (2.0 * this->c.get(i, 0) + this->c.get(i + 1, 0));
         this->d.push_back(d_temp);
@@ -47,12 +47,11 @@ double CubicSpline1D::calculate_position(double x)
     } else if (x > this->x[this->x.size()-1]) {
         return 0;
     }
-    std::cout << "y11 " << x << std::endl;
     int i = this->search_index(x);
-    std::cout << "y22 " << i <<  std::endl;
+    if (i < 0) {
+        i = 0;
+    }
     double dx = x - this->x[i];
-     std::cout << "y33" << std::endl;
-    std::cout << this->a.size() << std::endl;
     double position = this->a[i] + this->b[i] * dx + this->c.get(i, 0) * std::pow(dx, 2.0) + this->d[i] * std::pow(dx, 3.0);
     return position;
 }
@@ -64,8 +63,10 @@ double CubicSpline1D::calculate_first_derivative(double x)
     } else if (x > this->x[this->x.size()-1]) {
         return 0;
     }
-
     int i = this->search_index(x);
+    if (i < 0) {
+        i = 0;
+    }
     double dx = x - this->x[i];
     double dy = this->b[i] + 2.0 * this->c.get(i, 0) * dx + 3.0 * this->d[i] * std::pow(dx, 2.0);
     return dy;
@@ -87,16 +88,19 @@ double CubicSpline1D::calculate_second_derivative(double x)
 
 int CubicSpline1D::search_index(double x)
 {
-    std::cout << this->x.size() << std::endl;
     auto itr = std::lower_bound(this->x.begin(), this->x.end(), x);
-    return std::distance(this->x.begin(), itr) - 1;
+    int result = std::distance(this->x.begin(), itr) - 1;
+    if (result < 0)
+        return 0;
+    return result;
+    // return std::distance(this->x.begin(), itr) - 1;
 }
 
 ModelMatrix CubicSpline1D::calculate_a(std::vector<double> diff_x)
 {
     int nx = this->x.size();
     ModelMatrix mat_a = ModelMatrix::zero(nx, nx);
-    mat_a.set(0, 0, 1.0);
+    mat_a.set(0, 0, 1.0); 
 
     for (int i = 0; i < nx - 1; i++) {
         if (i != nx - 2) {
@@ -132,7 +136,7 @@ CubicSpline2D::CubicSpline2D(std::vector<WayPoint> waypoints)
     std::vector<double> x;
     std::vector<double> y;
 
-    for (int i = 0; i < waypoints.size(); i++) {
+    for (uint32_t i = 0; i < waypoints.size(); i++) {
         x.push_back(waypoints[i].x);
         y.push_back(waypoints[i].y);
     }
@@ -151,36 +155,34 @@ std::vector<Point> CubicSpline2D::generate_spline_course(double speed, double ds
 {
     std::vector<Point> points;
 
-    std::cout << "00" << std::endl;
 
     // calc_spline_course //
     double last_s = this->s[this->s.size() - 1]; // 최종 변위량
-    std::cout << "11 " << last_s << std::endl;
     for (double i = 0.0; i < last_s; i += ds) {
         Point point;
         this->calculate_position(i, &point.x, &point.y);
-        std::cout << "22" << std::endl;
+
         point.yaw = this->calculate_yaw(i);
-        std::cout << "33" << std::endl;
+
         point.k = this->calculate_curvature(i);
-        std::cout << "44" << std::endl;
+
         if (isnan(point.k)) {
             point.k = 0;
         }
-        std::cout << "55" << std::endl;
+
         points.push_back(point);
     }
 
     // calculate speed propfile //
     bool direction = true;
     double past_speed = speed;
-    for (int i = 0; i < points.size() - 1; i++) {
+    for (uint32_t i = 0; i < points.size() - 1; i++) {
         double dx = points[i + 1].x - points[i].x;
         double dy = points[i + 1].y - points[i].y;
 
         double move_direction = std::atan2(dy, dx);
-        float current_gradient = dy/dx;
-        float target_speed = speed;
+        double current_gradient = dy/dx;
+        double target_speed = speed;
 
         if (dx != 0.0 && dy != 0.0) {
             double dangle = std::abs(pi_2_pi(move_direction - points[i].yaw)); // angle
@@ -205,9 +207,7 @@ std::vector<Point> CubicSpline2D::generate_spline_course(double speed, double ds
 
 void CubicSpline2D::calculate_position(double s, double* x, double* y)
 {
-    std::cout << "x11" << std::endl;
     *x = this->sx->calculate_position(s);
-    std::cout << "x22" << std::endl;
     *y = this->sy->calculate_position(s);
 }
 
@@ -237,7 +237,7 @@ std::vector<double> CubicSpline2D::calculate_s(std::vector<double> x, std::vecto
 
     s.push_back(0.0);
     this->ds.clear();
-    for (int i = 0; i < x.size() - 1; i++) {
+    for (uint32_t i = 0; i < x.size() - 1; i++) {
         double diff_x = x[i + 1] - x[i];
         double diff_y = y[i + 1] - y[i];
 
