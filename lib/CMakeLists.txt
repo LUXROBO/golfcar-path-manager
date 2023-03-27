@@ -14,10 +14,10 @@ include_directories (
 
 file (GLOB SOURCES
     src/*.cpp
-) 
+)
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/../output
+    ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/../output
 )
