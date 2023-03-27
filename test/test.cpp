@@ -11,14 +11,13 @@
 
 int main(int argc, const char * argv[])
 {
-    std::vector<WayPoint> waypoints;
     lqr_steer_control golfcar_path_tracker;
     ControlState current_state(0, 0, 0, 0, 0);
 
     std::cout << "start" << std::endl;
 
+    std::vector<WayPoint> waypoints;
     waypoints.push_back(WayPoint(0.00, 0.00));
-    // waypoints.push_back(WayPoint(10.00, 10.00));
     waypoints.push_back(WayPoint(1.70, 2.70));
     waypoints.push_back(WayPoint(4.60, -0.20));
     waypoints.push_back(WayPoint(8.40, 2.70));
@@ -42,14 +41,6 @@ int main(int argc, const char * argv[])
     waypoints.push_back(WayPoint(-0.80, -6.00));
     waypoints.push_back(WayPoint(1.60, -4.30));
     waypoints.push_back(WayPoint(0.00, 0.00));
-
-    // waypoints.push_back(WayPoint(0.00, 0.00));
-    // waypoints.push_back(WayPoint(20.00, 0.00));
-    // waypoints.push_back(WayPoint(-20.00, 0.00));
-    // waypoints.push_back(WayPoint(10.00, -12.00));
-    // waypoints.push_back(WayPoint(0, 8));
-    // waypoints.push_back(WayPoint(-10.00, -12.00));
-    // waypoints.push_back(WayPoint(20.00, 0.00));
 
     // generate spline
     CubicSpline2D spline_gener(waypoints);
