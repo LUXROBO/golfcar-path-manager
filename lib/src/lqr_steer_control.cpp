@@ -69,7 +69,7 @@ void lqr_steer_control::add_course(ControlState init_state, std::vector<Point> p
 
 int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<Point> points, int pind, double& min_distance_ref)
 {
-    const int N_IND_SEARCH = 20;
+    const int N_IND_SEARCH = 10;
     double min = 10000;
     uint32_t min_point_index = 0;
     for (uint32_t i = pind; i < (pind + N_IND_SEARCH); i++) {
@@ -97,7 +97,7 @@ int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<P
     } else {
         angle = pi_2_pi(points[min_index].yaw - atan2(dyl, dxl));
     }
-    
+
     if (angle < 0) {
         min_distance *= -1;
     }
@@ -144,7 +144,7 @@ ModelMatrix lqr_steer_control::solve_DARE(ModelMatrix A, ModelMatrix B, ModelMat
             }
         }
         if (max < eps) {
-            return Xn; 
+            return Xn;
         }
         X = Xn;
     }
@@ -207,7 +207,7 @@ bool lqr_steer_control::update(double dt) {
     // dt 저장
     ModelMatrix reference_point;
     ModelMatrix reference_steer;
-    
+
     double calculated_steer = 0;
     static double pe = 0;
     static double pth_e = 0;
@@ -215,26 +215,22 @@ bool lqr_steer_control::update(double dt) {
     if (dt == 0) {
         return false;
     }
-    try {
-        uint32_t closest_point_index =lqr_steering_control (this->state, calculated_steer, pe, pth_e);
-        // PID로 가속도 값 계산
-        this->path_pid.set_target(this->points[closest_point_index].speed);
 
-        double calculated_accel = this->path_pid.calculate(this->state.v);
-        // state update
-        this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
+    uint32_t closest_point_index =lqr_steering_control (this->state, calculated_steer, pe, pth_e);
+    // PID로 가속도 값 계산
+    this->path_pid.set_target(this->points[closest_point_index].speed);
 
-        double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
-    
-        if (state_to_goal_distance < 1 && (closest_point_index > this->points.size()/2)) {
-            // finish
-            return true;
-        }
-        return false;
-    } catch (const std::exception &e) {
-        std::cout << "error occur " << e.what() << std::endl;
+    double calculated_accel = this->path_pid.calculate(this->state.v);
+    // state update
+    this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
+
+    double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
+
+    if (state_to_goal_distance < 1 && (closest_point_index > this->points.size()/2)) {
+        // finish
         return true;
     }
+    return false;
 }
 
 double lqr_steer_control::calculate_error()
@@ -257,12 +253,12 @@ double lqr_steer_control::calculate_error()
     };
 
     if (nearest_index != 0) {
-        distance1 = cal_diatance_between_line_to_point(this->points[nearest_index].x, this->points[nearest_index].y, 
+        distance1 = cal_diatance_between_line_to_point(this->points[nearest_index].x, this->points[nearest_index].y,
                                            this->points[nearest_index - 1].x, this->points[nearest_index - 1].y,
                                            this->state.x, this->state.y);
     }
     if (nearest_index != (this->points.size() - 1)) {
-        distance2 = cal_diatance_between_line_to_point(this->points[nearest_index].x, this->points[nearest_index].y, 
+        distance2 = cal_diatance_between_line_to_point(this->points[nearest_index].x, this->points[nearest_index].y,
                                            this->points[nearest_index + 1].x, this->points[nearest_index + 1].y,
                                            this->state.x, this->state.y);
     }
