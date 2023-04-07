@@ -1,5 +1,5 @@
-#ifndef LQR_STEER_CONTROL_H
-#define LQR_STEER_CONTROL_H
+#ifndef PATH_TRACKING_MANAGER_H
+#define PATH_TRACKING_MANAGER_H
 
 #include <vector>
 #include <fstream>
@@ -10,29 +10,22 @@
 
 #define _USE_MATH_DEFINES
 
-class lqr_steer_control
+class path_tracking_manager
 {
 public:
-    lqr_steer_control();
-    ~lqr_steer_control();
+    path_tracking_manager();
+    ~path_tracking_manager();
 
 public:
-    bool update(double dt);
-    void generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds=1.0);
+    virtual bool update(double dt);
     void add_course(ControlState init_state, std::vector<Point> points);
-    void calc_ref_trajectory(double dt, ModelMatrix& reference_point, ModelMatrix& reference_steer);
-    double calculate_error();
 
-private:
-    int calculate_nearest_index(ControlState state, std::vector<Point> points, int pind);
-    double lqr_steer_control::calculate_min_distance(int min_index);
+protected:
+    virtual int calculate_nearest_index(ControlState state, std::vector<Point> points, int pind);
     void smooth_yaw(std::vector<Point> &points);
     ControlState update_state(ControlState state, double a, double delta, double dt);
-    ModelMatrix dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R);
-    int lqr_steering_control(ControlState state, double& steer, double& pe, double& pth_e);
-    ModelMatrix solve_DARE(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R);
 
-private:
+protected:
     double t;                  // 누적 시간
     double dt;
     ControlState init_state;

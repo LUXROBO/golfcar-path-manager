@@ -25,49 +25,6 @@ pid_steer_control::~pid_steer_control()
 
 }
 
-void pid_steer_control::generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds)
-{
-    CubicSpline2D spline(waypoints);
-    this->points = spline.generate_spline_course(target_speed, ds); // get spline points
-
-    int goal_index = points.size() - 1;
-
-    this->init_state = init_state;  // init start state
-    if (this->init_state.yaw - this->points[0].yaw >= M_PI) {
-        this->init_state.yaw -= 2.0 * M_PI;
-    } else if (this->init_state.yaw - this->points[0].yaw <= -M_PI) {
-        this->init_state.yaw += 2.0 * M_PI;
-    }
-    this->goal_state = ControlState(this->points[goal_index].x, this->points[goal_index].y, this->points[goal_index].yaw, 0, this->points[goal_index].speed);
-    this->t = 0.0;
-
-    this->target_ind = this->calculate_nearest_index(this->init_state, this->points, 0);
-    this->smooth_yaw(this->points);
-    this->oa.clear();
-    this->odelta.clear();
-}
-
-void pid_steer_control::add_course(ControlState init_state, std::vector<Point> points)
-{
-    this->points.insert(end(this->points), begin(points), end(points));
-
-    int goal_index = points.size() - 1;
-
-    this->init_state = init_state;  // init start state
-    if (this->init_state.yaw - this->points[0].yaw >= M_PI) {
-        this->init_state.yaw -= 2.0 * M_PI;
-    } else if (this->init_state.yaw - this->points[0].yaw <= -M_PI) {
-        this->init_state.yaw += 2.0 * M_PI;
-    }
-    this->goal_state = ControlState(this->points[goal_index].x, this->points[goal_index].y, this->points[goal_index].yaw, 0, this->points[goal_index].speed);
-    this->t = 0.0;
-
-    this->target_ind = this->calculate_nearest_index(this->init_state, this->points, 0);
-    this->smooth_yaw(this->points);
-    this->oa.clear();
-    this->odelta.clear();
-}
-
 int pid_steer_control::calculate_nearest_index(ControlState state, std::vector<Point> points, int pind)
 {
     const int N_IND_SEARCH = 5;
@@ -121,23 +78,6 @@ int pid_steer_control::calculate_target_index(ControlState state, std::vector<Po
     return min_point_index;
 }
 
-void pid_steer_control::smooth_yaw(std::vector<Point> &points)
-{
-    for (uint32_t i = 0; i < points.size() - 1; i++) {
-        double diff_yaw = points[i + 1].yaw - points[i].yaw;
-
-        while (diff_yaw >= M_PI_2) {
-            points[i + 1].yaw -= M_PI * 2.0;
-            diff_yaw = points[i + 1].yaw - points[i].yaw;
-        }
-
-        while (diff_yaw <= -M_PI_2) {
-            points[i + 1].yaw += M_PI * 2.0;
-            diff_yaw = points[i + 1].yaw - points[i].yaw;
-        }
-    }
-}
-
 int pid_steer_control::pid_steering_control(ControlState state, double& steer)
 {
     double e = 0;
@@ -176,7 +116,7 @@ bool pid_steer_control::update(double dt) {
     double calculated_accel = this->path_accel_pid.calculate(this->state.v);
 
     // state update
-    this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
+    this->state = path_tracking_manager::update_state(this->state, calculated_accel, calculated_steer, this->dt);
     double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
 
     if (state_to_goal_distance < 1 && (this->target_ind > this->points.size()/2)) {
@@ -216,27 +156,4 @@ double pid_steer_control::calculate_error()
                                            this->state.x, this->state.y);
     }
     return distance1 < distance2 ? distance1 : distance2;
-}
-
-ControlState pid_steer_control::update_state(ControlState state, double accel, double steer_delta, double dt)
-{
-    if (steer_delta > MAX_STEER) {
-        steer_delta = MAX_STEER;
-    } else if (steer_delta < -MAX_STEER) {
-        steer_delta = -MAX_STEER;
-    }
-    state.steer = steer_delta;
-    // golfcar position, angle update
-    state.x = state.x + state.v * std::cos(state.yaw) * dt;
-    state.y = state.y + state.v * std::sin(state.yaw) * dt;
-    state.yaw = state.yaw + state.v / WB * std::tan(steer_delta) * dt;
-    state.v = state.v + accel * dt;
-
-    if (state.v > MAX_SPEED) {
-        state.v = MAX_SPEED;
-    } else if (state.v < -MAX_SPEED) {
-        state.v = -MAX_SPEED;
-    }
-
-    return state;
 }

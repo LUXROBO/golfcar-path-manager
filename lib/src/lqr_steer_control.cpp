@@ -22,32 +22,8 @@ lqr_steer_control::~lqr_steer_control()
 
 }
 
-void lqr_steer_control::generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds)
-{
-    CubicSpline2D spline(waypoints);
-    double xd =0;
-    this->points = spline.generate_spline_course(target_speed, ds); // get spline points
-
-    int goal_index = points.size() - 1;
-
-    this->init_state = init_state;  // init start state
-    if (this->init_state.yaw - this->points[0].yaw >= M_PI) {
-        this->init_state.yaw -= 2.0 * M_PI;
-    } else if (this->init_state.yaw - this->points[0].yaw <= -M_PI) {
-        this->init_state.yaw += 2.0 * M_PI;
-    }
-    this->goal_state = ControlState(this->points[goal_index].x, this->points[goal_index].y, this->points[goal_index].yaw, 0, this->points[goal_index].speed);
-    this->t = 0.0;
-
-    this->target_ind = this->calculate_nearest_index(this->init_state, this->points, 0, xd);
-    this->smooth_yaw(this->points);
-    this->oa.clear();
-    this->odelta.clear();
-}
-
 void lqr_steer_control::add_course(ControlState init_state, std::vector<Point> points)
 {
-    double xd =0;
     this->points.insert(end(this->points), begin(points), end(points));
 
     int goal_index = points.size() - 1;
@@ -61,13 +37,11 @@ void lqr_steer_control::add_course(ControlState init_state, std::vector<Point> p
     this->goal_state = ControlState(this->points[goal_index].x, this->points[goal_index].y, this->points[goal_index].yaw, 0, this->points[goal_index].speed);
     this->t = 0.0;
 
-    this->target_ind = this->calculate_nearest_index(this->init_state, this->points, 0, xd);
+    this->target_ind = this->calculate_nearest_index(this->init_state, this->points, 0);
     this->smooth_yaw(this->points);
-    this->oa.clear();
-    this->odelta.clear();
 }
 
-int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<Point> points, int pind, double& min_distance_ref)
+int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<Point> points, int pind)
 {
     const int N_IND_SEARCH = 10;
     double min = 10000;
@@ -75,23 +49,30 @@ int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<P
     for (uint32_t i = pind; i < (pind + N_IND_SEARCH); i++) {
         double dx = state.x - points[i].x;
         double dy = state.y - points[i].y;
-        double distance_2 = dx * dx + dy * dy;
-        if (min > distance_2) {
-            min = distance_2;
+        double distance = dx * dx + dy * dy;
+        if (min > distance) {
+            min = distance;
             min_point_index = i;
         }
         if (i >= (points.size() - 1)) {
             break;
         }
     }
+    return min_point_index;
+}
 
-    double min_distance = min;
-    uint32_t min_index = min_point_index;
+double lqr_steer_control::calculate_min_distance(int min_index)
+{
+    double min_distance = 0;
 
     double dxl = points[min_index].x - state.x;
     double dyl = points[min_index].y - state.y;
 
     double angle = 0;
+
+    min_distance = sqrt(dxl * dxl + dyl * dyl);
+
+
     if ((abs(dxl) <= 0.00001) && (abs(dyl) <= 0.00001)) {
         angle = pi_2_pi(points[min_index].yaw);
     } else {
@@ -101,9 +82,7 @@ int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<P
     if (angle < 0) {
         min_distance *= -1;
     }
-    min_distance_ref = min_distance;
-
-    return min_index;
+    return min_distance;
 }
 
 void lqr_steer_control::smooth_yaw(std::vector<Point> &points)
@@ -161,9 +140,9 @@ ModelMatrix  lqr_steer_control::dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q
 
 int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, double& pe, double& pth_e)
 {
-    double e = 0;
-    this->target_ind = this->calculate_nearest_index(state, this->points, this->target_ind, e);
-
+    this->target_ind = this->calculate_nearest_index(state, this->points, this->target_ind);
+    
+    double e = calculate_min_distance(this->target_ind);
     double k = this->points[this->target_ind].k;
     double v = state.v;
     double th_e = pi_2_pi(state.yaw - this->points[this->target_ind].yaw);
@@ -205,9 +184,6 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
 
 bool lqr_steer_control::update(double dt) {
     // dt 저장
-    ModelMatrix reference_point;
-    ModelMatrix reference_steer;
-
     double calculated_steer = 0;
     static double pe = 0;
     static double pth_e = 0;
@@ -216,14 +192,13 @@ bool lqr_steer_control::update(double dt) {
         return false;
     }
 
-    uint32_t closest_point_index =lqr_steering_control (this->state, calculated_steer, pe, pth_e);
+    uint32_t closest_point_index = lqr_steering_control(this->state, calculated_steer, pe, pth_e);
     // PID로 가속도 값 계산
     this->path_pid.set_target(this->points[closest_point_index].speed);
 
     double calculated_accel = this->path_pid.calculate(this->state.v);
     // state update
     this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
-
     double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
 
     if (state_to_goal_distance < 1 && (closest_point_index > this->points.size()/2)) {
@@ -235,14 +210,13 @@ bool lqr_steer_control::update(double dt) {
 
 double lqr_steer_control::calculate_error()
 {
-    double e = 0;
     double distance1 = 100;
     double distance2 = 100;
     int temp_target_index = this->target_ind - 10;
     if (temp_target_index < 0) {
         temp_target_index = 0;
     }
-    int nearest_index = this->calculate_nearest_index(state, this->points, temp_target_index, e);
+    int nearest_index = this->calculate_nearest_index(state, this->points, temp_target_index);
 
     auto cal_diatance_between_line_to_point = [](double x1, double y1, double x2, double y2, double stand_x, double stand_y ) -> double{
         double a = (y1 - y2) / (x1 - x2);
