@@ -1,23 +1,26 @@
 cmake_minimum_required (VERSION 3.0)
 
-set (TARGET golfcar_path_manager)
+add_subdirectory(${PROJECT_SOURCE_DIR}/lib)
+add_subdirectory(${PROJECT_SOURCE_DIR}/test)
 
-set (CMAKE_CXX_STANDARD 11)
+# set (TARGET golfcar_path_manager)
 
-file (GLOB SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}lib/src/*.cpp
-)
-set (SOURCE_TEST
-    lib/src/cubic_spline_planner.cpp
-    lib/src/lqr_steer_control.cpp
-    lib/src/model_matrix.cpp
-    lib/src/pid_control.cpp
-)
+# set (CMAKE_CXX_STANDARD 11)
 
-idf_component_register(
-    SRCS
-        ${SOURCE_TEST}
-    INCLUDE_DIRS
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/inc
+# file (GLOB SOURCES
+#     ${CMAKE_CURRENT_SOURCE_DIR}lib/src/*.cpp
+# )
+# set (SOURCE_TEST
+#     lib/src/cubic_spline_planner.cpp
+#     lib/src/lqr_steer_control.cpp
+#     lib/src/model_matrix.cpp
+#     lib/src/pid_control.cpp
+# )
 
-    REQUIRES mbedtls)
+# idf_component_register(
+#     SRCS
+#         ${SOURCE_TEST}
+#     INCLUDE_DIRS
+#         ${CMAKE_CURRENT_SOURCE_DIR}/lib/inc
+
+#     REQUIRES mbedtls)
