@@ -11,27 +11,27 @@
 class CubicSpline1D
 {
 public:
-    CubicSpline1D(std::vector<double> x, std::vector<double> y);
+    CubicSpline1D(std::vector<float> x, std::vector<float> y);
     ~CubicSpline1D();
 
 public:
-    double calculate_position(double x);
-    double calculate_first_derivative(double x);
-    double calculate_second_derivative(double x);
+    float calculate_position(float x);
+    float calculate_first_derivative(float x);
+    float calculate_second_derivative(float x);
 
 private:
-    int search_index(double x);
-    ModelMatrix calculate_a(std::vector<double> diff_x);
-    ModelMatrix calculate_b(std::vector<double> diff_x, std::vector<double> coeff_a);
+    int search_index(float x);
+    ModelMatrix calculate_a(std::vector<float> diff_x);
+    ModelMatrix calculate_b(std::vector<float> diff_x, std::vector<float> coeff_a);
 
 private:
-    std::vector<double> x;
-    std::vector<double> y;
+    std::vector<float> x;
+    std::vector<float> y;
 
-    std::vector<double> a;
-    std::vector<double> b;
+    std::vector<float> a;
+    std::vector<float> b;
     ModelMatrix c;
-    std::vector<double> d;
+    std::vector<float> d;
 };
 
 class CubicSpline2D
@@ -41,22 +41,22 @@ public:
     ~CubicSpline2D();
 
 public:
-    std::vector<Point> generate_spline_course(double speed, double ds=0.1);
+    std::vector<Point> generate_spline_course(float speed, float ds=0.1);
 
 private:
-    void calculate_position(double s, double* x, double* y);
-    double calculate_curvature(double s);
-    double calculate_yaw(double s);
-    std::vector<double> calculate_s(std::vector<double> x, std::vector<double> y);
+    void calculate_position(float s, float* x, float* y);
+    float calculate_curvature(float s);
+    float calculate_yaw(float s);
+    std::vector<float> calculate_s(std::vector<float> x, std::vector<float> y);
 
 private:
-    std::vector<double> s;
+    std::vector<float> s;
     CubicSpline1D *sx;
     CubicSpline1D *sy;
 
-    std::vector<double> ds;
+    std::vector<float> ds;
 };
 
-double pi_2_pi(double angle);
+float pi_2_pi(float angle);
 
 #endif

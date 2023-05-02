@@ -18,11 +18,11 @@ ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column)
     element_.resize(row_ * column_);
 }
 
-ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const double *element)
+ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const float *element)
     : row_(row), column_(column), element_(element, element + (row * column)) {
 }
 
-ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const double **element)
+ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const float **element)
     : row_(row), column_(column) {
     element_.resize(row_ * column_);
 
@@ -33,7 +33,7 @@ ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, cons
     }
 }
 
-ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const std::vector<double> element)
+ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const std::vector<float> element)
     : row_(row), column_(column), element_(element) {
 }
 
@@ -49,11 +49,11 @@ unsigned int ModelMatrix::column() const {
     return column_;
 }
 
-std::vector<double> ModelMatrix::element() const {
+std::vector<float> ModelMatrix::element() const {
     return element_;
 }
 
-double ModelMatrix::get(const unsigned int row, const unsigned int column) const {
+float ModelMatrix::get(const unsigned int row, const unsigned int column) const {
     if (row > row_) {
         return 0.0;
     } else if (column > column_) {
@@ -63,7 +63,7 @@ double ModelMatrix::get(const unsigned int row, const unsigned int column) const
     }
 }
 
-void ModelMatrix::set(const unsigned int row, const unsigned int column, const double value) {
+void ModelMatrix::set(const unsigned int row, const unsigned int column, const float value) {
     if (row > row_) {
         return;
     } else if (column > column_) {
@@ -78,7 +78,7 @@ ModelMatrix ModelMatrix::zero(const unsigned int row, const unsigned int column)
 }
 
 ModelMatrix ModelMatrix::one(const unsigned int row, const unsigned int column) {
-    std::vector<double> mat(row * column);
+    std::vector<float> mat(row * column);
     for (unsigned int r = 0; r < row; r++) {
         for (unsigned int c = 0; c < column; c++) {
             mat[r * column + c] = 1.0;
@@ -88,7 +88,7 @@ ModelMatrix ModelMatrix::one(const unsigned int row, const unsigned int column) 
 }
 
 ModelMatrix ModelMatrix::identity(const unsigned int row, const unsigned int column) {
-    std::vector<double> mat(row * column);
+    std::vector<float> mat(row * column);
     for (unsigned int r = 0; r < row; r++) {
         for (unsigned int c = 0; c < column; c++) {
             if (r == c) {
@@ -102,7 +102,7 @@ ModelMatrix ModelMatrix::identity(const unsigned int row, const unsigned int col
 }
 
 ModelMatrix ModelMatrix::transpose() {
-    std::vector<double> ele(row_ * column_);
+    std::vector<float> ele(row_ * column_);
     for (unsigned int r = 0; r < row_; r++) {
         for (unsigned int c = 0; c < column_; c++) {
             ele[c * row_ + r] = element_[r * column_ + c];
@@ -111,7 +111,7 @@ ModelMatrix ModelMatrix::transpose() {
     return ModelMatrix(column_, row_, ele);
 }
 
-double ModelMatrix::determinant() {
+float ModelMatrix::determinant() {
     if (row_ == column_) {
         return determinant(element_, row_);
     } else if (row_ > column_) {
@@ -131,7 +131,7 @@ ModelMatrix ModelMatrix::inverse() {
     }
 }
 
-ModelMatrix ModelMatrix::inverse(const double sigma) {
+ModelMatrix ModelMatrix::inverse(const float sigma) {
     if (row_ <= column_) {
         // m by n matrix (n >= m)
         // generate sigma digonal matrix
@@ -146,8 +146,8 @@ ModelMatrix ModelMatrix::inverse(const double sigma) {
     }
 }
 
-double ModelMatrix::length() const {
-    double l = 0.0;
+float ModelMatrix::length() const {
+    float l = 0.0;
     for (unsigned int r = 0; r < row_; r++) {
         for (unsigned int c = 0; c < column_; c++) {
             l += element_[r * column_ + c] * element_[r * column_ + c];
@@ -157,11 +157,11 @@ double ModelMatrix::length() const {
 }
 
 ModelMatrix ModelMatrix::normalize() const {
-    double l = length();
+    float l = length();
     if (l == 0.0) {
         return ModelMatrix::identity(row_, column_);
     } else {
-        std::vector<double> ele(row_, column_);
+        std::vector<float> ele(row_, column_);
         for (unsigned int r = 0; r < row_; r++) {
             for (unsigned int c = 0; c < column_; c++) {
                 ele[r * column_ + c] = element_[r * column_ + c] / l;
@@ -171,9 +171,9 @@ ModelMatrix ModelMatrix::normalize() const {
     }
 }
 
-double ModelMatrix::dot(const ModelMatrix &rhs) {
+float ModelMatrix::dot(const ModelMatrix &rhs) {
     if (row_ == rhs.row() && column_ == rhs.column()) {
-        double dot = 0.0;
+        float dot = 0.0;
         for (unsigned int r = 0; r < row_; r++) {
             for (unsigned int c = 0; c < column_; c++) {
                 dot += element_[r * column_ + c] * rhs.element()[r * column_ + c];
@@ -187,7 +187,7 @@ double ModelMatrix::dot(const ModelMatrix &rhs) {
 
 ModelMatrix ModelMatrix::cross(const ModelMatrix &rhs) {
     if (row_ == 3 && column_ == 1 && rhs.row() == 3 && rhs.column() == 1) {
-        std::vector<double> ele(3);
+        std::vector<float> ele(3);
         ele[0] = element_[1] * rhs.element()[2] - element_[2] * rhs.element()[1];
         ele[1] = element_[2] * rhs.element()[0] - element_[0] * rhs.element()[2];
         ele[2] = element_[0] * rhs.element()[1] - element_[1] * rhs.element()[0];
@@ -199,7 +199,7 @@ ModelMatrix ModelMatrix::cross(const ModelMatrix &rhs) {
 
 ModelMatrix ModelMatrix::cross() {
     if (row_ == 3 && column_ == 1) {
-        std::vector<double> ele(3 * 3);
+        std::vector<float> ele(3 * 3);
         ele[0 * 3 + 0] = 0.0;
         ele[0 * 3 + 1] = -element_[2];
         ele[0 * 3 + 2] = element_[1];
@@ -222,14 +222,14 @@ ModelMatrix &ModelMatrix::operator=(const ModelMatrix &other) {
     return *this;
 }
 
-ModelMatrix ModelMatrix::operator+(const double &rhs) {
+ModelMatrix ModelMatrix::operator+(const float &rhs) {
     ModelMatrix right = ModelMatrix::one(row_, column_) * rhs;
 	return (*this) + right;
 }
 
 ModelMatrix ModelMatrix::operator+(const ModelMatrix &rhs) {
     if (row_ == rhs.row() && column_ == rhs.column()) {
-        std::vector<double> temp(row_ * column_);
+        std::vector<float> temp(row_ * column_);
         for (unsigned int r = 0; r < row_; r++) {
             for (unsigned int c = 0; c < column_; c++) {
                 temp[r * column_ + c] = element_[r * column_ + c] + rhs.element()[r * column_ + c];
@@ -241,14 +241,14 @@ ModelMatrix ModelMatrix::operator+(const ModelMatrix &rhs) {
     }
 }
 
-ModelMatrix ModelMatrix::operator-(const double &rhs) {
+ModelMatrix ModelMatrix::operator-(const float &rhs) {
     ModelMatrix right = ModelMatrix::one(row_, column_) * rhs;
 	return (*this) - right;
 }
 
 ModelMatrix ModelMatrix::operator-(const ModelMatrix &rhs) {
     if (row_ == rhs.row() && column_ == rhs.column()) {
-        std::vector<double> temp(row_ * column_);
+        std::vector<float> temp(row_ * column_);
         for (unsigned int r = 0; r < row_; r++) {
             for (unsigned int c = 0; c < column_; c++) {
                 temp[r * column_ + c] = element_[r * column_ + c] - rhs.element()[r * column_ + c];
@@ -260,8 +260,8 @@ ModelMatrix ModelMatrix::operator-(const ModelMatrix &rhs) {
     }
 }
 
-ModelMatrix ModelMatrix::operator*(const double &rhs) {
-    std::vector<double> temp(row_ * column_);
+ModelMatrix ModelMatrix::operator*(const float &rhs) {
+    std::vector<float> temp(row_ * column_);
     for (unsigned int r = 0; r < row_; r++) {
         for (unsigned int c = 0; c < column_; c++) {
             temp[r * column_ + c] = element_[r * column_ + c] * rhs;
@@ -272,7 +272,7 @@ ModelMatrix ModelMatrix::operator*(const double &rhs) {
 
 ModelMatrix ModelMatrix::operator*(const ModelMatrix &rhs) {
     if (column_ == rhs.row()) {
-		std::vector<double> temp(row_ * rhs.column());
+		std::vector<float> temp(row_ * rhs.column());
         for (unsigned int r = 0; r < row_; r++) {
             for (unsigned int c = 0; c < rhs.column(); c++) {
                 temp[r * rhs.column() + c] = 0;
@@ -287,18 +287,18 @@ ModelMatrix ModelMatrix::operator*(const ModelMatrix &rhs) {
     }
 }
 
-ModelMatrix operator+(const double &lhs, const ModelMatrix &rhs) {
+ModelMatrix operator+(const float &lhs, const ModelMatrix &rhs) {
     ModelMatrix left = ModelMatrix::one(rhs.row(), rhs.column()) * lhs;
     return left + rhs;
 }
 
-ModelMatrix operator-(const double &lhs, const ModelMatrix &rhs) {
+ModelMatrix operator-(const float &lhs, const ModelMatrix &rhs) {
     ModelMatrix left = ModelMatrix::one(rhs.row(), rhs.column()) * lhs;
     return left - rhs;
 }
 
-ModelMatrix operator*(const double &lhs, const ModelMatrix &rhs) {
-    std::vector<double> temp(rhs.row() * rhs.column());
+ModelMatrix operator*(const float &lhs, const ModelMatrix &rhs) {
+    std::vector<float> temp(rhs.row() * rhs.column());
     for (unsigned int r = 0; r < rhs.row(); r++) {
         for (unsigned int c = 0; c < rhs.column(); c++) {
             temp[r * rhs.column() + c] = rhs.element()[r * rhs.column() + c] * lhs;
@@ -325,9 +325,9 @@ ModelMatrix ModelMatrix::pseudoInverseL() {
     return ((this->transpose()) * (*this)).inverse() * this->transpose();
 }
 
-double ModelMatrix::determinant(std::vector<double> matrix, int order) {
+float ModelMatrix::determinant(std::vector<float> matrix, int order) {
     // the determinant value
-    double det = 1.0;
+    float det = 1.0;
 
     // stop the recursion when matrix is a single element
     if (order == 1) {
@@ -338,12 +338,12 @@ double ModelMatrix::determinant(std::vector<double> matrix, int order) {
         det = matrix[0 * 3 + 0] * matrix[1 * 3 + 1] * matrix[2 * 3 + 2] + matrix[0 * 3 + 1] * matrix[1 * 3 + 2] * matrix[2 * 3 + 0] + matrix[0 * 3 + 2] * matrix[1 * 3 + 0] * matrix[2 * 3 + 1] - matrix[0 * 3 + 0] * matrix[1 * 3 + 2] * matrix[2 * 3 + 1] - matrix[0 * 3 + 1] * matrix[1 * 3 + 0] * matrix[2 * 3 + 2] - matrix[0 * 3 + 2] * matrix[1 * 3 + 1] * matrix[2 * 3 + 0];
     } else {
         // generation of temporary matrix
-        std::vector<double> temp_matrix = matrix;
+        std::vector<float> temp_matrix = matrix;
 
         // gaussian elimination
         for (int i = 0; i < order; i++) {
             // find max low
-            double temp = 0.000;
+            float temp = 0.000;
             int max_row = i;
             for (int j = i; j < order; j++) {
                 if (std::abs(temp_matrix[j * order + i]) > temp) {
@@ -378,15 +378,15 @@ double ModelMatrix::determinant(std::vector<double> matrix, int order) {
     return det;
 }
 
-std::vector<double> ModelMatrix::matrixInversion(std::vector<double> matrix, int order) {
-    std::vector<double> matA = matrix;
-    std::vector<double> matB = ModelMatrix::identity(order, order).element();
+std::vector<float> ModelMatrix::matrixInversion(std::vector<float> matrix, int order) {
+    std::vector<float> matA = matrix;
+    std::vector<float> matB = ModelMatrix::identity(order, order).element();
 
     // Gauss-Jordan
     // Forward
     for (int i = 0; i < order; i++) {
         // max row
-        double temp = 0.000;
+        float temp = 0.000;
         int max_row = i;
         for (int j = i; j < order; j++) {
             if (std::abs(matA[j * order + i]) > temp) {
@@ -395,7 +395,7 @@ std::vector<double> ModelMatrix::matrixInversion(std::vector<double> matrix, int
             }
         }
         // change row
-        double temp2 =  matA[max_row * order + i];
+        float temp2 =  matA[max_row * order + i];
         for (int j = 0; j < order; j++) {
             temp = matA[max_row * order + j];
             matA[max_row * order + j] = matA[i * order + j];
@@ -417,7 +417,7 @@ std::vector<double> ModelMatrix::matrixInversion(std::vector<double> matrix, int
     //Backward
     for (int i = order - 1; i >= 0; i--) {
         for (int j = i - 1; j >= 0; j--) {
-            double temp = matA[j * order + i];
+            float temp = matA[j * order + i];
             for (int k = 0; k < order; k++) {
                 matA[j * order + k] -= matA[i * order + k] * temp;
                 matB[j * order + k] -= matB[i * order + k] * temp;

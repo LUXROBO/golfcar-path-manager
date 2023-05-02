@@ -11,13 +11,13 @@
 #include <pid_steer_control.h>
 #include <cubic_spline_planner.h>
 
-static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
+static float distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
 {
-    double a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
-    double c = line_point1.y - a * line_point1.x;
-    double b = -1;
-    
-    return abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b); 
+    float a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
+    float c = line_point1.y - a * line_point1.x;
+    float b = -1;
+
+    return abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
 }
 
 int main(int argc, const char * argv[])
@@ -79,7 +79,7 @@ int main(int argc, const char * argv[])
     spline_list.open("spline_list.csv");
     move_path.open("move_path_" + time_string, std::ofstream::out);
 
-    for_each(splined_points.begin(), splined_points.end(), 
+    for_each(splined_points.begin(), splined_points.end(),
         [&spline_list](Point temp){
             std::cout << temp.x << ", " << temp.y << std::endl;
             spline_list << std::to_string(temp.x) <<  "," << std::to_string(temp.y) << "\n";
@@ -90,13 +90,13 @@ int main(int argc, const char * argv[])
     // add course to lqr path tracker
     golfcar_path_tracker.add_course(current_state, splined_points);
 
-    std::vector<double> error_list;
-    double error_average = 0;
-    
-    double min_var = 100;
-    double max_err = 0;
-    double min_err = 0;
-    double selected_gain = 0;
+    std::vector<float> error_list;
+    float error_average = 0;
+
+    float min_var = 100;
+    float max_err = 0;
+    float min_err = 0;
+    float selected_gain = 0;
 
     std::cout << "lqr test start" << std::endl;
     while (true) {
@@ -107,7 +107,7 @@ int main(int argc, const char * argv[])
                 std::cout << "finish test " << loop_count++ << std::endl;
 
                 error_average /= error_list.size();
-                double variance = 0;
+                float variance = 0;
                 for (auto x : error_list) {
                     variance += pow(x - error_average, 2);
                 }
@@ -142,16 +142,12 @@ int main(int argc, const char * argv[])
                 memset((void*)&current_state, 0, sizeof(ControlState));
                 golfcar_path_tracker.set_state(current_state);
                 golfcar_path_tracker.add_course(current_state, splined_points);
-
-                // move_path.close();
-                // error_measure.close();
-
             } else {
                 static int progress_signal = 0;
                 if (progress_signal >= 10) {
                     // if (golfcar_path_tracker.target_ind != 0) {
                     //     auto now_point = Point{golfcar_path_tracker.get_state().x, golfcar_path_tracker.get_state().y, 0, 0, 0};
-                    //     double error_amount = distance_between_point_and_line(now_point, splined_points[golfcar_path_tracker.target_ind-1], splined_points[golfcar_path_tracker.target_ind]);
+                    //     float error_amount = distance_between_point_and_line(now_point, splined_points[golfcar_path_tracker.target_ind-1], splined_points[golfcar_path_tracker.target_ind]);
                     //     error_list.push_back(error_amount);
                     //     error_average += error_amount;
                     // }
