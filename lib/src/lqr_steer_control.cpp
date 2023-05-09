@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <stdio.h>
 #include <iostream>
+#include "arm_math.h"
 
 // #include "//ESP_LOg.h"
 
@@ -127,17 +128,22 @@ void lqr_steer_control::smooth_yaw(std::vector<Point> &points)
 ModelMatrix lqr_steer_control::solve_DARE(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R)
 {
     ModelMatrix X = Q;
-    float maxiter = 10;
-    float eps = 0.01;
+    int maxiter = 10;
+    float eps_flaot = 0.01;
+    q31_t eps;
+    arm_float_to_q31(&eps_flaot, &eps, 1);
 
     for (int i = 0; i < maxiter; i++) {
         // Xn =          A.T @ X @ A           - A.T @ X @ B @ la.inv(R + B.T @ X @ B) @ B.T @ X @ A + Q
         ModelMatrix Xn = (A.transpose() * X * A) - A.transpose() * X * B * (R + (B.transpose() * X * B)).inverse() * B.transpose() * X * A + Q;
         ModelMatrix riccati_equ = Xn - X;
-        float max = -100;
+        q31_t max;
+        float temp = -100;
+        arm_float_to_q31(&temp, &max, 1);
         for (uint32_t j = 0; j < riccati_equ.row(); j++) {
             for (uint32_t k = 0; k < riccati_equ.column(); k++) {
-                float element = abs(riccati_equ.get(j, k));
+                q31_t element = riccati_equ.get(j, k);
+                arm_abs_q31(&element, &element, 1);
                 if (max < element) {
                     max = element;
                 }
@@ -169,31 +175,52 @@ int lqr_steer_control::lqr_steering_control(ControlState state, float& steer, fl
     float th_e = pi_2_pi(state.yaw - this->points[this->target_ind].yaw);
 
     float L = WB;
+    float for_cal_q31 = 0;
 
     ModelMatrix Q = ModelMatrix::one(4, 4);
     ModelMatrix R = ModelMatrix::one(1, 1);
 
     ModelMatrix A = ModelMatrix::zero(4, 4);
-    A.set(0, 0, 1.0);
-    A.set(0, 1, this->dt);
-    A.set(1, 2, v);
-    A.set(2, 2, 1.0);
-    A.set(2, 3, this->dt);
+    q31_t temp_q31[10];
+    float float_one = 1;
+    arm_float_to_q31(&this->dt, &temp_q31[0], 1);
+    arm_float_to_q31(&v, &temp_q31[1], 1);
+    arm_float_to_q31(&float_one, &temp_q31[2], 1);
+    A.set(0, 0, temp_q31[2]);
+    A.set(0, 1, temp_q31[0]);
+    A.set(1, 2, temp_q31[1]);
+    A.set(2, 2, temp_q31[2]);
+    A.set(2, 3, temp_q31[0]);
 
     ModelMatrix B = ModelMatrix::zero(4, 1);
-    B.set(3, 0, v / L);
+    for_cal_q31 = v / L;
+    arm_float_to_q31(&for_cal_q31, &temp_q31[0], 1);
+    B.set(3, 0, temp_q31[0]);
 
     ModelMatrix K = dlqr(A, B, Q, R);
 
     ModelMatrix x = ModelMatrix::zero(4, 1);
 
-    x.set(0, 0, e);
-    x.set(1, 0, (e - pe) / this->dt);
-    x.set(2, 0, th_e);
-    x.set(3, 0, (th_e - pth_e) / this->dt);
+    arm_float_to_q31(&e, &temp_q31[0], 1);
+    x.set(0, 0, temp_q31[0]);
+
+    for_cal_q31 = (e - pe) / this->dt;
+    arm_float_to_q31(&for_cal_q31, &temp_q31[0], 1);
+    x.set(1, 0, temp_q31[0]);
+
+    arm_float_to_q31(&th_e, &temp_q31[0], 1);
+    x.set(2, 0, temp_q31[0]);
+
+    for_cal_q31 = (th_e - pth_e) / this->dt;
+    arm_float_to_q31(&for_cal_q31, &temp_q31[0], 1);
+    x.set(3, 0, temp_q31[0]);
 
     float ff = atan2(L * k, 1);
-    float fb = pi_2_pi((-1 * K * x).get(0, 0));
+    for_cal_q31 = -1;
+    arm_float_to_q31(&for_cal_q31, &temp_q31[1], 1);
+    temp_q31[0] = (temp_q31[1] * K * x).get(0, 0);
+    arm_q31_to_float(&temp_q31[0], &for_cal_q31, 1);
+    float fb = pi_2_pi(for_cal_q31);
 
     steer = ff + fb;
 
@@ -204,10 +231,6 @@ int lqr_steer_control::lqr_steering_control(ControlState state, float& steer, fl
 }
 
 bool lqr_steer_control::update(float dt) {
-    // dt 저장
-    ModelMatrix reference_point;
-    ModelMatrix reference_steer;
-
     float calculated_steer = 0;
     static float pe = 0;
     static float pth_e = 0;

@@ -4,6 +4,8 @@
 #include <vector>
 #include "arm_math.h"
 
+#define MAX_ROW_COLUMN 7
+#define MAX_ELEMENTS 49
 /**
  * @file model_matrix.h
  */
@@ -33,7 +35,7 @@ public:
      * @param[in] column matrix column.
      * @param[in] element matrix element.
      */
-    ModelMatrix(const unsigned int row, const unsigned int column, const q15_t *element);
+    ModelMatrix(const unsigned int row, const unsigned int column, const q31_t *element);
 
     /**
      * @brief Create a new ModelMatrix instance.
@@ -41,7 +43,7 @@ public:
      * @param[in] column matrix column.
      * @param[in] element matrix element.
      */
-    ModelMatrix(const unsigned int row, const unsigned int column, const q15_t **element);
+    ModelMatrix(const unsigned int row, const unsigned int column, const q31_t **element);
 
     // /**
     //  * @brief Create a new ModelMatrix instance.
@@ -73,7 +75,7 @@ public:
      * @brief get matrix element
      * @returns matrix element.
      */
-    q15_t* element() const;
+    q31_t* element() const;
 
     /**
      * @brief get matrix element
@@ -81,7 +83,7 @@ public:
      * @param[in] column matrix column.
      * @returns matrix element.
      */
-    q15_t get(const unsigned int row, const unsigned int column) const;
+    q31_t get(const unsigned int row, const unsigned int column) const;
 
     /**
      * @brief set matrix element
@@ -89,7 +91,7 @@ public:
      * @param[in] column matrix column.
      * @param[in] value element value.
      */
-    void set(const unsigned int row, const unsigned int column, const q15_t value);
+    void set(const unsigned int row, const unsigned int column, const q31_t value);
 
     /**
      * @brief calculate zero matrix
@@ -125,7 +127,7 @@ public:
      * @brief calculate determinant
      * @returns determinant.
      */
-    q15_t determinant();
+    q31_t determinant();
 
     /**
      * @brief calculate inverse matrix
@@ -138,13 +140,13 @@ public:
      * @param[in] sigma DLS sigma.
      * @returns result matrix.
      */
-    ModelMatrix inverse(const q15_t sigma);
+    ModelMatrix inverse(const q31_t sigma);
 
     /**
      * @brief get vector length
      * @returns length.
      */
-    q15_t length() const;
+    q31_t length() const;
 
     /**
      * @brief get normalized vector
@@ -156,7 +158,7 @@ public:
      * @brief calculate vector dot product
      * @returns result value.
      */
-    q15_t dot(const ModelMatrix &rhs);
+    q31_t dot(const ModelMatrix &rhs);
 
     /**
      * @brief calculate vector cross product
@@ -171,29 +173,29 @@ public:
     ModelMatrix cross();
 
     ModelMatrix &operator=(const ModelMatrix &other);
-    ModelMatrix operator+(const q15_t &rhs);
+    ModelMatrix operator+(const q31_t &rhs);
     ModelMatrix operator+(const ModelMatrix &rhs);
-    ModelMatrix operator-(const q15_t &rhs);
+    ModelMatrix operator-(const q31_t &rhs);
     ModelMatrix operator-(const ModelMatrix &rhs);
-    ModelMatrix operator*(const q15_t &rhs);
+    ModelMatrix operator*(const q31_t &rhs);
     ModelMatrix operator*(const ModelMatrix &rhs);
 
-    friend ModelMatrix operator+(const q15_t &lhs, const ModelMatrix &rhs);
-    friend ModelMatrix operator-(const q15_t &lhs, const ModelMatrix &rhs);
-    friend ModelMatrix operator*(const q15_t &lhs, const ModelMatrix &rhs);
+    friend ModelMatrix operator+(const q31_t &lhs, const ModelMatrix &rhs);
+    friend ModelMatrix operator-(const q31_t &lhs, const ModelMatrix &rhs);
+    friend ModelMatrix operator*(const q31_t &lhs, const ModelMatrix &rhs);
 
 private:
     ModelMatrix pseudoInverse();
     ModelMatrix pseudoInverseR();
     ModelMatrix pseudoInverseL();
-    q15_t determinant(q15_t* matrix, int order);
-    void matrixInversion(q15_t* matrix, q15_t* result, int order);
+    q31_t determinant(q31_t* matrix, int order);
+    void matrixInversion(q31_t* matrix, q31_t* result, int order);
 
 private:
     unsigned int row_;
     unsigned int column_;
-    q15_t element_[16];
-    // std::vector<q15_t> element_;
+    q31_t element_[MAX_ELEMENTS];
+    // std::vector<q31_t> element_;
 };
 
 #endif // MODEL_MATRIX_H

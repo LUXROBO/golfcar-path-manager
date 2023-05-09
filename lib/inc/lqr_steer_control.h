@@ -20,7 +20,6 @@ public:
     bool update(float dt);
     void generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, float target_speed, float ds=1.0);
     void add_course(ControlState init_state, std::vector<Point> points);
-    void calc_ref_trajectory(float dt, ModelMatrix& reference_point, ModelMatrix& reference_steer);
     float calculate_error();
 
 private:

@@ -1,5 +1,6 @@
 #include "cubic_spline_planner.h"
 
+#include "arm_math.h"
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
@@ -25,11 +26,22 @@ CubicSpline1D::CubicSpline1D(std::vector<float> x, std::vector<float> y)
     this->a = y;
     ModelMatrix coeff_a = this->calculate_a(diff_x);
     ModelMatrix coeff_b = this->calculate_b(diff_x, this->a);
-    this->c = coeff_a.inverse(0.001) * coeff_b;
+    float temp_float = 0.001;
+    q31_t temp_q31;
+    arm_float_to_q31(&temp_float, &temp_q31, 1);
+    this->c = coeff_a.inverse(temp_q31) * coeff_b;
 
     for (uint32_t i = 0; i < this->x.size() - 1; i++) {
-        float d_temp = (this->c.get(i + 1, 0) - this->c.get(i, 0)) / (3.0 * diff_x[i]);
-        float b_temp = 1.0 / diff_x[i] * (this->a[i + 1] - this->a[i]) - diff_x[i] / 3.0 * (2.0 * this->c.get(i, 0) + this->c.get(i + 1, 0));
+        float temp_c0;
+        float temp_c1;
+        q31_t temp_c0_q31 = this->c.get(i, 0);
+        q31_t temp_c1_q31 = this->c.get(i + 1, 0);
+
+        arm_q31_to_float(&temp_c0_q31, &temp_c0, 1);
+        arm_q31_to_float(&temp_c1_q31, &temp_c1, 1);
+
+        float d_temp = (temp_c1_q31 - temp_c0_q31) / (3.0 * diff_x[i]);
+        float b_temp = 1.0 / diff_x[i] * (this->a[i + 1] - this->a[i]) - diff_x[i] / 3.0 * (2.0 * temp_c0_q31 + temp_c1_q31);
         this->d.push_back(d_temp);
         this->b.push_back(b_temp);
     }
@@ -52,7 +64,10 @@ float CubicSpline1D::calculate_position(float x)
         i = 0;
     }
     float dx = x - this->x[i];
-    float position = this->a[i] + this->b[i] * dx + this->c.get(i, 0) * std::pow(dx, 2.0) + this->d[i] * std::pow(dx, 3.0);
+    q31_t temp_c_q31 = this->c.get(i, 0);
+    float temp_c;
+    arm_q31_to_float(&temp_c_q31, &temp_c, 1);
+    float position = this->a[i] + this->b[i] * dx + temp_c * std::pow(dx, 2.0) + this->d[i] * std::pow(dx, 3.0);
     return position;
 }
 
@@ -68,7 +83,10 @@ float CubicSpline1D::calculate_first_derivative(float x)
         i = 0;
     }
     float dx = x - this->x[i];
-    float dy = this->b[i] + 2.0 * this->c.get(i, 0) * dx + 3.0 * this->d[i] * std::pow(dx, 2.0);
+    q31_t temp_c_q31 = this->c.get(i, 0);
+    float temp_c;
+    arm_q31_to_float(&temp_c_q31, &temp_c, 1);
+    float dy = this->b[i] + 2.0 * temp_c * dx + 3.0 * this->d[i] * std::pow(dx, 2.0);
     return dy;
 }
 
@@ -82,7 +100,10 @@ float CubicSpline1D::calculate_second_derivative(float x)
 
     int i = this->search_index(x);
     float dx = x - this->x[i];
-    float ddy = 2.0 * this->c.get(i, 0) + 6.0 * this->d[i] * dx;
+    q31_t temp_c_q31 = this->c.get(i, 0);
+    float temp_c;
+    arm_q31_to_float(&temp_c_q31, &temp_c, 1);
+    float ddy = 2.0 * temp_c + 6.0 * this->d[i] * dx;
     return ddy;
 }
 
@@ -100,20 +121,23 @@ ModelMatrix CubicSpline1D::calculate_a(std::vector<float> diff_x)
 {
     int nx = this->x.size();
     ModelMatrix mat_a = ModelMatrix::zero(nx, nx);
+    q31_t temp;
     mat_a.set(0, 0, 1.0);
 
     for (int i = 0; i < nx - 1; i++) {
         if (i != nx - 2) {
             float ele = 2.0 * (diff_x[i] + diff_x[i + 1]);
-            mat_a.set(i + 1, i + 1, ele);
+            arm_float_to_q31(&ele, &temp, 1);
+            mat_a.set(i + 1, i + 1, temp);
         }
-        mat_a.set(i + 1, i, diff_x[i]);
-        mat_a.set(i, i + 1, diff_x[i]);
+        arm_float_to_q31(&diff_x[i], &temp, 1);
+        mat_a.set(i + 1, i, temp);
+        mat_a.set(i, i + 1, temp);
     }
 
-    mat_a.set(0, 1, 0.0);
-    mat_a.set(nx - 1, nx - 2, 0.0);
-    mat_a.set(nx - 1, nx - 1, 1.0);
+    mat_a.set(0, 1, 0);
+    mat_a.set(nx - 1, nx - 2, 0);
+    mat_a.set(nx - 1, nx - 1, 1 * 32767);
     return mat_a;
 }
 
@@ -121,10 +145,12 @@ ModelMatrix CubicSpline1D::calculate_b(std::vector<float> diff_x, std::vector<fl
 {
     int nx = this->x.size();
     ModelMatrix mat_b = ModelMatrix::zero(nx, 1);
+    q31_t temp;
 
     for (int i = 0; i < nx - 2; i++) {
         float ele = 3.0 * (coeff_a[i + 2] - coeff_a[i + 1]) / diff_x[i + 1] - 3.0 * (coeff_a[i + 1] - coeff_a[i]) / diff_x[i];
-        mat_b.set(i + 1, 0, ele);
+        arm_float_to_q31(&ele, &temp, 1);
+        mat_b.set(i + 1, 0, temp);
     }
 
     return mat_b;
@@ -154,8 +180,6 @@ CubicSpline2D::~CubicSpline2D()
 std::vector<Point> CubicSpline2D::generate_spline_course(float speed, float ds)
 {
     std::vector<Point> points;
-
-
     // calc_spline_course //
     float last_s = this->s[this->s.size() - 1]; // 최종 변위량
     for (float i = 0.0; i < last_s; i += ds) {
