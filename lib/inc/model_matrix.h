@@ -3,6 +3,7 @@
 
 #include <vector>
 
+
 /**
  * @file model_matrix.h
  */
@@ -32,7 +33,7 @@ public:
      * @param[in] column matrix column.
      * @param[in] element matrix element.
      */
-    ModelMatrix(const unsigned int row, const unsigned int column, const double *element);
+    ModelMatrix(const unsigned int row, const unsigned int column, const float *element);
 
     /**
      * @brief Create a new ModelMatrix instance.
@@ -40,7 +41,7 @@ public:
      * @param[in] column matrix column.
      * @param[in] element matrix element.
      */
-    ModelMatrix(const unsigned int row, const unsigned int column, const double **element);
+    ModelMatrix(const unsigned int row, const unsigned int column, const float **element);
 
     /**
      * @brief Create a new ModelMatrix instance.
@@ -48,7 +49,7 @@ public:
      * @param[in] column matrix column.
      * @param[in] element matrix element.
      */
-    ModelMatrix(const unsigned int row, const unsigned int column, const std::vector<double> element);
+    ModelMatrix(const unsigned int row, const unsigned int column, const std::vector<float> element);
 
     /**
      * @brief Destructor
@@ -72,7 +73,7 @@ public:
      * @brief get matrix element
      * @returns matrix element.
      */
-    std::vector<double> element() const;
+    std::vector<float> element() const;
 
     /**
      * @brief get matrix element
@@ -80,7 +81,7 @@ public:
      * @param[in] column matrix column.
      * @returns matrix element.
      */
-    double get(const unsigned int row, const unsigned int column) const;
+    float get(const unsigned int row, const unsigned int column) const;
 
     /**
      * @brief set matrix element
@@ -88,7 +89,7 @@ public:
      * @param[in] column matrix column.
      * @param[in] value element value.
      */
-    void set(const unsigned int row, const unsigned int column, const double value);
+    void set(const unsigned int row, const unsigned int column, const float value);
 
     /**
      * @brief calculate zero matrix
@@ -124,7 +125,7 @@ public:
      * @brief calculate determinant
      * @returns determinant.
      */
-    double determinant();
+    float determinant();
 
     /**
      * @brief calculate inverse matrix
@@ -137,13 +138,13 @@ public:
      * @param[in] sigma DLS sigma.
      * @returns result matrix.
      */
-    ModelMatrix inverse(const double sigma);
+    ModelMatrix inverse(const float sigma);
 
     /**
      * @brief get vector length
      * @returns length.
      */
-    double length() const;
+    float length() const;
 
     /**
      * @brief get normalized vector
@@ -155,7 +156,7 @@ public:
      * @brief calculate vector dot product
      * @returns result value.
      */
-    double dot(const ModelMatrix &rhs);
+    float dot(const ModelMatrix &rhs);
 
     /**
      * @brief calculate vector cross product
@@ -170,28 +171,28 @@ public:
     ModelMatrix cross();
 
     ModelMatrix &operator=(const ModelMatrix &other);
-    ModelMatrix operator+(const double &rhs);
+    ModelMatrix operator+(const float &rhs);
     ModelMatrix operator+(const ModelMatrix &rhs);
-    ModelMatrix operator-(const double &rhs);
+    ModelMatrix operator-(const float &rhs);
     ModelMatrix operator-(const ModelMatrix &rhs);
-    ModelMatrix operator*(const double &rhs);
+    ModelMatrix operator*(const float &rhs);
     ModelMatrix operator*(const ModelMatrix &rhs);
 
-    friend ModelMatrix operator+(const double &lhs, const ModelMatrix &rhs);
-    friend ModelMatrix operator-(const double &lhs, const ModelMatrix &rhs);
-    friend ModelMatrix operator*(const double &lhs, const ModelMatrix &rhs);
+    friend ModelMatrix operator+(const float &lhs, const ModelMatrix &rhs);
+    friend ModelMatrix operator-(const float &lhs, const ModelMatrix &rhs);
+    friend ModelMatrix operator*(const float &lhs, const ModelMatrix &rhs);
 
 private:
     ModelMatrix pseudoInverse();
     ModelMatrix pseudoInverseR();
     ModelMatrix pseudoInverseL();
-    double determinant(std::vector<double> matrix, int order);
-    std::vector<double> matrixInversion(std::vector<double> matrix, int order);
+    float determinant(std::vector<float> matrix, int order);
+    std::vector<float> matrixInversion(std::vector<float> matrix, int order);
 
 private:
     unsigned int row_;
     unsigned int column_;
-    std::vector<double> element_;
+    std::vector<float> element_;
 };
 
 #endif // MODEL_MATRIX_H
