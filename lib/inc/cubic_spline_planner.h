@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "model_matrix.h"
-
 #include "path_manager.h"
+
 
 class CubicSpline1D
 {

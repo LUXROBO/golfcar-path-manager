@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <iostream>
 
-#define SPLINE_TAG "SPLINE_TAG"
 
 CubicSpline1D::CubicSpline1D(std::vector<float> x, std::vector<float> y)
 {

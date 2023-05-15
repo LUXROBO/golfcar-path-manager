@@ -1,7 +1,9 @@
 #ifndef LQR_PID_CONTROL_H
 #define LQR_PID_CONTROL_H
 
-typedef struct pid_parameter_ {
+
+typedef struct pid_parameter
+{
     float p_gain;
     float i_gain;
     float d_gain;

@@ -1,12 +1,10 @@
 #include "pid_steer_control.h"
-#include <cmath>
-#include <algorithm>
+
 #include <stdio.h>
 #include <iostream>
+#include <cmath>
+#include <algorithm>
 
-// #include "//ESP_LOg.h"
-
-#define STANLEY_TAG "STANLEY_RUNNER_TAG"
 
 const float MAX_STEER = 45.0 * M_PI / 180.0;
 const float MAX_SPEED = 10.0 / 3.6;

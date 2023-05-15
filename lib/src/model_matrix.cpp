@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+
 // ModelMatrix
 ModelMatrix::ModelMatrix()
     : row_(4), column_(4) {
