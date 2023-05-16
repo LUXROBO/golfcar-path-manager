@@ -19,14 +19,11 @@ public:
     bool update(float dt);
     void generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, float target_speed, float ds=1.0);
     void add_course(ControlState init_state, std::vector<Point> points);
-    void calc_ref_trajectory(float dt, ModelMatrix& reference_point, ModelMatrix& reference_steer);
     float calculate_error();
 
 private:
     int calculate_nearest_index(ControlState state, std::vector<Point> points, int pind, float& min_distance);
     void smooth_yaw(std::vector<Point> &points);
-    ModelMatrix predict_motion(ControlState x0, float a, float delta, ModelMatrix x_ref, float dt);
-    void linear_mpc_control(ModelMatrix x_ref, ModelMatrix x_bar, ControlState x0, ModelMatrix d_ref);
     ControlState update_state(ControlState state, float a, float delta, float dt);
     ModelMatrix dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R);
     int lqr_steering_control(ControlState state, float& steer, float& pe, float& pth_e);
