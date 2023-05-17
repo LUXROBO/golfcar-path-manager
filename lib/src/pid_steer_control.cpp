@@ -187,7 +187,7 @@ bool pid_steer_control::update(float dt) {
     this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
     float state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
 
-    if (state_to_goal_distance < 1.0f && (this->target_ind > this->points.size() / 2.0f)) {
+    if (abs(this->state.v) < 0.02f && (this->target_ind > this->points.size() / 2.0f)) {
         // finish
         return true;
     }
