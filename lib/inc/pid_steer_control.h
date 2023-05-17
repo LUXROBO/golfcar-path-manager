@@ -16,39 +16,39 @@ public:
     ~pid_steer_control();
 
 public:
-    void init(const float max_steer_angle, const float max_speed, const float wheel_base, const float gain);
-    bool update(float dt);
-    void generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, float target_speed, float ds=1.0);
+    void init(const double max_steer_angle, const double max_speed, const double wheel_base, const double gain);
+    bool update(double dt);
+    void generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds=1.0);
     void set_course(ControlState init_state, std::vector<Point> points);
     void add_course(ControlState init_state, std::vector<Point> points);
-    float calculate_error();
+    double calculate_error();
 
 private:
     int calculate_nearest_index(ControlState state, std::vector<Point> points, int pind);
-    int calculate_target_index(ControlState state, std::vector<Point> points, int pind, float& err_front_axel);
+    int calculate_target_index(ControlState state, std::vector<Point> points, int pind, double& err_front_axel);
     void smooth_yaw(std::vector<Point> &points);
-    ControlState update_state(ControlState state, float a, float delta, float dt);
-    int pid_steering_control(ControlState state, float& steer);
+    ControlState update_state(ControlState state, double a, double delta, double dt);
+    int pid_steering_control(ControlState state, double& steer);
 
 private:
-    float t;                    // 누적 시간
-    float dt;
+    double t;                    // 누적 시간
+    double dt;
     ControlState init_state;
     ControlState goal_state;
     std::vector<Point> points;  // spline 된 좌표값 + yaw + speed, 굴곡
     int target_ind;             // 목표로 가려는 point의 index값
     ControlState state;         // 현재 상태
 
-    float dl;
-    std::vector<float> oa;     // accel
-    std::vector<float> odelta; // steer
+    double dl;
+    std::vector<double> oa;     // accel
+    std::vector<double> odelta; // steer
     pid_controller path_accel_pid;
     pid_controller path_steer_pid;
 
-    float max_steer_angle;
-    float max_speed;
-    float wheel_base;
-    float pid_gain;
+    double max_steer_angle;
+    double max_speed;
+    double wheel_base;
+    double pid_gain;
 
 public:
     ControlState get_state() const {

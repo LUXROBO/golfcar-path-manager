@@ -6,10 +6,10 @@
 #include <algorithm>
 
 
-static const float DEFAULT_MAX_STEER = 45.0 * M_PI / 180.0;     // [rad] 45deg
-static const float DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
-static const float DEFAULT_WHEEL_BASE = 0.41;                   // 앞 뒤 바퀴 사이 거리 [m]
-static const float DEFAULT_PID_GAIN = 0.5;                      // gain
+static const double DEFAULT_MAX_STEER = 45.0 * M_PI / 180.0;     // [rad] 45deg
+static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
+static const double DEFAULT_WHEEL_BASE = 0.41;                   // 앞 뒤 바퀴 사이 거리 [m]
+static const double DEFAULT_PID_GAIN = 0.5;                      // gain
 
 pid_steer_control::pid_steer_control()
 {
@@ -21,7 +21,7 @@ pid_steer_control::~pid_steer_control()
 
 }
 
-void pid_steer_control::init(const float max_steer_angle, const float max_speed, const float wheel_base, const float gain)
+void pid_steer_control::init(const double max_steer_angle, const double max_speed, const double wheel_base, const double gain)
 {
     this->path_accel_pid = pid_controller(1, 0, 0);
     this->path_steer_pid = pid_controller(1, 0, 0);
@@ -33,7 +33,7 @@ void pid_steer_control::init(const float max_steer_angle, const float max_speed,
     this->pid_gain = gain;
 }
 
-void pid_steer_control::generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, float target_speed, float ds)
+void pid_steer_control::generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds)
 {
     CubicSpline2D spline(waypoints);
     std::vector<Point> points = spline.generate_spline_course(target_speed, ds); // get spline points
@@ -86,12 +86,12 @@ void pid_steer_control::add_course(ControlState init_state, std::vector<Point> p
 int pid_steer_control::calculate_nearest_index(ControlState state, std::vector<Point> points, int pind)
 {
     const int N_IND_SEARCH = 5;
-    float min = 10000;
+    double min = 10000;
     uint32_t min_point_index = 0;
     for (uint32_t i = pind; i < (pind + N_IND_SEARCH); i++) {
-        float dx = state.x - points[i].x;
-        float dy = state.y - points[i].y;
-        float point_to_distance = dx * dx + dy * dy;
+        double dx = state.x - points[i].x;
+        double dy = state.y - points[i].y;
+        double point_to_distance = dx * dx + dy * dy;
         if (min > point_to_distance) {
             min = point_to_distance;
             min_point_index = i;
@@ -103,21 +103,21 @@ int pid_steer_control::calculate_nearest_index(ControlState state, std::vector<P
     return min_point_index;
 }
 
-int pid_steer_control::calculate_target_index(ControlState state, std::vector<Point> points, int pind, float& err_front_axel)
+int pid_steer_control::calculate_target_index(ControlState state, std::vector<Point> points, int pind, double& err_front_axel)
 {
     const int N_IND_SEARCH = 5;
-    float min = 10000;
-    float target_dx = 0;
-    float target_dy = 0;
+    double min = 10000;
+    double target_dx = 0;
+    double target_dy = 0;
     uint32_t min_point_index = 0;
 
-    float fx = state.x + this->wheel_base * std::cos(state.yaw);
-    float fy = state.y + this->wheel_base * std::sin(state.yaw);
+    double fx = state.x + this->wheel_base * std::cos(state.yaw);
+    double fy = state.y + this->wheel_base * std::sin(state.yaw);
 
     for (uint32_t i = pind; i < (pind + N_IND_SEARCH); i++) {
-        float dx = fx - points[i].x;
-        float dy = fy - points[i].y;
-        float point_to_distance = dx * dx + dy * dy;
+        double dx = fx - points[i].x;
+        double dy = fy - points[i].y;
+        double point_to_distance = dx * dx + dy * dy;
         if (min > point_to_distance) {
             min = point_to_distance;
             target_dx = dx;
@@ -128,8 +128,8 @@ int pid_steer_control::calculate_target_index(ControlState state, std::vector<Po
             break;
         }
     }
-    float front_axle_vec_x = -std::cos(state.yaw + M_PI / 2);
-    float front_axle_vec_y = -std::sin(state.yaw + M_PI / 2);
+    double front_axle_vec_x = -std::cos(state.yaw + M_PI / 2);
+    double front_axle_vec_y = -std::sin(state.yaw + M_PI / 2);
 
     err_front_axel = target_dx * front_axle_vec_x + target_dy * front_axle_vec_y;
 
@@ -139,7 +139,7 @@ int pid_steer_control::calculate_target_index(ControlState state, std::vector<Po
 void pid_steer_control::smooth_yaw(std::vector<Point> &points)
 {
     for (uint32_t i = 0; i < points.size() - 1; i++) {
-        float diff_yaw = points[i + 1].yaw - points[i].yaw;
+        double diff_yaw = points[i + 1].yaw - points[i].yaw;
 
         while (diff_yaw >= M_PI_2) {
             points[i + 1].yaw -= M_PI * 2.0;
@@ -153,25 +153,25 @@ void pid_steer_control::smooth_yaw(std::vector<Point> &points)
     }
 }
 
-int pid_steer_control::pid_steering_control(ControlState state, float& steer)
+int pid_steer_control::pid_steering_control(ControlState state, double& steer)
 {
-    float e = 0.0f;
+    double e = 0.0f;
     int current_target_ind = this->calculate_target_index(state, this->points, this->target_ind, e);
 
     if (current_target_ind < this->target_ind) {
         current_target_ind = this->target_ind;
     }
 
-    float th_e = pi_2_pi(this->points[current_target_ind].yaw - state.yaw);
-    float steer_delta = std::atan2(this->pid_gain * e, state.v);
+    double th_e = pi_2_pi(this->points[current_target_ind].yaw - state.yaw);
+    double steer_delta = std::atan2(this->pid_gain * e, state.v);
 
     steer = th_e + steer_delta;
 
     return current_target_ind;
 }
 
-bool pid_steer_control::update(float dt) {
-    float calculated_steer = 0;
+bool pid_steer_control::update(double dt) {
+    double calculated_steer = 0;
     this->dt = dt;
 
     if (dt == 0) {
@@ -181,11 +181,11 @@ bool pid_steer_control::update(float dt) {
     this->target_ind = pid_steering_control(this->state, calculated_steer);
     // PID로 가속도 값 계산
     this->path_accel_pid.set_target(this->points[this->target_ind].speed);
-    float calculated_accel = this->path_accel_pid.calculate(this->state.v);
+    double calculated_accel = this->path_accel_pid.calculate(this->state.v);
 
     // state update
     this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
-    float state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
+    double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
 
     if (abs(this->state.v) < 0.02f && (this->target_ind > this->points.size() / 2.0f)) {
         // finish
@@ -195,10 +195,10 @@ bool pid_steer_control::update(float dt) {
     return false;
 }
 
-float pid_steer_control::calculate_error()
+double pid_steer_control::calculate_error()
 {
-    float distance1 = 100;
-    float distance2 = 100;
+    double distance1 = 100;
+    double distance2 = 100;
     int temp_target_index = this->target_ind - 10;
 
     if (temp_target_index < 0) {
@@ -207,10 +207,10 @@ float pid_steer_control::calculate_error()
 
     int nearest_index = this->calculate_nearest_index(state, this->points, temp_target_index);
 
-    auto cal_diatance_between_line_to_point = [](float x1, float y1, float x2, float y2, float stand_x, float stand_y ) -> float {
-        float a = (y1 - y2) / (x1 - x2);
-        float b = -1;
-        float c = y1 - a * x1;
+    auto cal_diatance_between_line_to_point = [](double x1, double y1, double x2, double y2, double stand_x, double stand_y ) -> double {
+        double a = (y1 - y2) / (x1 - x2);
+        double b = -1;
+        double c = y1 - a * x1;
 
         return abs(a * stand_x + b * stand_y + c) / sqrt(a*a + 1);
     };
@@ -228,7 +228,7 @@ float pid_steer_control::calculate_error()
     return distance1 < distance2 ? distance1 : distance2;
 }
 
-ControlState pid_steer_control::update_state(ControlState state, float accel, float steer_delta, float dt)
+ControlState pid_steer_control::update_state(ControlState state, double accel, double steer_delta, double dt)
 {
     if (steer_delta > this->max_steer_angle) {
         steer_delta = this->max_steer_angle;

@@ -16,31 +16,31 @@ public:
     ~lqr_steer_control();
 
 public:
-    bool update(float dt);
-    void generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, float target_speed, float ds=1.0);
+    bool update(double dt);
+    void generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds=1.0);
     void add_course(ControlState init_state, std::vector<Point> points);
-    float calculate_error();
+    double calculate_error();
 
 private:
-    int calculate_nearest_index(ControlState state, std::vector<Point> points, int pind, float& min_distance);
+    int calculate_nearest_index(ControlState state, std::vector<Point> points, int pind, double& min_distance);
     void smooth_yaw(std::vector<Point> &points);
-    ControlState update_state(ControlState state, float a, float delta, float dt);
+    ControlState update_state(ControlState state, double a, double delta, double dt);
     ModelMatrix dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R);
-    int lqr_steering_control(ControlState state, float& steer, float& pe, float& pth_e);
+    int lqr_steering_control(ControlState state, double& steer, double& pe, double& pth_e);
     ModelMatrix solve_DARE(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R);
 
 private:
-    float t;                  // 누적 시간
-    float dt;
+    double t;                  // 누적 시간
+    double dt;
     ControlState init_state;
     ControlState goal_state;
     std::vector<Point> points; // spline 된 좌표값 + yaw + speed, 굴곡
 
     ControlState state;        // 현재 상태
     int target_ind;             // 목표로 가려는 point의 index값
-    float dl;                  //
-    std::vector<float> oa;     // accel
-    std::vector<float> odelta; // steer
+    double dl;                  //
+    std::vector<double> oa;     // accel
+    std::vector<double> odelta; // steer
     pid_controller path_pid;
 
 public :

@@ -7,10 +7,10 @@
 
 typedef struct WayPoint_
 {
-    float x;
-    float y;
+    double x;
+    double y;
 
-    WayPoint_(float x, float y)
+    WayPoint_(double x, double y)
     {
         this->x = x;
         this->y = y;
@@ -20,28 +20,28 @@ typedef struct WayPoint_
 
 typedef struct Point_
 {
-    float x;
-    float y;
-    float yaw;
-    float k;
-    float speed;
+    double x;
+    double y;
+    double yaw;
+    double k;
+    double speed;
 } Point;
 
 
 typedef struct ControlState_
 {
-    float x;
-    float y;
-    float yaw;
-    float steer;
-    float v;
+    double x;
+    double y;
+    double yaw;
+    double steer;
+    double v;
 
     ControlState_()
     {
 
     }
 
-    ControlState_(float x, float y, float yaw, float steer, float v)
+    ControlState_(double x, double y, double yaw, double steer, double v)
     {
         this->x = x;
         this->y = y;

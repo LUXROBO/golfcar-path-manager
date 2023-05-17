@@ -6,11 +6,11 @@
 #include <iostream>
 
 
-CubicSpline1D::CubicSpline1D(std::vector<float> x, std::vector<float> y)
+CubicSpline1D::CubicSpline1D(std::vector<double> x, std::vector<double> y)
 {
-    std::vector<float> diff_x;
+    std::vector<double> diff_x;
     for (uint32_t i = 0; i < x.size() - 1; i++) {
-        float diff = x[i + 1] - x[i];
+        double diff = x[i + 1] - x[i];
         diff_x.push_back(diff);
         if (diff < 0) {
             return;
@@ -27,8 +27,8 @@ CubicSpline1D::CubicSpline1D(std::vector<float> x, std::vector<float> y)
     this->c = coeff_a.inverse(0.001) * coeff_b;
 
     for (uint32_t i = 0; i < this->x.size() - 1; i++) {
-        float d_temp = (this->c.get(i + 1, 0) - this->c.get(i, 0)) / (3.0 * diff_x[i]);
-        float b_temp = 1.0 / diff_x[i] * (this->a[i + 1] - this->a[i]) - diff_x[i] / 3.0 * (2.0 * this->c.get(i, 0) + this->c.get(i + 1, 0));
+        double d_temp = (this->c.get(i + 1, 0) - this->c.get(i, 0)) / (3.0 * diff_x[i]);
+        double b_temp = 1.0 / diff_x[i] * (this->a[i + 1] - this->a[i]) - diff_x[i] / 3.0 * (2.0 * this->c.get(i, 0) + this->c.get(i + 1, 0));
         this->d.push_back(d_temp);
         this->b.push_back(b_temp);
     }
@@ -39,7 +39,7 @@ CubicSpline1D::~CubicSpline1D()
 
 }
 
-float CubicSpline1D::calculate_position(float x)
+double CubicSpline1D::calculate_position(double x)
 {
     if (x < this->x[0]) {
         return 0;
@@ -50,12 +50,12 @@ float CubicSpline1D::calculate_position(float x)
     if (i < 0) {
         i = 0;
     }
-    float dx = x - this->x[i];
-    float position = this->a[i] + this->b[i] * dx + this->c.get(i, 0) * std::pow(dx, 2.0) + this->d[i] * std::pow(dx, 3.0);
+    double dx = x - this->x[i];
+    double position = this->a[i] + this->b[i] * dx + this->c.get(i, 0) * std::pow(dx, 2.0) + this->d[i] * std::pow(dx, 3.0);
     return position;
 }
 
-float CubicSpline1D::calculate_first_derivative(float x)
+double CubicSpline1D::calculate_first_derivative(double x)
 {
     if (x < this->x[0]) {
         return 0;
@@ -66,12 +66,12 @@ float CubicSpline1D::calculate_first_derivative(float x)
     if (i < 0) {
         i = 0;
     }
-    float dx = x - this->x[i];
-    float dy = this->b[i] + 2.0 * this->c.get(i, 0) * dx + 3.0 * this->d[i] * std::pow(dx, 2.0);
+    double dx = x - this->x[i];
+    double dy = this->b[i] + 2.0 * this->c.get(i, 0) * dx + 3.0 * this->d[i] * std::pow(dx, 2.0);
     return dy;
 }
 
-float CubicSpline1D::calculate_second_derivative(float x)
+double CubicSpline1D::calculate_second_derivative(double x)
 {
     if (x < this->x[0]) {
         return 0;
@@ -80,12 +80,12 @@ float CubicSpline1D::calculate_second_derivative(float x)
     }
 
     int i = this->search_index(x);
-    float dx = x - this->x[i];
-    float ddy = 2.0 * this->c.get(i, 0) + 6.0 * this->d[i] * dx;
+    double dx = x - this->x[i];
+    double ddy = 2.0 * this->c.get(i, 0) + 6.0 * this->d[i] * dx;
     return ddy;
 }
 
-int CubicSpline1D::search_index(float x)
+int CubicSpline1D::search_index(double x)
 {
     auto itr = std::lower_bound(this->x.begin(), this->x.end(), x);
     int result = std::distance(this->x.begin(), itr) - 1;
@@ -95,7 +95,7 @@ int CubicSpline1D::search_index(float x)
     // return std::distance(this->x.begin(), itr) - 1;
 }
 
-ModelMatrix CubicSpline1D::calculate_a(std::vector<float> diff_x)
+ModelMatrix CubicSpline1D::calculate_a(std::vector<double> diff_x)
 {
     int nx = this->x.size();
     ModelMatrix mat_a = ModelMatrix::zero(nx, nx);
@@ -103,7 +103,7 @@ ModelMatrix CubicSpline1D::calculate_a(std::vector<float> diff_x)
 
     for (int i = 0; i < nx - 1; i++) {
         if (i != nx - 2) {
-            float ele = 2.0 * (diff_x[i] + diff_x[i + 1]);
+            double ele = 2.0 * (diff_x[i] + diff_x[i + 1]);
             mat_a.set(i + 1, i + 1, ele);
         }
         mat_a.set(i + 1, i, diff_x[i]);
@@ -116,13 +116,13 @@ ModelMatrix CubicSpline1D::calculate_a(std::vector<float> diff_x)
     return mat_a;
 }
 
-ModelMatrix CubicSpline1D::calculate_b(std::vector<float> diff_x, std::vector<float> coeff_a)
+ModelMatrix CubicSpline1D::calculate_b(std::vector<double> diff_x, std::vector<double> coeff_a)
 {
     int nx = this->x.size();
     ModelMatrix mat_b = ModelMatrix::zero(nx, 1);
 
     for (int i = 0; i < nx - 2; i++) {
-        float ele = 3.0 * (coeff_a[i + 2] - coeff_a[i + 1]) / diff_x[i + 1] - 3.0 * (coeff_a[i + 1] - coeff_a[i]) / diff_x[i];
+        double ele = 3.0 * (coeff_a[i + 2] - coeff_a[i + 1]) / diff_x[i + 1] - 3.0 * (coeff_a[i + 1] - coeff_a[i]) / diff_x[i];
         mat_b.set(i + 1, 0, ele);
     }
 
@@ -132,8 +132,8 @@ ModelMatrix CubicSpline1D::calculate_b(std::vector<float> diff_x, std::vector<fl
 
 CubicSpline2D::CubicSpline2D(std::vector<WayPoint> waypoints)
 {
-    std::vector<float> x;
-    std::vector<float> y;
+    std::vector<double> x;
+    std::vector<double> y;
 
     for (uint32_t i = 0; i < waypoints.size(); i++) {
         x.push_back(waypoints[i].x);
@@ -150,14 +150,14 @@ CubicSpline2D::~CubicSpline2D()
 
 }
 
-std::vector<Point> CubicSpline2D::generate_spline_course(float speed, float ds)
+std::vector<Point> CubicSpline2D::generate_spline_course(double speed, double ds)
 {
     std::vector<Point> points;
 
 
     // calc_spline_course //
-    float last_s = this->s[this->s.size() - 1]; // 최종 변위량
-    for (float i = 0.0; i < last_s; i += ds) {
+    double last_s = this->s[this->s.size() - 1]; // 최종 변위량
+    for (double i = 0.0; i < last_s; i += ds) {
         Point point;
         this->calculate_position(i, &point.x, &point.y);
 
@@ -174,17 +174,17 @@ std::vector<Point> CubicSpline2D::generate_spline_course(float speed, float ds)
 
     // calculate speed propfile //
     bool direction = true;
-    float past_speed = speed;
+    double past_speed = speed;
     for (uint32_t i = 0; i < points.size() - 1; i++) {
-        float dx = points[i + 1].x - points[i].x;
-        float dy = points[i + 1].y - points[i].y;
+        double dx = points[i + 1].x - points[i].x;
+        double dy = points[i + 1].y - points[i].y;
 
-        float move_direction = std::atan2(dy, dx);
-        float current_gradient = dy/dx;
-        float target_speed = speed;
+        double move_direction = std::atan2(dy, dx);
+        double current_gradient = dy/dx;
+        double target_speed = speed;
 
         if (dx != 0.0 && dy != 0.0) {
-            float dangle = std::abs(pi_2_pi(move_direction - points[i].yaw)); // angle
+            double dangle = std::abs(pi_2_pi(move_direction - points[i].yaw)); // angle
             if (dangle >= M_PI / 4.0) {
                 direction = false;
             } else {
@@ -204,43 +204,43 @@ std::vector<Point> CubicSpline2D::generate_spline_course(float speed, float ds)
     return points;
 }
 
-void CubicSpline2D::calculate_position(float s, float* x, float* y)
+void CubicSpline2D::calculate_position(double s, double* x, double* y)
 {
     *x = this->sx->calculate_position(s);
     *y = this->sy->calculate_position(s);
 }
 
-float CubicSpline2D::calculate_curvature(float s)
+double CubicSpline2D::calculate_curvature(double s)
 {
-    float dx = this->sx->calculate_first_derivative(s);
-    float ddx = this->sx->calculate_second_derivative(s);
-    float dy = this->sy->calculate_first_derivative(s);
-    float ddy = this->sy->calculate_second_derivative(s);
-    float k = (ddy * dx - ddx * dy) / std::pow(std::pow(dx, 2) + std::pow(dy, 2), (3.0 / 2.0));
+    double dx = this->sx->calculate_first_derivative(s);
+    double ddx = this->sx->calculate_second_derivative(s);
+    double dy = this->sy->calculate_first_derivative(s);
+    double ddy = this->sy->calculate_second_derivative(s);
+    double k = (ddy * dx - ddx * dy) / std::pow(std::pow(dx, 2) + std::pow(dy, 2), (3.0 / 2.0));
     return k;
 }
 
-float CubicSpline2D::calculate_yaw(float s)
+double CubicSpline2D::calculate_yaw(double s)
 {
-    float dx = this->sx->calculate_first_derivative(s);
-    float dy = this->sy->calculate_first_derivative(s);
-    float yaw = std::atan2(dy, dx);
+    double dx = this->sx->calculate_first_derivative(s);
+    double dy = this->sy->calculate_first_derivative(s);
+    double yaw = std::atan2(dy, dx);
     return yaw;
 }
 
 // 점과 점 거리 계산 후 ds에 저장, s에는 거리 누적값 저장
-std::vector<float> CubicSpline2D::calculate_s(std::vector<float> x, std::vector<float> y)
+std::vector<double> CubicSpline2D::calculate_s(std::vector<double> x, std::vector<double> y)
 {
-    std::vector<float> s;
-    float hypot_sum = 0.0;
+    std::vector<double> s;
+    double hypot_sum = 0.0;
 
     s.push_back(0.0);
     this->ds.clear();
     for (uint32_t i = 0; i < x.size() - 1; i++) {
-        float diff_x = x[i + 1] - x[i];
-        float diff_y = y[i + 1] - y[i];
+        double diff_x = x[i + 1] - x[i];
+        double diff_y = y[i + 1] - y[i];
 
-        float hypot = std::sqrt(diff_x * diff_x + diff_y * diff_y);
+        double hypot = std::sqrt(diff_x * diff_x + diff_y * diff_y);
         this->ds.push_back(hypot);
 
         hypot_sum += hypot;
@@ -250,7 +250,7 @@ std::vector<float> CubicSpline2D::calculate_s(std::vector<float> x, std::vector<
     return s;
 }
 
-float pi_2_pi(float angle)
+double pi_2_pi(double angle)
 {
     while (angle > M_PI) {
         angle = angle - 2.0 * M_PI;
