@@ -72,7 +72,7 @@ public:
     }
 
     size_t get_remain_point() const {
-        return this->points.size() - target_ind;
+        return this->points.size() - target_ind - 1;
     }
 };
 
