@@ -81,6 +81,7 @@ void pid_steer_control::add_course(ControlState init_state, std::vector<Point> p
     this->smooth_yaw(this->points);
     this->oa.clear();
     this->odelta.clear();
+    this->points.back().speed = 2.2;
 }
 
 int pid_steer_control::calculate_nearest_index(ControlState state, std::vector<Point> points, int pind)
@@ -186,8 +187,8 @@ bool pid_steer_control::update(double dt) {
     // state update
     this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
     double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
-
-    if (abs(this->state.v) < 0.02f && (this->target_ind > this->points.size() / 2.0f)) {
+    size_t remain_point = get_remain_point();
+    if (state_to_goal_distance < 0.5 && remain_point == 0) {
         // finish
         return true;
     }
