@@ -188,7 +188,7 @@ bool pid_steer_control::update(double dt) {
     this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
     double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
     size_t remain_point = get_remain_point();
-    if (state_to_goal_distance < 0.5 && remain_point == 0) {
+    if (remain_point == 0) {
         // finish
         return true;
     }
