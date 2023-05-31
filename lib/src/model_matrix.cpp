@@ -19,11 +19,11 @@ ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column)
     element_.resize(row_ * column_);
 }
 
-ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const double *element)
+ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const q_format *element)
     : row_(row), column_(column), element_(element, element + (row * column)) {
 }
 
-ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const double **element)
+ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const q_format **element)
     : row_(row), column_(column) {
     element_.resize(row_ * column_);
 
@@ -34,7 +34,7 @@ ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, cons
     }
 }
 
-ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const std::vector<double> element)
+ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const std::vector<q_format> element)
     : row_(row), column_(column), element_(element) {
 }
 
@@ -50,7 +50,7 @@ unsigned int ModelMatrix::column() const {
     return column_;
 }
 
-std::vector<double> ModelMatrix::element() const {
+std::vector<q_format> ModelMatrix::element() const {
     return element_;
 }
 
@@ -60,7 +60,7 @@ double ModelMatrix::get(const unsigned int row, const unsigned int column) const
     } else if (column > column_) {
         return 0.0;
     } else {
-        return element_[row * column_ + column];
+        return element_[row * column_ + column].change_double();
     }
 }
 
@@ -79,7 +79,7 @@ ModelMatrix ModelMatrix::zero(const unsigned int row, const unsigned int column)
 }
 
 ModelMatrix ModelMatrix::one(const unsigned int row, const unsigned int column) {
-    std::vector<double> mat(row * column);
+    std::vector<q_format> mat(row * column);
     for (unsigned int r = 0; r < row; r++) {
         for (unsigned int c = 0; c < column; c++) {
             mat[r * column + c] = 1.0;
@@ -89,7 +89,7 @@ ModelMatrix ModelMatrix::one(const unsigned int row, const unsigned int column) 
 }
 
 ModelMatrix ModelMatrix::identity(const unsigned int row, const unsigned int column) {
-    std::vector<double> mat(row * column);
+    std::vector<q_format> mat(row * column);
     for (unsigned int r = 0; r < row; r++) {
         for (unsigned int c = 0; c < column; c++) {
             if (r == c) {
@@ -103,7 +103,7 @@ ModelMatrix ModelMatrix::identity(const unsigned int row, const unsigned int col
 }
 
 ModelMatrix ModelMatrix::transpose() {
-    std::vector<double> ele(row_ * column_);
+    std::vector<q_format> ele(row_ * column_);
     for (unsigned int r = 0; r < row_; r++) {
         for (unsigned int c = 0; c < column_; c++) {
             ele[c * row_ + r] = element_[r * column_ + c];
@@ -151,7 +151,7 @@ double ModelMatrix::length() const {
     double l = 0.0;
     for (unsigned int r = 0; r < row_; r++) {
         for (unsigned int c = 0; c < column_; c++) {
-            l += element_[r * column_ + c] * element_[r * column_ + c];
+            l += (element_[r * column_ + c] * element_[r * column_ + c]).change_double();
         }
     }
     return std::sqrt(l);
@@ -162,7 +162,7 @@ ModelMatrix ModelMatrix::normalize() const {
     if (l == 0.0) {
         return ModelMatrix::identity(row_, column_);
     } else {
-        std::vector<double> ele(row_, column_);
+        std::vector<q_format> ele(row_, column_);
         for (unsigned int r = 0; r < row_; r++) {
             for (unsigned int c = 0; c < column_; c++) {
                 ele[r * column_ + c] = element_[r * column_ + c] / l;

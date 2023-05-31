@@ -2,7 +2,7 @@
 #define MODEL_MATRIX_H
 
 #include <vector>
-
+#include <qformat.h>
 
 /**
  * @file model_matrix.h
@@ -33,7 +33,7 @@ public:
      * @param[in] column matrix column.
      * @param[in] element matrix element.
      */
-    ModelMatrix(const unsigned int row, const unsigned int column, const double *element);
+    ModelMatrix(const unsigned int row, const unsigned int column, const q_format *element);
 
     /**
      * @brief Create a new ModelMatrix instance.
@@ -41,7 +41,7 @@ public:
      * @param[in] column matrix column.
      * @param[in] element matrix element.
      */
-    ModelMatrix(const unsigned int row, const unsigned int column, const double **element);
+    ModelMatrix(const unsigned int row, const unsigned int column, const q_format **element);
 
     /**
      * @brief Create a new ModelMatrix instance.
@@ -49,7 +49,7 @@ public:
      * @param[in] column matrix column.
      * @param[in] element matrix element.
      */
-    ModelMatrix(const unsigned int row, const unsigned int column, const std::vector<double> element);
+    ModelMatrix(const unsigned int row, const unsigned int column, const std::vector<q_format> element);
 
     /**
      * @brief Destructor
@@ -73,7 +73,7 @@ public:
      * @brief get matrix element
      * @returns matrix element.
      */
-    std::vector<double> element() const;
+    std::vector<q_format> element() const;
 
     /**
      * @brief get matrix element
@@ -186,13 +186,13 @@ private:
     ModelMatrix pseudoInverse();
     ModelMatrix pseudoInverseR();
     ModelMatrix pseudoInverseL();
-    double determinant(std::vector<double> matrix, int order);
-    std::vector<double> matrixInversion(std::vector<double> matrix, int order);
+    double determinant(std::vector<q_format> matrix, int order);
+    std::vector<q_format> matrixInversion(std::vector<q_format> matrix, int order);
 
 private:
     unsigned int row_;
     unsigned int column_;
-    std::vector<double> element_;
+    std::vector<q_format> element_;
 };
 
 #endif // MODEL_MATRIX_H
