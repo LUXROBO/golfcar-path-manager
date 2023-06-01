@@ -81,7 +81,7 @@ public:
      * @param[in] column matrix column.
      * @returns matrix element.
      */
-    double get(const unsigned int row, const unsigned int column) const;
+    q_format get(const unsigned int row, const unsigned int column) const;
 
     /**
      * @brief set matrix element
@@ -89,7 +89,7 @@ public:
      * @param[in] column matrix column.
      * @param[in] value element value.
      */
-    void set(const unsigned int row, const unsigned int column, const double value);
+    void set(const unsigned int row, const unsigned int column, const q_format value);
 
     /**
      * @brief calculate zero matrix
@@ -125,7 +125,7 @@ public:
      * @brief calculate determinant
      * @returns determinant.
      */
-    double determinant();
+    q_format determinant();
 
     /**
      * @brief calculate inverse matrix
@@ -138,13 +138,13 @@ public:
      * @param[in] sigma DLS sigma.
      * @returns result matrix.
      */
-    ModelMatrix inverse(const double sigma);
+    ModelMatrix inverse(const q_format sigma);
 
     /**
      * @brief get vector length
      * @returns length.
      */
-    double length() const;
+    q_format length() const;
 
     /**
      * @brief get normalized vector
@@ -156,7 +156,7 @@ public:
      * @brief calculate vector dot product
      * @returns result value.
      */
-    double dot(const ModelMatrix &rhs);
+    q_format dot(const ModelMatrix &rhs);
 
     /**
      * @brief calculate vector cross product
@@ -171,22 +171,22 @@ public:
     ModelMatrix cross();
 
     ModelMatrix &operator=(const ModelMatrix &other);
-    ModelMatrix operator+(const double &rhs);
+    ModelMatrix operator+(const q_format &rhs);
     ModelMatrix operator+(const ModelMatrix &rhs);
-    ModelMatrix operator-(const double &rhs);
+    ModelMatrix operator-(const q_format &rhs);
     ModelMatrix operator-(const ModelMatrix &rhs);
-    ModelMatrix operator*(const double &rhs);
+    ModelMatrix operator*(const q_format &rhs);
     ModelMatrix operator*(const ModelMatrix &rhs);
 
-    friend ModelMatrix operator+(const double &lhs, const ModelMatrix &rhs);
-    friend ModelMatrix operator-(const double &lhs, const ModelMatrix &rhs);
-    friend ModelMatrix operator*(const double &lhs, const ModelMatrix &rhs);
+    friend ModelMatrix operator+(const q_format &lhs, const ModelMatrix &rhs);
+    friend ModelMatrix operator-(const q_format &lhs, const ModelMatrix &rhs);
+    friend ModelMatrix operator*(const q_format &lhs, const ModelMatrix &rhs);
 
 private:
     ModelMatrix pseudoInverse();
     ModelMatrix pseudoInverseR();
     ModelMatrix pseudoInverseL();
-    double determinant(std::vector<q_format> matrix, int order);
+    q_format determinant(std::vector<q_format> matrix, int order);
     std::vector<q_format> matrixInversion(std::vector<q_format> matrix, int order);
 
 private:

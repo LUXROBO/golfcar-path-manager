@@ -126,16 +126,16 @@ ModelMatrix lqr_steer_control::solve_DARE(ModelMatrix A, ModelMatrix B, ModelMat
 {
     ModelMatrix X = Q;
     double maxiter = 10;
-    double eps = 0.01;
+    q_format eps = 0.01;
 
     for (int i = 0; i < maxiter; i++) {
         // Xn =          A.T @ X @ A           - A.T @ X @ B @ la.inv(R + B.T @ X @ B) @ B.T @ X @ A + Q
         ModelMatrix Xn = (A.transpose() * X * A) - A.transpose() * X * B * (R + (B.transpose() * X * B)).inverse() * B.transpose() * X * A + Q;
         ModelMatrix riccati_equ = Xn - X;
-        double max = -100;
+        q_format max = -100;
         for (uint32_t j = 0; j < riccati_equ.row(); j++) {
             for (uint32_t k = 0; k < riccati_equ.column(); k++) {
-                double element = abs(riccati_equ.get(j, k));
+                q_format element = riccati_equ.get(j, k).abs();
                 if (max < element) {
                     max = element;
                 }
@@ -162,11 +162,11 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
     double e = 0;
     this->target_ind = this->calculate_nearest_index(state, this->points, this->target_ind, e);
 
-    double k = this->points[this->target_ind].k;
-    double v = state.v;
-    double th_e = pi_2_pi(state.yaw - this->points[this->target_ind].yaw);
+    q_format k = this->points[this->target_ind].k;
+    q_format v = state.v;
+    q_format th_e = pi_2_pi(state.yaw - this->points[this->target_ind].yaw);
 
-    double L = WB;
+    q_format L = WB;
 
     ModelMatrix Q = ModelMatrix::one(4, 4);
     ModelMatrix R = ModelMatrix::one(1, 1);
@@ -190,8 +190,8 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
     x.set(2, 0, th_e);
     x.set(3, 0, (th_e - pth_e) / this->dt);
 
-    double ff = atan2(L * k, 1);
-    double fb = pi_2_pi((-1 * K * x).get(0, 0));
+    double ff = atan2((L * k).to_double(), 1);
+    double fb = pi_2_pi((-1 * K * x).get(0, 0).to_double());
 
     steer = ff + fb;
 
