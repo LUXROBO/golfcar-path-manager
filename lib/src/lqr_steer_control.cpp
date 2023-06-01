@@ -6,9 +6,10 @@
 #include <algorithm>
 
 
-const double MAX_STEER = 45.0 * M_PI / 180.0;
-const double MAX_SPEED = 10.0 / 3.6;
-const double WB = 0.41;                      //앞 뒤 바퀴 사이 거리
+static const double DEFAULT_MAX_STEER = 45.0 * M_PI / 180.0;     // [rad] 45deg
+static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
+static const double DEFAULT_WHEEL_BASE = 0.41;                   // 앞 뒤 바퀴 사이 거리 [m]
+static const double DEFAULT_PID_GAIN = 1;                      // gain
 
 lqr_steer_control::lqr_steer_control()
 {
@@ -20,22 +21,33 @@ lqr_steer_control::~lqr_steer_control()
 
 }
 
-void lqr_steer_control::generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds)
+void lqr_steer_control::init(const double max_steer_angle, const double max_speed, const double wheel_base, const double gain)
 {
-    CubicSpline2D spline(waypoints);
-    double xd =0;
-    this->points = spline.generate_spline_course(target_speed, ds); // get spline points
+    this->path_pid = pid_controller(1, 0, 0);
+    this->points.clear();
 
+    this->max_steer_angle = max_steer_angle;
+    this->max_speed = max_speed;
+    this->wheel_base = wheel_base;
+    this->pid_gain = gain;
+}
+
+void lqr_steer_control::set_course(ControlState init_state, std::vector<Point> points)
+{
+	double xd = 0;
     int goal_index = points.size() - 1;
 
-    this->init_state = init_state;  // init start state
+    this->init_state = init_state;
+    this->points = points;
+
     if (this->init_state.yaw - this->points[0].yaw >= M_PI) {
-        this->init_state.yaw -= 2.0 * M_PI;
+        this->init_state.yaw -= 2.0f * M_PI;
     } else if (this->init_state.yaw - this->points[0].yaw <= -M_PI) {
-        this->init_state.yaw += 2.0 * M_PI;
+        this->init_state.yaw += 2.0f * M_PI;
     }
+
     this->goal_state = ControlState(this->points[goal_index].x, this->points[goal_index].y, this->points[goal_index].yaw, 0, this->points[goal_index].speed);
-    this->t = 0.0;
+    this->t = 0.0f;
 
     this->target_ind = this->calculate_nearest_index(this->init_state, this->points, 0, xd);
     this->smooth_yaw(this->points);
@@ -63,6 +75,7 @@ void lqr_steer_control::add_course(ControlState init_state, std::vector<Point> p
     this->smooth_yaw(this->points);
     this->oa.clear();
     this->odelta.clear();
+    this->points.back().speed = 2.2;
 }
 
 int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<Point> points, int pind, double& min_distance_ref)
@@ -166,7 +179,7 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
     q_format v = state.v;
     q_format th_e = pi_2_pi(state.yaw - this->points[this->target_ind].yaw);
 
-    q_format L = WB;
+    q_format L = this->wheel_base;
 
     ModelMatrix Q = ModelMatrix::one(4, 4);
     ModelMatrix R = ModelMatrix::one(1, 1);
@@ -221,10 +234,10 @@ bool lqr_steer_control::update(double dt) {
     double calculated_accel = this->path_pid.calculate(this->state.v);
     // state update
     this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
-
     double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
+    size_t remain_point = get_remain_point();
 
-    if (state_to_goal_distance < 1 && (closest_point_index > this->points.size()/2)) {
+    if (remain_point == 0) {
         // finish
         return true;
     }
@@ -265,22 +278,22 @@ double lqr_steer_control::calculate_error()
 
 ControlState lqr_steer_control::update_state(ControlState state, double accel, double steer_delta, double dt)
 {
-    if (steer_delta > MAX_STEER) {
-        steer_delta = MAX_STEER;
-    } else if (steer_delta < -MAX_STEER) {
-        steer_delta = -MAX_STEER;
+    if (steer_delta > this->max_steer_angle) {
+        steer_delta = this->max_steer_angle;
+    } else if (steer_delta < -this->max_steer_angle) {
+        steer_delta = -this->max_steer_angle;
     }
     state.steer = steer_delta;
     // golfcar position, angle update
     state.x = state.x + state.v * std::cos(state.yaw) * dt;
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
-    state.yaw = state.yaw + state.v / WB * std::tan(steer_delta) * dt;
+    state.yaw = state.yaw + state.v / this->wheel_base * std::tan(steer_delta) * dt;
     state.v = state.v + accel * dt;
 
-    if (state.v > MAX_SPEED) {
-        state.v = MAX_SPEED;
-    } else if (state.v < -MAX_SPEED) {
-        state.v = -MAX_SPEED;
+    if (state.v > this->max_speed) {
+        state.v = this->max_speed;
+    } else if (state.v < -this->max_speed) {
+        state.v = -this->max_speed;
     }
 
     return state;

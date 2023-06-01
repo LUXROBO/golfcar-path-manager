@@ -16,8 +16,9 @@ public:
     ~lqr_steer_control();
 
 public:
+    void init(const double max_steer_angle, const double max_speed, const double wheel_base, const double gain);
     bool update(double dt);
-    void generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds=1.0);
+    void set_course(ControlState init_state, std::vector<Point> points);
     void add_course(ControlState init_state, std::vector<Point> points);
     double calculate_error();
 
@@ -43,6 +44,11 @@ private:
     std::vector<double> odelta; // steer
     pid_controller path_pid;
 
+    double max_steer_angle;
+    double max_speed;
+    double wheel_base;
+    double pid_gain;
+
 public :
     ControlState get_state() const {
         return this->state;
@@ -54,6 +60,18 @@ public :
 
     std::vector<Point> get_points() const {
         return this->points;
+    }
+
+    void remove_points(size_t num) {
+        if (num == 0) {
+            this->points.clear();
+        } else if (this->points.size() > num) {
+            this->points.erase(begin(this->points), begin(this->points) + num);
+        }
+    }
+
+    size_t get_remain_point() const {
+        return this->points.size() - target_ind - 1;
     }
 };
 
