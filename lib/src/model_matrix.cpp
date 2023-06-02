@@ -56,9 +56,9 @@ std::vector<q_format> ModelMatrix::element() const {
 
 q_format ModelMatrix::get(const unsigned int row, const unsigned int column) const {
     if (row > row_) {
-        return 0.0;
+        return q_format();
     } else if (column > column_) {
-        return 0.0;
+        return q_format();
     } else {
         return element_[row * column_ + column];
     }
@@ -82,7 +82,8 @@ ModelMatrix ModelMatrix::one(const unsigned int row, const unsigned int column) 
     std::vector<q_format> mat(row * column);
     for (unsigned int r = 0; r < row; r++) {
         for (unsigned int c = 0; c < column; c++) {
-            mat[r * column + c] = 1.0;
+            // mat[r * column + c] = 1.0;
+            mat[r * column + c] = q_format(65536, q_format::init_q_format_flag);
         }
     }
     return ModelMatrix(row, column, mat);
@@ -93,9 +94,11 @@ ModelMatrix ModelMatrix::identity(const unsigned int row, const unsigned int col
     for (unsigned int r = 0; r < row; r++) {
         for (unsigned int c = 0; c < column; c++) {
             if (r == c) {
-                mat[r * column + c] = 1.0;
+                // mat[r * column + c] = 1.0;
+                mat[r * column + c] = q_format(65536, q_format::init_q_format_flag);
             } else {
-                mat[r * column + c] = 0.0;
+                // mat[r * column + c] = 0.0;
+                mat[r * column + c] = q_format();
             }
         }
     }
@@ -398,7 +401,7 @@ std::vector<q_format> ModelMatrix::matrixInversion(std::vector<q_format> matrix,
             }
         }
         // change row
-        q_format temp2 =  matA[max_row * order + i];
+        q_format temp2 = matA[max_row * order + i];
         for (int j = 0; j < order; j++) {
             temp = matA[max_row * order + j];
             matA[max_row * order + j] = matA[i * order + j];

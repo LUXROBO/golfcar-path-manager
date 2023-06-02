@@ -35,7 +35,7 @@ public:
     q_format abs();
     // q_format sqrt();
 
-    q_format &operator=(const q_format &other);
+    // q_format &operator=(const q_format &other);
     q_format &operator=(const double other);
     // operator double() const;
 
@@ -69,7 +69,7 @@ public:
 
     bool operator>(const q_format &rhs);
     friend bool operator>(double lhs, const q_format& rhs);
-    
+
 
     double to_double() const;
 };

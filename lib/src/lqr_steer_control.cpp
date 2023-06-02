@@ -138,14 +138,14 @@ void lqr_steer_control::smooth_yaw(std::vector<Point> &points)
 ModelMatrix lqr_steer_control::solve_DARE(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R)
 {
     ModelMatrix X = Q;
-    double maxiter = 10;
+    int maxiter = 10;
     q_format eps = 0.01;
 
     for (int i = 0; i < maxiter; i++) {
         // Xn =          A.T @ X @ A           - A.T @ X @ B @ la.inv(R + B.T @ X @ B) @ B.T @ X @ A + Q
         ModelMatrix Xn = (A.transpose() * X * A) - A.transpose() * X * B * (R + (B.transpose() * X * B)).inverse() * B.transpose() * X * A + Q;
         ModelMatrix riccati_equ = Xn - X;
-        q_format max = -100;
+        q_format max = 0;
         for (uint32_t j = 0; j < riccati_equ.row(); j++) {
             for (uint32_t k = 0; k < riccati_equ.column(); k++) {
                 q_format element = riccati_equ.get(j, k).abs();
