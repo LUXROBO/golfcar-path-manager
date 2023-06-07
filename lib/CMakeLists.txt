@@ -13,6 +13,9 @@ include_directories (
 )
 
 file (GLOB SOURCES
+    # src/cubic_spline_planner.cpp
+    # src/model_matrix.cpp
+    src/qformat_c.c
     src/*.cpp
 )
 

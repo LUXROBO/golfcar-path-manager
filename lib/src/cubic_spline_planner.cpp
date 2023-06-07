@@ -8,10 +8,10 @@
 
 CubicSpline1D::CubicSpline1D(std::vector<double> x, std::vector<double> y)
 {
-    std::vector<q_format> diff_x;
+    std::vector<q_format_c> diff_x;
     for (uint32_t i = 0; i < x.size() - 1; i++) {
         double diff = x[i + 1] - x[i];
-        diff_x.push_back(diff);
+        diff_x.push_back(to_q_format(diff));
         if (diff < 0) {
             return;
             //throw std::runtime_error("x coordinates must be sorted in ascending order");
@@ -24,11 +24,14 @@ CubicSpline1D::CubicSpline1D(std::vector<double> x, std::vector<double> y)
     this->a = y;
     ModelMatrix coeff_a = this->calculate_a(diff_x);
     ModelMatrix coeff_b = this->calculate_b(diff_x, this->a);
-    this->c = coeff_a.inverse(0.001) * coeff_b;
+    this->c = coeff_a.inverse(to_q_format(0.001)) * coeff_b;
 
     for (uint32_t i = 0; i < this->x.size() - 1; i++) {
-        double d_temp = ((this->c.get(i + 1, 0) - this->c.get(i, 0)) / (3.0 * diff_x[i])).to_double();
-        double b_temp = (1.0 / diff_x[i] * (this->a[i + 1] - this->a[i]) - diff_x[i] / 3.0 * (2.0 * this->c.get(i, 0) + this->c.get(i + 1, 0))).to_double();
+        double d_temp = to_double(q_format_div((this->c.get(i + 1, 0) - this->c.get(i, 0)), q_format_mult(to_q_format(3.0), diff_x[i])));
+        double b_temp = to_double( q_format_mult(q_format_div(Q_FORMAT_ONE, diff_x[i]), to_q_format(this->a[i + 1] - this->a[i]))
+                                 - q_format_mult(q_format_div(diff_x[i], to_q_format(3.0)), q_format_mult(to_q_format(2.0), this->c.get(i, 0)) + this->c.get(i + 1, 0)));
+        // double d_temp = (this->c.get(i + 1, 0) - this->c.get(i, 0)) / (3.0 * diff_x[i]);
+        // double b_temp = 1.0 / diff_x[i] * (this->a[i + 1] - this->a[i]) - diff_x[i] / 3.0 * (2.0 * this->c.get(i, 0) + this->c.get(i + 1, 0)));
         this->d.push_back(d_temp);
         this->b.push_back(b_temp);
     }
@@ -51,8 +54,12 @@ double CubicSpline1D::calculate_position(double x)
         i = 0;
     }
     double dx = x - this->x[i];
-    q_format position = this->a[i] + this->b[i] * dx + this->c.get(i, 0) * std::pow(dx, 2.0) + this->d[i] * std::pow(dx, 3.0);
-    return position.to_double();
+    // double position = this->a[i] + this->b[i] * dx + this->c.get(i, 0) * std::pow(dx, 2.0) + this->d[i] * std::pow(dx, 3.0);
+    double position =  this->a[i] + this->b[i] * dx + to_double(this->c.get(i, 0)) * std::pow(dx, 2.0) + this->d[i] * std::pow(dx, 3.0);
+    // double position = this->a[i] + to_double(q_format_mult(this->b[i], to_q_format(dx))
+    //                                         + q_format_mult(this->c.get(i, 0), to_q_format(std::pow(dx, 2.0)))
+    //                                         + q_format_mult(this->d[i], to_q_format(std::pow(dx, 3.0))));
+    return position;
 }
 
 double CubicSpline1D::calculate_first_derivative(double x)
@@ -67,8 +74,9 @@ double CubicSpline1D::calculate_first_derivative(double x)
         i = 0;
     }
     double dx = x - this->x[i];
-    q_format dy = this->b[i] + 2.0 * this->c.get(i, 0) * dx + 3.0 * this->d[i] * std::pow(dx, 2.0);
-    return dy.to_double();
+    double dy = this->b[i] + 2.0 * to_double(this->c.get(i, 0)) * dx + 3.0 * this->d[i] * std::pow(dx, 2.0);
+    
+    return dy;
 }
 
 double CubicSpline1D::calculate_second_derivative(double x)
@@ -81,8 +89,9 @@ double CubicSpline1D::calculate_second_derivative(double x)
 
     int i = this->search_index(x);
     double dx = x - this->x[i];
-    q_format ddy = 2.0 * this->c.get(i, 0) + 6.0 * this->d[i] * dx;
-    return ddy.to_double();
+    double ddy = 2.0 * to_double(this->c.get(i, 0)) + 6.0 * this->d[i] * dx;
+
+    return ddy;
 }
 
 int CubicSpline1D::search_index(double x)
@@ -95,35 +104,35 @@ int CubicSpline1D::search_index(double x)
     // return std::distance(this->x.begin(), itr) - 1;
 }
 
-ModelMatrix CubicSpline1D::calculate_a(std::vector<q_format> diff_x)
+ModelMatrix CubicSpline1D::calculate_a(std::vector<q_format_c> diff_x)
 {
     int nx = this->x.size();
     ModelMatrix mat_a = ModelMatrix::zero(nx, nx);
-    mat_a.set(0, 0, 1.0);
+    mat_a.set(0, 0, Q_FORMAT_ONE);
 
     for (int i = 0; i < nx - 1; i++) {
         if (i != nx - 2) {
-            q_format ele = 2.0 * (diff_x[i] + diff_x[i + 1]);
+            q_format_c ele = q_format_mult(to_q_format(2.0), (diff_x[i] + diff_x[i + 1]));
             mat_a.set(i + 1, i + 1, ele);
         }
         mat_a.set(i + 1, i, diff_x[i]);
         mat_a.set(i, i + 1, diff_x[i]);
     }
 
-    mat_a.set(0, 1, 0.0);
-    mat_a.set(nx - 1, nx - 2, 0.0);
-    mat_a.set(nx - 1, nx - 1, 1.0);
+    mat_a.set(0, 1, 0);
+    mat_a.set(nx - 1, nx - 2, 0);
+    mat_a.set(nx - 1, nx - 1, Q_FORMAT_ONE);
     return mat_a;
 }
 
-ModelMatrix CubicSpline1D::calculate_b(std::vector<q_format> diff_x, std::vector<double> coeff_a)
+ModelMatrix CubicSpline1D::calculate_b(std::vector<q_format_c> diff_x, std::vector<double> coeff_a)
 {
     int nx = this->x.size();
     ModelMatrix mat_b = ModelMatrix::zero(nx, 1);
 
     for (int i = 0; i < nx - 2; i++) {
-        q_format ele = 3.0 * (coeff_a[i + 2] - coeff_a[i + 1]) / diff_x[i + 1] - 3.0 * (coeff_a[i + 1] - coeff_a[i]) / diff_x[i];
-        mat_b.set(i + 1, 0, ele);
+        double ele = 3.0 * (coeff_a[i + 2] - coeff_a[i + 1]) / to_double(diff_x[i + 1]) - 3.0 * (coeff_a[i + 1] - coeff_a[i]) / to_double(diff_x[i]);
+        mat_b.set(i + 1, 0, to_q_format(ele));
     }
 
     return mat_b;

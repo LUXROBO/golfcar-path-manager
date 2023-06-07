@@ -27,7 +27,7 @@ private:
     void smooth_yaw(std::vector<Point> &points);
     ControlState update_state(ControlState state, double a, double delta, double dt);
     ModelMatrix dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R);
-    int lqr_steering_control(ControlState state, double& steer, double& pe, double& pth_e);
+    int lqr_steering_control(ControlState state, double& steer, q_format_c& pe, q_format_c& pth_e);
     ModelMatrix solve_DARE(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R);
 
 private:

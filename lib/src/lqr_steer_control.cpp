@@ -139,16 +139,16 @@ ModelMatrix lqr_steer_control::solve_DARE(ModelMatrix A, ModelMatrix B, ModelMat
 {
     ModelMatrix X = Q;
     int maxiter = 10;
-    q_format eps = 0.01;
+    q_format_c eps = to_q_format(0.01);
 
     for (int i = 0; i < maxiter; i++) {
         // Xn =          A.T @ X @ A           - A.T @ X @ B @ la.inv(R + B.T @ X @ B) @ B.T @ X @ A + Q
         ModelMatrix Xn = (A.transpose() * X * A) - A.transpose() * X * B * (R + (B.transpose() * X * B)).inverse() * B.transpose() * X * A + Q;
         ModelMatrix riccati_equ = Xn - X;
-        q_format max = 0;
+        q_format_c max = 0;
         for (uint32_t j = 0; j < riccati_equ.row(); j++) {
             for (uint32_t k = 0; k < riccati_equ.column(); k++) {
-                q_format element = riccati_equ.get(j, k).abs();
+                q_format_c element = abs(riccati_equ.get(j, k));
                 if (max < element) {
                     max = element;
                 }
@@ -170,46 +170,47 @@ ModelMatrix  lqr_steer_control::dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q
     return K;
 }
 
-int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, double& pe, double& pth_e)
+int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, q_format_c& pe, q_format_c& pth_e)
 {
     double e = 0;
     this->target_ind = this->calculate_nearest_index(state, this->points, this->target_ind, e);
+    q_format_c e_q = to_q_format(e);
 
-    q_format k = this->points[this->target_ind].k;
-    q_format v = state.v;
-    q_format th_e = pi_2_pi(state.yaw - this->points[this->target_ind].yaw);
+    q_format_c k = to_q_format(this->points[this->target_ind].k);
+    q_format_c v = to_q_format(state.v);
+    q_format_c th_e = to_q_format(pi_2_pi(state.yaw - this->points[this->target_ind].yaw));
 
-    q_format L = this->wheel_base;
+    q_format_c L = to_q_format(this->wheel_base);
+
+    q_format_c dt_q = to_q_format(this->dt);
 
     ModelMatrix Q = ModelMatrix::one(4, 4);
     ModelMatrix R = ModelMatrix::one(1, 1);
 
     ModelMatrix A = ModelMatrix::zero(4, 4);
-    A.set(0, 0, 1.0);
-    A.set(0, 1, this->dt);
+    A.set(0, 0, Q_FORMAT_ONE);
+    A.set(0, 1, dt_q);
     A.set(1, 2, v);
-    A.set(2, 2, 1.0);
-    A.set(2, 3, this->dt);
+    A.set(2, 2, Q_FORMAT_ONE);
+    A.set(2, 3, dt_q);
 
     ModelMatrix B = ModelMatrix::zero(4, 1);
-    B.set(3, 0, v / L);
+    B.set(3, 0, q_format_div(v, L));
 
     ModelMatrix K = dlqr(A, B, Q, R);
 
     ModelMatrix x = ModelMatrix::zero(4, 1);
 
-    x.set(0, 0, e);
-    x.set(1, 0, (e - pe) / this->dt);
+    x.set(0, 0, e_q);
+    x.set(1, 0, q_format_div(e_q - pe, dt_q));
     x.set(2, 0, th_e);
-    x.set(3, 0, (th_e - pth_e) / this->dt);
+    x.set(3, 0, q_format_div((th_e - pth_e), dt_q));
 
-    double ff = atan2((L * k).to_double(), 1);
-    double fb = pi_2_pi((-1 * K * x).get(0, 0).to_double());
+    double ff = atan2(to_double(q_format_mult(L, k)), 1);
+    double fb = pi_2_pi(to_double((to_q_format(-1) * K * x).get(0, 0)));
 
     steer = ff + fb;
-
-    pe = e;
-    th_e = th_e;
+    pe = e_q;
 
     return target_ind;
 }
@@ -220,14 +221,14 @@ bool lqr_steer_control::update(double dt) {
     ModelMatrix reference_steer;
 
     double calculated_steer = 0;
-    static double pe = 0;
-    static double pth_e = 0;
+    static q_format_c pe = 0;
+    static q_format_c pth_e = 0;
     this->dt = dt;
     if (dt == 0) {
         return false;
     }
 
-    uint32_t closest_point_index =lqr_steering_control (this->state, calculated_steer, pe, pth_e);
+    uint32_t closest_point_index = lqr_steering_control(this->state, calculated_steer, pe, pth_e);
     // PID로 가속도 값 계산
     this->path_pid.set_target(this->points[closest_point_index].speed);
 

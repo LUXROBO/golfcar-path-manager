@@ -21,8 +21,8 @@ public:
 
 private:
     int search_index(double x);
-    ModelMatrix calculate_a(std::vector<q_format> diff_x);
-    ModelMatrix calculate_b(std::vector<q_format> diff_x, std::vector<double> coeff_a);
+    ModelMatrix calculate_a(std::vector<q_format_c> diff_x);
+    ModelMatrix calculate_b(std::vector<q_format_c> diff_x, std::vector<double> coeff_a);
 
 private:
     std::vector<double> x;

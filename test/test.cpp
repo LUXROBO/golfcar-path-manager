@@ -26,19 +26,9 @@ int main(int argc, const char * argv[])
     // pid_steer_control golfcar_path_tracker;
     lqr_steer_control golfcar_path_tracker;
     ControlState current_state(0, 0, 0, 0, 0);
-
+    golfcar_path_tracker.init(45.0 * M_PI / 180.0, 10.0 / 3.6, 2.15, 1);
 
     std::cout << "start" << std::endl;
-
-    // q_format q_x = 1;
-    // q_format q_x_n = -1;
-    // q_format q_y = 0.1;
-    // q_format q_y_n = -0.1;
-    // q_y_n = -0.2;
-    // std::cout << (q_x / q_y).to_double() << std::endl;
-    // std::cout << (q_x - q_y_n).to_double() << std::endl;
-    // std::cout << (q_x / q_y_n).to_double() << std::endl;
-    // return 0;
 
     std::vector<WayPoint> waypoints;
     // waypoints.push_back(WayPoint(0.00, 0.00));
@@ -131,21 +121,21 @@ int main(int argc, const char * argv[])
                     selected_gain = loop_count * 0.1;
                 }
 
-                if (loop_count >= 1000) {
-                    std::cout << "min_var : " << min_var << " min_err : " << min_err << " max_err : " << max_err << " gain : " << selected_gain << std::endl;
+                // if (loop_count >= 1000) {
+                //     std::cout << "min_var : " << min_var << " min_err : " << min_err << " max_err : " << max_err << " gain : " << selected_gain << std::endl;
 
-                    // golfcar_path_tracker = pid_steer_control();
-                    golfcar_path_tracker = lqr_steer_control();
+                //     // golfcar_path_tracker = pid_steer_control();
+                //     golfcar_path_tracker = lqr_steer_control();
 
-                    memset((void*)&current_state, 0, sizeof(ControlState));
-                    golfcar_path_tracker.set_state(current_state);
-                    golfcar_path_tracker.add_course(current_state, splined_points);
-                    while (!golfcar_path_tracker.update(0.01)) {
-                        move_path << std::to_string(golfcar_path_tracker.get_state().x) <<  "," << std::to_string(golfcar_path_tracker.get_state().y) << "\n";
-                    }
-                    move_path.close();
-                    return 0;
-                }
+                //     memset((void*)&current_state, 0, sizeof(ControlState));
+                //     golfcar_path_tracker.set_state(current_state);
+                //     golfcar_path_tracker.add_course(current_state, splined_points);
+                //     while (!golfcar_path_tracker.update(0.01)) {
+                //         move_path << std::to_string(golfcar_path_tracker.get_state().x) <<  "," << std::to_string(golfcar_path_tracker.get_state().y) << "\n";
+                //     }
+                //     move_path.close();
+                //     return 0;
+                // }
 
                 error_list.clear();
                 error_average = 0;
@@ -154,10 +144,12 @@ int main(int argc, const char * argv[])
                 memset((void*)&current_state, 0, sizeof(ControlState));
                 golfcar_path_tracker.set_state(current_state);
                 golfcar_path_tracker.add_course(current_state, splined_points);
+
+                return 0;
             } else {
                 static int progress_signal = 0;
                 if (progress_signal >= 10) {
-                    std::cout << golfcar_path_tracker.get_state().steer << std::endl;
+                    std::cout << golfcar_path_tracker.get_state().x << "  " << golfcar_path_tracker.get_state().y << std::endl;
                     move_path << std::to_string(golfcar_path_tracker.get_state().x) <<  "," << std::to_string(golfcar_path_tracker.get_state().y) << "\n";
                     // if (golfcar_path_tracker.target_ind != 0) {
                     //     auto now_point = Point{golfcar_path_tracker.get_state().x, golfcar_path_tracker.get_state().y, 0, 0, 0};
