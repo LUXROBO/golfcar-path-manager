@@ -7,7 +7,7 @@ extern "C" {
 #include "stdint.h"
 
 #define DEFAULT_M 15
-#define DEFAULT_N 16
+#define DEFAULT_N 20
 
 #define Q_FORMAT_ONE ((int64_t)(1 << DEFAULT_N))
 

@@ -54,6 +54,10 @@ public :
         return this->state;
     }
 
+    int get_target_index() const {
+        return this->target_ind;
+    }
+
     void set_state(ControlState state) {
         this->state = state;
     }

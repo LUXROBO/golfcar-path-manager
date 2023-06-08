@@ -80,8 +80,8 @@ void lqr_steer_control::add_course(ControlState init_state, std::vector<Point> p
 
 int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<Point> points, int pind, double& min_distance_ref)
 {
-    const int N_IND_SEARCH = 10;
-    double min = 10000;
+    const int N_IND_SEARCH = 5;
+    double min = 100000;
     uint32_t min_point_index = 0;
     for (uint32_t i = pind; i < (pind + N_IND_SEARCH); i++) {
         double dx = state.x - points[i].x;
