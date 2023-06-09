@@ -145,21 +145,21 @@ int main(int argc, const char * argv[])
                     selected_gain = loop_count * 0.1;
                 }
 
-                if (loop_count >= 1000) {
-                    std::cout << "min_var : " << min_var << " min_err : " << min_err << " max_err : " << max_err << " gain : " << selected_gain << std::endl;
+                // if (loop_count >= 1000) {
+                //     std::cout << "min_var : " << min_var << " min_err : " << min_err << " max_err : " << max_err << " gain : " << selected_gain << std::endl;
 
-                    // golfcar_path_tracker = pid_steer_control();
-                    golfcar_path_tracker = lqr_steer_control();
+                //     // golfcar_path_tracker = pid_steer_control();
+                //     golfcar_path_tracker = lqr_steer_control();
 
-                    memset((void*)&current_state, 0, sizeof(ControlState));
-                    golfcar_path_tracker.set_state(current_state);
-                    golfcar_path_tracker.add_course(current_state, splined_points);
-                    while (!golfcar_path_tracker.update(0.01)) {
-                        move_path << std::to_string(golfcar_path_tracker.get_state().x) <<  "," << std::to_string(golfcar_path_tracker.get_state().y) << "\n";
-                    }
-                    move_path.close();
-                    return 0;
-                }
+                //     memset((void*)&current_state, 0, sizeof(ControlState));
+                //     golfcar_path_tracker.set_state(current_state);
+                //     golfcar_path_tracker.add_course(current_state, splined_points);
+                //     while (!golfcar_path_tracker.update(0.01)) {
+                //         move_path << std::to_string(golfcar_path_tracker.get_state().x) <<  "," << std::to_string(golfcar_path_tracker.get_state().y) << "\n";
+                //     }
+                //     move_path.close();
+                //     return 0;
+                // }
 
                 error_list.clear();
                 error_average = 0;
@@ -168,6 +168,7 @@ int main(int argc, const char * argv[])
                 memset((void*)&current_state, 0, sizeof(ControlState));
                 golfcar_path_tracker.set_state(current_state);
                 golfcar_path_tracker.add_course(current_state, splined_points);
+                return 0;
             } else {
                 static int progress_signal = 0;
                 if (progress_signal >= 10) {

@@ -22,6 +22,7 @@ ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column)
 
 ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const q_format *element)
     : row_(row), column_(column) {
+    memset((void*)element_, 0, sizeof(q_format) * ModelMatrix::MAX_SIZE);
     memcpy((void*)element_, (void*)element, sizeof(q_format) * row * column);
 }
 
@@ -90,7 +91,7 @@ ModelMatrix ModelMatrix::one(const unsigned int row, const unsigned int column) 
     for (unsigned int r = 0; r < row; r++) {
         for (unsigned int c = 0; c < column; c++) {
             // mat[r * column + c] = 1.0;
-            mat[r * column + c] = q_format(65536, q_format::init_q_format_flag);
+            mat[r * column + c] = q_format(q_format::default_one, q_format::init_q_format_flag);
         }
     }
     return ModelMatrix(row, column, mat);
@@ -102,7 +103,7 @@ ModelMatrix ModelMatrix::identity(const unsigned int row, const unsigned int col
         for (unsigned int c = 0; c < column; c++) {
             if (r == c) {
                 // mat[r * column + c] = 1.0;
-                mat[r * column + c] = q_format(65536, q_format::init_q_format_flag);
+                mat[r * column + c] = q_format(q_format::default_one, q_format::init_q_format_flag);
             } else {
                 // mat[r * column + c] = 0.0;
                 mat[r * column + c] = q_format();
@@ -148,7 +149,8 @@ ModelMatrix ModelMatrix::inverse(const q_format sigma) {
         // generate sigma digonal matrix
         ModelMatrix temp = ModelMatrix::identity(row_, row_) * sigma;
         // calculation of inverse matrix
-        ModelMatrix temp2 = (*this) * (this->transpose());
+        ModelMatrix temp_trans = (this->transpose());
+        ModelMatrix temp2 = (*this) * temp_trans;
         ModelMatrix temp3 = temp2 + temp;
         return this->transpose() * temp3.inverse();
     } else {
@@ -275,7 +277,7 @@ ModelMatrix ModelMatrix::operator-(const ModelMatrix &rhs) {
 }
 
 ModelMatrix ModelMatrix::operator*(const q_format &rhs) {
-    q_format temp[ModelMatrix::MAX_SIZE];
+    q_format temp[ModelMatrix::MAX_SIZE] = {0, };
     for (unsigned int r = 0; r < row_; r++) {
         for (unsigned int c = 0; c < column_; c++) {
             temp[r * column_ + c] = element_[r * column_ + c] * rhs;
@@ -286,7 +288,7 @@ ModelMatrix ModelMatrix::operator*(const q_format &rhs) {
 
 ModelMatrix ModelMatrix::operator*(const ModelMatrix &rhs) {
     if (column_ == rhs.row()) {
-		q_format temp[ModelMatrix::MAX_SIZE];
+		q_format temp[ModelMatrix::MAX_SIZE] = {0, };
         for (unsigned int r = 0; r < row_; r++) {
             for (unsigned int c = 0; c < rhs.column(); c++) {
                 temp[r * rhs.column() + c] = 0;
