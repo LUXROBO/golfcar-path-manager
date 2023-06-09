@@ -24,47 +24,61 @@ static double distance_between_point_and_line(Point point, Point line_point1, Po
 int main(int argc, const char * argv[])
 {
     // pid_steer_control golfcar_path_tracker;
-    lqr_steer_control golfcar_path_tracker;
-    ControlState current_state(0, 0, 0, 0, 0);
+    // ModelMatrix A(3, 3);
+    // ModelMatrix B(3, 1);
+    // for (int i=0; i<3; i++) {
+    //     for (int j=0; j<3; j++) {
+    //         A.set(i, j, j + 3*i) ;
+    //     }
+    // }
+    // for (int i=0; i<3; i++) {
+    //     B.set(i, 0, i) ;
+    // }
 
+    // std::cout << "A = \n";
+    // for (int i=0; i<A.row(); i++) {
+    //     for (int j=0; j<A.column(); j++) {
+    //         std::cout << A.get(i, j).to_double() << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // std::cout << "B = \n";
+    // for (int i=0; i<B.row(); i++) {
+    //     for (int j=0; j<B.column(); j++) {
+    //         std::cout << B.get(i, j).to_double() << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // ModelMatrix C = A.inverse();
+    // std::cout << "C = \n";
+    // for (int i=0; i<C.row(); i++) {
+    //     for (int j=0; j<C.column(); j++) {
+    //         std::cout << C.get(i, j).to_double() << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // ModelMatrix D = A * C;
+    // std::cout << "D = \n";
+    // for (int i=0; i<D.row(); i++) {
+    //     for (int j=0; j<D.column(); j++) {
+    //         std::cout << D.get(i, j).to_double() << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // return 0;
+
+
+    lqr_steer_control golfcar_path_tracker;
+    golfcar_path_tracker.init(0.785398f, 10.0 / 3.6, 2.15, 0.6);
+    ControlState current_state(0, 0, 0, 0, 0);
 
     std::cout << "start" << std::endl;
 
-    // q_format q_x = 1;
-    // q_format q_x_n = -1;
-    // q_format q_y = 0.1;
-    // q_format q_y_n = -0.1;
-    // q_y_n = -0.2;
-    // std::cout << (q_x / q_y).to_double() << std::endl;
-    // std::cout << (q_x - q_y_n).to_double() << std::endl;
-    // std::cout << (q_x / q_y_n).to_double() << std::endl;
-    // return 0;
-
     std::vector<WayPoint> waypoints;
-    // waypoints.push_back(WayPoint(0.00, 0.00));
-    // waypoints.push_back(WayPoint(1.70, 2.70));
-    // waypoints.push_back(WayPoint(4.60, -0.20));
-    // waypoints.push_back(WayPoint(8.40, 2.70));
-    // waypoints.push_back(WayPoint(11.20, 5.30));
-    // waypoints.push_back(WayPoint(11.00, 8.10));
-    // waypoints.push_back(WayPoint(12.10, 10.20));
-    // waypoints.push_back(WayPoint(9.40, 12.80));
-    // waypoints.push_back(WayPoint(7.40, 11.30));
-    // waypoints.push_back(WayPoint(3.90, 14.10));
-    // waypoints.push_back(WayPoint(2.00, 12.10));
-    // waypoints.push_back(WayPoint(-0.50, 8.80));
-    // waypoints.push_back(WayPoint(-3.40, 7.50));
-    // waypoints.push_back(WayPoint(-6.50, 7.10));
-    // waypoints.push_back(WayPoint(-9.20, 3.80));
-    // waypoints.push_back(WayPoint(-9.70, 1.80));
-    // waypoints.push_back(WayPoint(-10.10, -0.70));
-    // waypoints.push_back(WayPoint(-11.50, -3.10));
-    // waypoints.push_back(WayPoint(-8.80, -4.30));
-    // waypoints.push_back(WayPoint(-6.30, -5.70));
-    // waypoints.push_back(WayPoint(-3.70, -6.80));
-    // waypoints.push_back(WayPoint(-0.80, -6.00));
-    // waypoints.push_back(WayPoint(1.60, -4.30));
-    // waypoints.push_back(WayPoint(0.00, 0.00));
 
     waypoints.push_back(WayPoint(0.00, 0.00));
     waypoints.push_back(WayPoint(10.00, 0.00));
@@ -157,7 +171,7 @@ int main(int argc, const char * argv[])
             } else {
                 static int progress_signal = 0;
                 if (progress_signal >= 10) {
-                    std::cout << golfcar_path_tracker.get_state().steer << std::endl;
+                    std::cout << golfcar_path_tracker.get_state().x << " " << golfcar_path_tracker.get_state().y << std::endl;
                     move_path << std::to_string(golfcar_path_tracker.get_state().x) <<  "," << std::to_string(golfcar_path_tracker.get_state().y) << "\n";
                     // if (golfcar_path_tracker.target_ind != 0) {
                     //     auto now_point = Point{golfcar_path_tracker.get_state().x, golfcar_path_tracker.get_state().y, 0, 0, 0};

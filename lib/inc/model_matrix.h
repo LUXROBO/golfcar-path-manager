@@ -10,6 +10,10 @@
 
 class ModelMatrix {
 public:
+    static constexpr int MAX_RAW = 7;
+    static constexpr int MAX_COL = 7;
+    static constexpr int MAX_SIZE = ModelMatrix::MAX_RAW * ModelMatrix::MAX_COL;
+public:
     /**
      * @brief Create a new ModelMatrix instance.
      */
@@ -73,7 +77,7 @@ public:
      * @brief get matrix element
      * @returns matrix element.
      */
-    std::vector<q_format> element() const;
+    q_format* element() const;
 
     /**
      * @brief get matrix element
@@ -186,13 +190,13 @@ private:
     ModelMatrix pseudoInverse();
     ModelMatrix pseudoInverseR();
     ModelMatrix pseudoInverseL();
-    q_format determinant(std::vector<q_format> matrix, int order);
-    std::vector<q_format> matrixInversion(std::vector<q_format> matrix, int order);
+    q_format determinant(q_format* matrix, int order);
+    ModelMatrix matrixInversion(q_format* matrix, int order);
 
 private:
     unsigned int row_;
     unsigned int column_;
-    std::vector<q_format> element_;
+    q_format element_[ModelMatrix::MAX_RAW * ModelMatrix::MAX_COL];
 };
 
 #endif // MODEL_MATRIX_H

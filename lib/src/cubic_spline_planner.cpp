@@ -26,6 +26,14 @@ CubicSpline1D::CubicSpline1D(std::vector<double> x, std::vector<double> y)
     ModelMatrix coeff_b = this->calculate_b(diff_x, this->a);
     this->c = coeff_a.inverse(0.001) * coeff_b;
 
+    std::cout << "D = \n";
+    for (int i=0; i<this->c.row(); i++) {
+        for (int j=0; j<this->c.column(); j++) {
+            std::cout << this->c.get(i, j).to_double() << " ";
+        }
+        std::cout << std::endl;
+    }
+
     for (uint32_t i = 0; i < this->x.size() - 1; i++) {
         double d_temp = ((this->c.get(i + 1, 0) - this->c.get(i, 0)) / (3.0 * diff_x[i])).to_double();
         double b_temp = (1.0 / diff_x[i] * (this->a[i + 1] - this->a[i]) - diff_x[i] / 3.0 * (2.0 * this->c.get(i, 0) + this->c.get(i + 1, 0))).to_double();

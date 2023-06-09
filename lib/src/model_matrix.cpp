@@ -6,26 +6,28 @@
 // ModelMatrix
 ModelMatrix::ModelMatrix()
     : row_(4), column_(4) {
-    element_.resize(row_ * column_);
+    memset((void*)element_, 0, sizeof(q_format) * ModelMatrix::MAX_SIZE);
+    // element_.resize(row_ * column_);
 }
 
 ModelMatrix::ModelMatrix(const ModelMatrix &other)
     : row_(other.row()), column_(other.column()) {
-    element_ = other.element();
+    memcpy((void*)element_, (void*)other.element(), sizeof(q_format) * ModelMatrix::MAX_SIZE);
 }
 
 ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column)
     : row_(row), column_(column) {
-    element_.resize(row_ * column_);
+    memset((void*)element_, 0, sizeof(q_format) * ModelMatrix::MAX_SIZE);
 }
 
 ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const q_format *element)
-    : row_(row), column_(column), element_(element, element + (row * column)) {
+    : row_(row), column_(column) {
+    memcpy((void*)element_, (void*)element, sizeof(q_format) * row * column);
 }
 
 ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const q_format **element)
     : row_(row), column_(column) {
-    element_.resize(row_ * column_);
+    memset((void*)element_, 0, sizeof(q_format) * ModelMatrix::MAX_SIZE);
 
     for (unsigned int r = 0; r < row; r++) {
         for (unsigned int c = 0; c < column; c++) {
@@ -35,11 +37,16 @@ ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, cons
 }
 
 ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const std::vector<q_format> element)
-    : row_(row), column_(column), element_(element) {
+    : row_(row), column_(column){
+    for (unsigned int r = 0; r < row; r++) {
+        for (unsigned int c = 0; c < column; c++) {
+            element_[r * column + c] = element[r * column + c];
+        }
+    }
 }
 
 ModelMatrix::~ModelMatrix() {
-    element_.clear();
+    memset((void*)element_, 0, sizeof(q_format) * ModelMatrix::MAX_SIZE);
 }
 
 unsigned int ModelMatrix::row() const {
@@ -50,8 +57,8 @@ unsigned int ModelMatrix::column() const {
     return column_;
 }
 
-std::vector<q_format> ModelMatrix::element() const {
-    return element_;
+q_format* ModelMatrix::element() const {
+    return (q_format*)element_;
 }
 
 q_format ModelMatrix::get(const unsigned int row, const unsigned int column) const {
@@ -79,7 +86,7 @@ ModelMatrix ModelMatrix::zero(const unsigned int row, const unsigned int column)
 }
 
 ModelMatrix ModelMatrix::one(const unsigned int row, const unsigned int column) {
-    std::vector<q_format> mat(row * column);
+    q_format mat[ModelMatrix::MAX_SIZE];
     for (unsigned int r = 0; r < row; r++) {
         for (unsigned int c = 0; c < column; c++) {
             // mat[r * column + c] = 1.0;
@@ -90,7 +97,7 @@ ModelMatrix ModelMatrix::one(const unsigned int row, const unsigned int column) 
 }
 
 ModelMatrix ModelMatrix::identity(const unsigned int row, const unsigned int column) {
-    std::vector<q_format> mat(row * column);
+    q_format mat[ModelMatrix::MAX_SIZE];
     for (unsigned int r = 0; r < row; r++) {
         for (unsigned int c = 0; c < column; c++) {
             if (r == c) {
@@ -106,7 +113,7 @@ ModelMatrix ModelMatrix::identity(const unsigned int row, const unsigned int col
 }
 
 ModelMatrix ModelMatrix::transpose() {
-    std::vector<q_format> ele(row_ * column_);
+    q_format ele[ModelMatrix::MAX_SIZE];
     for (unsigned int r = 0; r < row_; r++) {
         for (unsigned int c = 0; c < column_; c++) {
             ele[c * row_ + r] = element_[r * column_ + c];
@@ -128,7 +135,7 @@ q_format ModelMatrix::determinant() {
 ModelMatrix ModelMatrix::inverse() {
     if (row_ == column_) {
         // square matrix
-        return ModelMatrix(row_, column_,  matrixInversion(element_, row_));
+        return matrixInversion(element_, row_);
     } else {
         // rectangular matrix
         return pseudoInverse();
@@ -167,7 +174,7 @@ ModelMatrix ModelMatrix::normalize() const {
     if (l == 0.0) {
         return ModelMatrix::identity(row_, column_);
     } else {
-        std::vector<q_format> ele(row_, column_);
+        q_format ele[ModelMatrix::MAX_SIZE];
         for (unsigned int r = 0; r < row_; r++) {
             for (unsigned int c = 0; c < column_; c++) {
                 ele[r * column_ + c] = element_[r * column_ + c] / l;
@@ -193,7 +200,7 @@ q_format ModelMatrix::dot(const ModelMatrix &rhs) {
 
 ModelMatrix ModelMatrix::cross(const ModelMatrix &rhs) {
     if (row_ == 3 && column_ == 1 && rhs.row() == 3 && rhs.column() == 1) {
-        std::vector<q_format> ele(3);
+        q_format ele[ModelMatrix::MAX_SIZE];
         ele[0] = element_[1] * rhs.element()[2] - element_[2] * rhs.element()[1];
         ele[1] = element_[2] * rhs.element()[0] - element_[0] * rhs.element()[2];
         ele[2] = element_[0] * rhs.element()[1] - element_[1] * rhs.element()[0];
@@ -205,7 +212,7 @@ ModelMatrix ModelMatrix::cross(const ModelMatrix &rhs) {
 
 ModelMatrix ModelMatrix::cross() {
     if (row_ == 3 && column_ == 1) {
-        std::vector<q_format> ele(3 * 3);
+        q_format ele[ModelMatrix::MAX_SIZE];
         ele[0 * 3 + 0] = 0.0;
         ele[0 * 3 + 1] = element_[2] * -1;
         ele[0 * 3 + 2] = element_[1];
@@ -224,7 +231,8 @@ ModelMatrix ModelMatrix::cross() {
 ModelMatrix &ModelMatrix::operator=(const ModelMatrix &other) {
     this->row_ = other.row_;
     this->column_ = other.column();
-    this->element_ = other.element();
+    memcpy((void*)this->element_, (void*)other.element(), sizeof(q_format) * ModelMatrix::MAX_SIZE);
+    // this->element_ = other.element();
     return *this;
 }
 
@@ -235,7 +243,7 @@ ModelMatrix ModelMatrix::operator+(const q_format &rhs) {
 
 ModelMatrix ModelMatrix::operator+(const ModelMatrix &rhs) {
     if (row_ == rhs.row() && column_ == rhs.column()) {
-        std::vector<q_format> temp(row_ * column_);
+        q_format temp[ModelMatrix::MAX_SIZE];
         for (unsigned int r = 0; r < row_; r++) {
             for (unsigned int c = 0; c < column_; c++) {
                 temp[r * column_ + c] = element_[r * column_ + c] + rhs.element()[r * column_ + c];
@@ -254,7 +262,7 @@ ModelMatrix ModelMatrix::operator-(const q_format &rhs) {
 
 ModelMatrix ModelMatrix::operator-(const ModelMatrix &rhs) {
     if (row_ == rhs.row() && column_ == rhs.column()) {
-        std::vector<q_format> temp(row_ * column_);
+        q_format temp[ModelMatrix::MAX_SIZE];
         for (unsigned int r = 0; r < row_; r++) {
             for (unsigned int c = 0; c < column_; c++) {
                 temp[r * column_ + c] = element_[r * column_ + c] - rhs.element()[r * column_ + c];
@@ -267,7 +275,7 @@ ModelMatrix ModelMatrix::operator-(const ModelMatrix &rhs) {
 }
 
 ModelMatrix ModelMatrix::operator*(const q_format &rhs) {
-    std::vector<q_format> temp(row_ * column_);
+    q_format temp[ModelMatrix::MAX_SIZE];
     for (unsigned int r = 0; r < row_; r++) {
         for (unsigned int c = 0; c < column_; c++) {
             temp[r * column_ + c] = element_[r * column_ + c] * rhs;
@@ -278,7 +286,7 @@ ModelMatrix ModelMatrix::operator*(const q_format &rhs) {
 
 ModelMatrix ModelMatrix::operator*(const ModelMatrix &rhs) {
     if (column_ == rhs.row()) {
-		std::vector<q_format> temp(row_ * rhs.column());
+		q_format temp[ModelMatrix::MAX_SIZE];
         for (unsigned int r = 0; r < row_; r++) {
             for (unsigned int c = 0; c < rhs.column(); c++) {
                 temp[r * rhs.column() + c] = 0;
@@ -304,7 +312,7 @@ ModelMatrix operator-(const q_format &lhs, const ModelMatrix &rhs) {
 }
 
 ModelMatrix operator*(const q_format &lhs, const ModelMatrix &rhs) {
-    std::vector<q_format> temp(rhs.row() * rhs.column());
+    q_format temp[ModelMatrix::MAX_SIZE];
     for (unsigned int r = 0; r < rhs.row(); r++) {
         for (unsigned int c = 0; c < rhs.column(); c++) {
             temp[r * rhs.column() + c] = rhs.element()[r * rhs.column() + c] * lhs;
@@ -331,7 +339,7 @@ ModelMatrix ModelMatrix::pseudoInverseL() {
     return ((this->transpose()) * (*this)).inverse() * this->transpose();
 }
 
-q_format ModelMatrix::determinant(std::vector<q_format> matrix, int order) {
+q_format ModelMatrix::determinant(q_format* matrix, int order) {
     // the determinant value
     q_format det = 1.0;
 
@@ -344,7 +352,9 @@ q_format ModelMatrix::determinant(std::vector<q_format> matrix, int order) {
         det = matrix[0 * 3 + 0] * matrix[1 * 3 + 1] * matrix[2 * 3 + 2] + matrix[0 * 3 + 1] * matrix[1 * 3 + 2] * matrix[2 * 3 + 0] + matrix[0 * 3 + 2] * matrix[1 * 3 + 0] * matrix[2 * 3 + 1] - matrix[0 * 3 + 0] * matrix[1 * 3 + 2] * matrix[2 * 3 + 1] - matrix[0 * 3 + 1] * matrix[1 * 3 + 0] * matrix[2 * 3 + 2] - matrix[0 * 3 + 2] * matrix[1 * 3 + 1] * matrix[2 * 3 + 0];
     } else {
         // generation of temporary matrix
-        std::vector<q_format> temp_matrix = matrix;
+        q_format temp_matrix[ModelMatrix::MAX_SIZE];
+        memcpy((void*)temp_matrix, (void*)matrix, sizeof(q_format) * this->row_ * this->column_);
+        // std::vector<q_format> temp_matrix = matrix;
 
         // gaussian elimination
         for (int i = 0; i < order; i++) {
@@ -384,9 +394,20 @@ q_format ModelMatrix::determinant(std::vector<q_format> matrix, int order) {
     return det;
 }
 
-std::vector<q_format> ModelMatrix::matrixInversion(std::vector<q_format> matrix, int order) {
-    std::vector<q_format> matA = matrix;
-    std::vector<q_format> matB = ModelMatrix::identity(order, order).element();
+ModelMatrix ModelMatrix::matrixInversion(q_format* matrix, int order) {
+    // std::vector<q_format> matA = matrix;
+    q_format matA[ModelMatrix::MAX_SIZE];
+    memcpy((void*)matA, (void*)matrix, sizeof(q_format) * this->row_ * this->column_);
+    q_format matB[ModelMatrix::MAX_SIZE];
+    memcpy((void*)matB, (void*)ModelMatrix::identity(order, order).element(), sizeof(q_format) * order * order);
+
+    // std::cout << "Bdd = \n";
+    // for (int i=0; i<order; i++) {
+    //     for (int j=0; j<order; j++) {
+    //         std::cout << matB[i*order + j].to_double() << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
 
     // Gauss-Jordan
     // Forward
@@ -431,5 +452,15 @@ std::vector<q_format> ModelMatrix::matrixInversion(std::vector<q_format> matrix,
         }
     }
 
-    return matB;
+    // std::cout << "Bdd = \n";
+    // for (int i=0; i<order; i++) {
+    //     for (int j=0; j<order; j++) {
+    //         std::cout << matB[i*order + j].to_double() << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    ModelMatrix td(order, order, matB);
+
+    return td;
 }
