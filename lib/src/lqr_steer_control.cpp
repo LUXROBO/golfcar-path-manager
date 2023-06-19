@@ -11,9 +11,21 @@ static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
 static const double DEFAULT_WHEEL_BASE = 0.41;                   // 앞 뒤 바퀴 사이 거리 [m]
 static const double DEFAULT_PID_GAIN = 1;                      // gain
 
+static double distance_between_point_and_line(ControlState point, Point line_point1, Point line_point2)
+{
+    double a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
+    double c = line_point1.y - a * line_point1.x;
+    double b = -1;
+
+    return abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
+}
+
+
 lqr_steer_control::lqr_steer_control()
 {
     this->path_pid = pid_controller(1, 0, 0);
+    this->Q = ModelMatrix::identity(4, 4);
+    this->R = ModelMatrix::identity(1, 1);
 }
 
 lqr_steer_control::~lqr_steer_control()
@@ -103,6 +115,11 @@ int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<P
     double dyl = points[min_index].y - state.y;
 
     double angle = 0;
+
+    if (min_index != 0) {
+        min_distance = distance_between_point_and_line(this->state, points[min_index], points[min_index - 1]);
+    }
+
     if ((abs(dxl) <= 0.00001) && (abs(dyl) <= 0.00001)) {
         angle = pi_2_pi(points[min_index].yaw);
     } else {
@@ -181,9 +198,6 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
 
     q_format L = this->wheel_base;
 
-    ModelMatrix Q = ModelMatrix::one(4, 4);
-    ModelMatrix R = ModelMatrix::one(1, 1);
-
     ModelMatrix A = ModelMatrix::zero(4, 4);
     A.set(0, 0, 1.0);
     A.set(0, 1, this->dt);
@@ -194,7 +208,7 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
     ModelMatrix B = ModelMatrix::zero(4, 1);
     B.set(3, 0, v / L);
 
-    ModelMatrix K = dlqr(A, B, Q, R);
+    ModelMatrix K = dlqr(A, B, this->Q, this->R);
 
     ModelMatrix x = ModelMatrix::zero(4, 1);
 

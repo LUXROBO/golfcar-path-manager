@@ -1,5 +1,5 @@
 #include "model_matrix.h"
-
+#include "string.h"
 #include <cmath>
 
 
@@ -7,7 +7,6 @@
 ModelMatrix::ModelMatrix()
     : row_(4), column_(4) {
     memset((void*)element_, 0, sizeof(q_format) * ModelMatrix::MAX_SIZE);
-    // element_.resize(row_ * column_);
 }
 
 ModelMatrix::ModelMatrix(const ModelMatrix &other)
@@ -102,10 +101,8 @@ ModelMatrix ModelMatrix::identity(const unsigned int row, const unsigned int col
     for (unsigned int r = 0; r < row; r++) {
         for (unsigned int c = 0; c < column; c++) {
             if (r == c) {
-                // mat[r * column + c] = 1.0;
                 mat[r * column + c] = q_format(q_format::default_one, q_format::init_q_format_flag);
             } else {
-                // mat[r * column + c] = 0.0;
                 mat[r * column + c] = q_format();
             }
         }
@@ -149,8 +146,7 @@ ModelMatrix ModelMatrix::inverse(const q_format sigma) {
         // generate sigma digonal matrix
         ModelMatrix temp = ModelMatrix::identity(row_, row_) * sigma;
         // calculation of inverse matrix
-        ModelMatrix temp_trans = (this->transpose());
-        ModelMatrix temp2 = (*this) * temp_trans;
+        ModelMatrix temp2 = (*this) * (this->transpose());
         ModelMatrix temp3 = temp2 + temp;
         return this->transpose() * temp3.inverse();
     } else {
@@ -234,7 +230,6 @@ ModelMatrix &ModelMatrix::operator=(const ModelMatrix &other) {
     this->row_ = other.row_;
     this->column_ = other.column();
     memcpy((void*)this->element_, (void*)other.element(), sizeof(q_format) * ModelMatrix::MAX_SIZE);
-    // this->element_ = other.element();
     return *this;
 }
 
@@ -395,27 +390,21 @@ q_format ModelMatrix::determinant(q_format* matrix, int order) {
 
     return det;
 }
-
+q_format matddA[ModelMatrix::MAX_SIZE];
 ModelMatrix ModelMatrix::matrixInversion(q_format* matrix, int order) {
     // std::vector<q_format> matA = matrix;
     q_format matA[ModelMatrix::MAX_SIZE];
     memcpy((void*)matA, (void*)matrix, sizeof(q_format) * this->row_ * this->column_);
+    memset((void*)matddA, 0, sizeof(q_format) * ModelMatrix::MAX_SIZE);
+    memcpy((void*)matddA, (void*)matA, sizeof(q_format) * this->row_ * this->column_);
     q_format matB[ModelMatrix::MAX_SIZE];
     memcpy((void*)matB, (void*)ModelMatrix::identity(order, order).element(), sizeof(q_format) * order * order);
-
-    // std::cout << "Bdd = \n";
-    // for (int i=0; i<order; i++) {
-    //     for (int j=0; j<order; j++) {
-    //         std::cout << matB[i*order + j].to_double() << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
 
     // Gauss-Jordan
     // Forward
     for (int i = 0; i < order; i++) {
         // max row
-        q_format temp = 0.000;
+        q_format temp = 0;
         int max_row = i;
         for (int j = i; j < order; j++) {
             if (matA[j * order + i].abs() > temp) {
@@ -426,19 +415,19 @@ ModelMatrix ModelMatrix::matrixInversion(q_format* matrix, int order) {
         // change row
         q_format temp2 = matA[max_row * order + i];
         for (int j = 0; j < order; j++) {
-            temp = matA[max_row * order + j];
+            q_format temp3 = matA[max_row * order + j];
             matA[max_row * order + j] = matA[i * order + j];
-            matA[i * order + j] = temp / temp2;
+            matA[i * order + j] = temp3 / temp2;
 
-            temp = matB[max_row * order + j];
+            temp3 = matB[max_row * order + j];
             matB[max_row * order + j] = matB[i * order + j];
-            matB[i * order + j] = temp / temp2;
+            matB[i * order + j] = temp3 / temp2;
         }
         for (int j = i + 1; j < order; j++) {
-            temp = matA[j * order + i];
+            q_format temp3 = matA[j * order + i];
             for (int k = 0; k < order; k++) {
-                matA[j * order + k] -= matA[i * order + k] * temp;
-                matB[j * order + k] -= matB[i * order + k] * temp;
+                matA[j * order + k] -= matA[i * order + k] * temp3;
+                matB[j * order + k] -= matB[i * order + k] * temp3;
             }
         }
     }
@@ -453,14 +442,6 @@ ModelMatrix ModelMatrix::matrixInversion(q_format* matrix, int order) {
             }
         }
     }
-
-    // std::cout << "Bdd = \n";
-    // for (int i=0; i<order; i++) {
-    //     for (int j=0; j<order; j++) {
-    //         std::cout << matB[i*order + j].to_double() << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
 
     ModelMatrix td(order, order, matB);
 

@@ -29,10 +29,13 @@ private:
     ModelMatrix dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R);
     int lqr_steering_control(ControlState state, double& steer, double& pe, double& pth_e);
     ModelMatrix solve_DARE(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R);
+    ModelMatrix Q;
+    ModelMatrix R;
 
 private:
     double t;                  // 누적 시간
     double dt;
+    
     ControlState init_state;
     ControlState goal_state;
     std::vector<Point> points; // spline 된 좌표값 + yaw + speed, 굴곡
@@ -58,8 +61,28 @@ public :
         this->state = state;
     }
 
+    void set_q(int i, int j, double value) {
+        this->Q.set(i, j, value);
+    }
+
+    void set_r(int i, int j, double value) {
+        this->R.set(i, j, value);
+    }
+
+    double get_q(int i, int j) {
+        return this->Q.get(i, j).to_double();
+    }
+
+    double get_r(int i, int j) {
+        return this->R.get(i, j).to_double();
+    }
+
     std::vector<Point> get_points() const {
         return this->points;
+    }
+
+    int get_target_index() const {
+        return this->target_ind;
     }
 
     void remove_points(size_t num) {
