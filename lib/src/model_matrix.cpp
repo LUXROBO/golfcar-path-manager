@@ -248,6 +248,7 @@ ModelMatrix ModelMatrix::operator+(const ModelMatrix &rhs) {
         }
         return ModelMatrix(row_, column_, temp);
     } else {
+        std::cout << "operating error" << std::endl;
         return ModelMatrix::zero(row_, column_);
     }
 }
@@ -294,6 +295,7 @@ ModelMatrix ModelMatrix::operator*(const ModelMatrix &rhs) {
         }
         return ModelMatrix(row_, rhs.column(), temp);
     } else {
+        std::cout << "operate error" << std::endl;
 		return ModelMatrix::zero(row_, column_);
     }
 }
@@ -390,16 +392,15 @@ q_format ModelMatrix::determinant(q_format* matrix, int order) {
 
     return det;
 }
-q_format matddA[ModelMatrix::MAX_SIZE];
+// q_format matddA[ModelMatrix::MAX_SIZE];
 ModelMatrix ModelMatrix::matrixInversion(q_format* matrix, int order) {
     // std::vector<q_format> matA = matrix;
     q_format matA[ModelMatrix::MAX_SIZE];
     memcpy((void*)matA, (void*)matrix, sizeof(q_format) * this->row_ * this->column_);
-    memset((void*)matddA, 0, sizeof(q_format) * ModelMatrix::MAX_SIZE);
-    memcpy((void*)matddA, (void*)matA, sizeof(q_format) * this->row_ * this->column_);
+    // memset((void*)matddA, 0, sizeof(q_format) * ModelMatrix::MAX_SIZE);
+    // memcpy((void*)matddA, (void*)matA, sizeof(q_format) * this->row_ * this->column_);
     q_format matB[ModelMatrix::MAX_SIZE];
     memcpy((void*)matB, (void*)ModelMatrix::identity(order, order).element(), sizeof(q_format) * order * order);
-
     // Gauss-Jordan
     // Forward
     for (int i = 0; i < order; i++) {
@@ -431,7 +432,6 @@ ModelMatrix ModelMatrix::matrixInversion(q_format* matrix, int order) {
             }
         }
     }
-
     //Backward
     for (int i = order - 1; i >= 0; i--) {
         for (int j = i - 1; j >= 0; j--) {
@@ -444,6 +444,5 @@ ModelMatrix ModelMatrix::matrixInversion(q_format* matrix, int order) {
     }
 
     ModelMatrix td(order, order, matB);
-
     return td;
 }

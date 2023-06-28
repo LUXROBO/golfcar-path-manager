@@ -5,7 +5,6 @@
 #include <cmath>
 #include <algorithm>
 
-
 static const double DEFAULT_MAX_STEER = 45.0 * M_PI / 180.0;     // [rad] 45deg
 static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
 static const double DEFAULT_WHEEL_BASE = 0.41;                   // 앞 뒤 바퀴 사이 거리 [m]
@@ -20,12 +19,23 @@ static double distance_between_point_and_line(ControlState point, Point line_poi
     return abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
 }
 
-
 lqr_steer_control::lqr_steer_control()
 {
     this->path_pid = pid_controller(1, 0, 0);
     this->Q = ModelMatrix::identity(4, 4);
     this->R = ModelMatrix::identity(1, 1);
+
+    // this->Q.set(0,0,18.4);
+    // this->Q.set(1,1,1.5);
+    // this->Q.set(2,2,2.1);
+    // this->Q.set(3,3,3.8);
+    // this->R.set(0,0,4.3);
+
+    // this->Q.set(0,0,1);
+    // this->Q.set(1,1,1);
+    // this->Q.set(2,2,1);
+    // this->Q.set(3,3,1);
+    // this->R.set(0,0,1);
 }
 
 lqr_steer_control::~lqr_steer_control()
@@ -42,6 +52,8 @@ void lqr_steer_control::init(const double max_steer_angle, const double max_spee
     this->max_speed = max_speed;
     this->wheel_base = wheel_base;
     this->pid_gain = gain;
+    this->desired[0] = 0;
+    this->desired[1] = 0;
 }
 
 void lqr_steer_control::set_course(ControlState init_state, std::vector<Point> points)
@@ -118,6 +130,9 @@ int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<P
 
     if (min_index != 0) {
         min_distance = distance_between_point_and_line(this->state, points[min_index], points[min_index - 1]);
+    } else {
+        Point temp = {this->state.x, this->state.y, this->state.yaw, 0, this->state.v};
+        min_distance = distance_between_point_and_line(this->state, points[min_index], temp);
     }
 
     if ((abs(dxl) <= 0.00001) && (abs(dyl) <= 0.00001)) {
@@ -191,6 +206,7 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
 {
     double e = 0;
     this->target_ind = this->calculate_nearest_index(state, this->points, this->target_ind, e);
+    std::cout << "error distance : " << e << std::endl;
 
     q_format k = this->points[this->target_ind].k;
     q_format v = state.v;
@@ -198,6 +214,12 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
 
     q_format L = this->wheel_base;
 
+    /*
+    [1, dt,  0,  0]
+    [0,  0,  v,  0]
+    [0,  0,  1, dt]
+    [0,  0,  0,  0]
+    */
     ModelMatrix A = ModelMatrix::zero(4, 4);
     A.set(0, 0, 1.0);
     A.set(0, 1, this->dt);
@@ -244,10 +266,33 @@ bool lqr_steer_control::update(double dt) {
     uint32_t closest_point_index =lqr_steering_control (this->state, calculated_steer, pe, pth_e);
     // PID로 가속도 값 계산
     this->path_pid.set_target(this->points[closest_point_index].speed);
-
     double calculated_accel = this->path_pid.calculate(this->state.v);
+
+#ifndef KALMAN_TEST
     // state update
     this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
+    double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
+    size_t remain_point = get_remain_point();
+
+    if (remain_point == 0) {
+        // finish
+        return true;
+    }
+#else
+    if (calculated_steer > this->max_steer_angle) {
+        calculated_steer = this->max_steer_angle;
+    } else if (calculated_steer < -this->max_steer_angle) {
+        calculated_steer = -this->max_steer_angle;
+    }
+    this->state.steer = calculated_steer;
+#endif
+    this->desired[0] = calculated_accel * dt;
+    this->desired[1] = calculated_steer;
+    return false;
+}
+
+int lqr_steer_control::is_goal()
+{
     double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
     size_t remain_point = get_remain_point();
 
@@ -274,7 +319,7 @@ double lqr_steer_control::calculate_error()
         double b = -1;
         double c = y1 - a * x1;
 
-        return abs(a * stand_x + b * stand_y + c) / sqrt(a*a + 1);
+        return abs(a * stand_x + b * stand_y + c) / sqrt(a * a + 1);
     };
 
     if (nearest_index != 0) {

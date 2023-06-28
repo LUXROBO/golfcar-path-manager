@@ -1,13 +1,14 @@
 #ifndef LQR_STEER_CONTROL_H
 #define LQR_STEER_CONTROL_H
 
+// #define KALMAN_TEST
+
 #include <vector>
 #include <fstream>
 
 #include "cubic_spline_planner.h"
 #include "lqr_pid_control.h"
 #include "path_manager.h"
-
 
 class lqr_steer_control
 {
@@ -20,6 +21,7 @@ public:
     bool update(double dt);
     void set_course(ControlState init_state, std::vector<Point> points);
     void add_course(ControlState init_state, std::vector<Point> points);
+    int is_goal();
     double calculate_error();
 
 private:
@@ -52,6 +54,8 @@ private:
     double wheel_base;
     double pid_gain;
 
+    double desired[2];
+
 public :
     ControlState get_state() const {
         return this->state;
@@ -75,6 +79,10 @@ public :
 
     double get_r(int i, int j) {
         return this->R.get(i, j).to_double();
+    }
+
+    double get_desired(int i) const {
+        return this->desired[i];
     }
 
     std::vector<Point> get_points() const {
