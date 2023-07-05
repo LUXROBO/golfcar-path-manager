@@ -5,9 +5,9 @@
 q_format::q_format(double value, int input_type)
 {
     if (input_type == q_format::init_double_format_flag) {
-        this->value = (uint64_t)((value) * ((int64_t)1 << q_format::default_n_size));
+        this->value = (int64_t)((value) * ((int64_t)1 << q_format::default_n_size));
     } else {
-        this->value = (uint64_t)value;
+        this->value = (int64_t)value;
     }
     return;
 }
