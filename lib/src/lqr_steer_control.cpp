@@ -194,7 +194,8 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
 
     q_format k = this->points[this->target_ind].k;
     q_format v = state.v;
-    q_format th_e = pi_2_pi(state.yaw - this->points[this->target_ind].yaw);
+    double tttt = pi_2_pi(state.yaw - this->points[this->target_ind].yaw);
+    q_format th_e = tttt;
 
     q_format L = this->wheel_base;
 
