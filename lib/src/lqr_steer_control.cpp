@@ -191,10 +191,14 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
 {
     double e = 0;
     this->target_ind = this->calculate_nearest_index(state, this->points, this->target_ind, e);
+    int jump_point = this->target_ind + 2;
+    if (jump_point > (this->points.size() - 1)) {
+        jump_point = this->target_ind;
+    }
 
-    q_format k = this->points[this->target_ind].k;
+    q_format k = this->points[jump_point].k;
     q_format v = state.v;
-    double tttt = pi_2_pi(state.yaw - this->points[this->target_ind].yaw);
+    double tttt = pi_2_pi(state.yaw - this->points[jump_point].yaw);
     q_format th_e = tttt;
 
     q_format L = this->wheel_base;
@@ -226,7 +230,7 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
     pe = e;
     th_e = th_e;
 
-    return target_ind;
+    return jump_point;
 }
 
 bool lqr_steer_control::update(double dt) {
@@ -242,7 +246,7 @@ bool lqr_steer_control::update(double dt) {
         return false;
     }
 
-    uint32_t closest_point_index =lqr_steering_control (this->state, calculated_steer, pe, pth_e);
+    uint32_t closest_point_index = lqr_steering_control (this->state, calculated_steer, pe, pth_e);
     // PID로 가속도 값 계산
     this->path_pid.set_target(this->points[closest_point_index].speed);
 
