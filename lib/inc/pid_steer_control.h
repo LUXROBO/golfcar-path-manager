@@ -59,6 +59,10 @@ public:
         this->state = state;
     }
 
+    int set_target_index(int target_index) {
+        this->target_ind = target_index;
+    }
+
     std::vector<Point> get_points() const {
         return this->points;
     }
