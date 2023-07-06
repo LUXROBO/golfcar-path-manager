@@ -61,6 +61,10 @@ public :
         this->state = state;
     }
 
+    void set_target_index(int target_index) {
+        this->target_ind = target_index;
+    }
+
     void set_q(int i, int j, double value) {
         this->Q.set(i, j, value);
     }
