@@ -16,7 +16,7 @@ public:
     ~pid_steer_control();
 
 public:
-    void init(const double max_steer_angle, const double max_speed, const double wheel_base, const double gain);
+    void init(const double max_steer_angle, const double max_speed, const double wheel_base);
     bool update(double dt);
     void generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds=1.0);
     void set_course(ControlState init_state, std::vector<Point> points);
@@ -48,7 +48,11 @@ private:
     double max_steer_angle;
     double max_speed;
     double wheel_base;
-    double pid_gain;
+
+    double kp;
+    double ki;
+    double kd;
+    double pre_e;
 
 public:
     ControlState get_state() const {
@@ -73,6 +77,18 @@ public:
 
     size_t get_remain_point() const {
         return this->points.size() - target_ind - 1;
+    }
+
+    void get_gain(double* kp, double* ki, double* kd) {
+        *kp = this->kp;
+        *ki = this->ki;
+        *kd = this->kd;
+    }
+
+    void set_gain(double kp, double ki, double kd) {
+        this->kp = kp;
+        this->ki = ki;
+        this->kd = kd;
     }
 };
 

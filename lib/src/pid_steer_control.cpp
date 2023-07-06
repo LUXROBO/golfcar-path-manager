@@ -9,11 +9,13 @@
 static const double DEFAULT_MAX_STEER = 45.0 * M_PI / 180.0;     // [rad] 45deg
 static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
 static const double DEFAULT_WHEEL_BASE = 0.41;                   // 앞 뒤 바퀴 사이 거리 [m]
-static const double DEFAULT_PID_GAIN = 0.5;                      // gain
+static const double DEFAULT_PID_KP = 0.7;                        // gain
+static const double DEFAULT_PID_KI = 0.0;
+static const double DEFAULT_PID_KD = 0.0;
 
 pid_steer_control::pid_steer_control()
 {
-    this->init(DEFAULT_MAX_STEER, DEFAULT_MAX_SPEED, DEFAULT_WHEEL_BASE, DEFAULT_PID_GAIN);
+    this->init(DEFAULT_MAX_STEER, DEFAULT_MAX_SPEED, DEFAULT_WHEEL_BASE);
 }
 
 pid_steer_control::~pid_steer_control()
@@ -21,7 +23,7 @@ pid_steer_control::~pid_steer_control()
 
 }
 
-void pid_steer_control::init(const double max_steer_angle, const double max_speed, const double wheel_base, const double gain)
+void pid_steer_control::init(const double max_steer_angle, const double max_speed, const double wheel_base)
 {
     this->path_accel_pid = pid_controller(1, 0, 0);
     this->path_steer_pid = pid_controller(1, 0, 0);
@@ -30,7 +32,11 @@ void pid_steer_control::init(const double max_steer_angle, const double max_spee
     this->max_steer_angle = max_steer_angle;
     this->max_speed = max_speed;
     this->wheel_base = wheel_base;
-    this->pid_gain = gain;
+
+    this->kp = DEFAULT_PID_KP;
+    this->ki = DEFAULT_PID_KI;
+    this->kd = DEFAULT_PID_KD;
+    this->pre_e = 0.0;
 }
 
 void pid_steer_control::generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds)
@@ -164,9 +170,11 @@ int pid_steer_control::pid_steering_control(ControlState state, double& steer)
     }
 
     double th_e = pi_2_pi(this->points[current_target_ind].yaw - state.yaw);
-    double steer_delta = std::atan2(this->pid_gain * e, state.v);
+    double steer_delta = std::atan2(this->kp * e + this->kd * pre_e, state.v);
 
     steer = th_e + steer_delta;
+
+    this->pre_e = e;
 
     return current_target_ind;
 }
