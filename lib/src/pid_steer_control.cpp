@@ -170,7 +170,7 @@ int pid_steer_control::pid_steering_control(ControlState state, double& steer)
     }
 
     double th_e = pi_2_pi(this->points[current_target_ind].yaw - state.yaw);
-    double steer_delta = std::atan2(this->kp * e + this->kd * pre_e, state.v);
+    double steer_delta = std::atan2(this->kp * e + this->kd * (e - pre_e), state.v);
 
     steer = th_e + steer_delta;
 
