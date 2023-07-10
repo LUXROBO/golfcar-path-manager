@@ -21,6 +21,13 @@ void pid_controller::init(double p_gain, double i_gain, double d_gain)
     this->parameter.output = 0;
 }
 
+void pid_controller::set_gain(double p_gain, double i_gain, double d_gain)
+{
+    this->parameter.p_gain = p_gain;
+    this->parameter.i_gain = i_gain;
+    this->parameter.d_gain = d_gain;
+}
+
 void pid_controller::set_target(double target)
 {
     this->parameter.target = target;

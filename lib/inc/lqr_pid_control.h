@@ -31,7 +31,17 @@ class pid_controller
             this->parameter = parameter;
         }
         void init(double p_gain, double i_gain, double d_gain);
+        void set_gain(double p_gain, double i_gain, double d_gain);
         void set_target(double target);
+        double get_p_gain() {
+            return this->parameter.p_gain;
+        };
+        double get_i_gain() {
+            return this->parameter.i_gain;
+        };
+        double get_d_gain() {
+            return this->parameter.d_gain;
+        };
         double calculate(double current_value);
 
     private:

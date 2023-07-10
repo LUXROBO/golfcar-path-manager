@@ -44,6 +44,7 @@ private:
     std::vector<double> odelta; // steer
     pid_controller path_accel_pid;
     pid_controller path_steer_pid;
+    pid_controller path_distance_pid;
 
     double max_steer_angle;
     double max_speed;
@@ -83,16 +84,24 @@ public:
         return this->points.size() - target_ind - 1;
     }
 
-    void get_gain(double* kp, double* ki, double* kd) {
-        *kp = this->kp;
-        *ki = this->ki;
-        *kd = this->kd;
+    void get_distance_gain(double* kp, double* ki, double* kd) {
+        *kp = this->path_distance_pid.get_p_gain();
+        *ki = this->path_distance_pid.get_i_gain();
+        *kd = this->path_distance_pid.get_d_gain();
     }
 
-    void set_gain(double kp, double ki, double kd) {
-        this->kp = kp;
-        this->ki = ki;
-        this->kd = kd;
+    void set_distance_gain(double kp, double ki, double kd) {
+        this->path_distance_pid.set_gain(kp, ki, kd);
+    }
+
+    void get_steer_gain(double* kp, double* ki, double* kd) {
+        *kp = this->path_steer_pid.get_p_gain();
+        *ki = this->path_steer_pid.get_i_gain();
+        *kd = this->path_steer_pid.get_d_gain();
+    }
+
+    void set_steer_gain(double kp, double ki, double kd) {
+        this->path_steer_pid.set_gain(kp, ki, kd);
     }
 };
 
