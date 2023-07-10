@@ -103,13 +103,13 @@ public :
 
     void get_distance_gain(double* kp, double* ki, double* kd) {
         *kp = this->get_q(0, 0);
-        *ki = this->get_q(1, 1);
-        *kd = this->get_r(0, 0);
+        *ki = this->get_r(0, 0);
+        *kd = this->get_q(2, 2);
     }
     void set_distance_gain(double kp, double ki, double kd) {
         this->set_q(0, 0, kp);
-        this->set_q(1, 1, ki);
-        this->set_r(0, 0, kd);
+        this->set_q(2, 2, kd);
+        // this->set_r(0, 0, kd);
     }
     void get_steer_gain(double* kp, double* ki, double* kd) {
 
