@@ -16,7 +16,7 @@ public:
     ~lqr_steer_control();
 
 public:
-    void init(const double max_steer_angle, const double max_speed, const double wheel_base, const double gain);
+    void init(const double max_steer_angle, const double max_speed, const double wheel_base);
     bool update(double dt);
     void set_course(ControlState init_state, std::vector<Point> points);
     void add_course(ControlState init_state, std::vector<Point> points);
@@ -35,7 +35,7 @@ private:
 private:
     double t;                  // 누적 시간
     double dt;
-    
+
     ControlState init_state;
     ControlState goal_state;
     std::vector<Point> points; // spline 된 좌표값 + yaw + speed, 굴곡
@@ -99,6 +99,23 @@ public :
 
     size_t get_remain_point() const {
         return this->points.size() - target_ind - 1;
+    }
+
+    void get_distance_gain(double* kp, double* ki, double* kd) {
+        *kp = this->get_q(0, 0);
+        *ki = this->get_q(1, 1);
+        *kd = this->get_r(0, 0);
+    }
+    void set_distance_gain(double kp, double ki, double kd) {
+        this->set_q(0, 0, kp);
+        this->set_q(1, 1, ki);
+        this->set_r(0, 0, kd);
+    }
+    void get_steer_gain(double* kp, double* ki, double* kd) {
+
+    }
+    void set_steer_gain(double kp, double ki, double kd) {
+
     }
 };
 

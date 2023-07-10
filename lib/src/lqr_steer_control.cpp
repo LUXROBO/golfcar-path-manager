@@ -25,6 +25,7 @@ lqr_steer_control::lqr_steer_control()
 {
     this->path_pid = pid_controller(1, 0, 0);
     this->Q = ModelMatrix::identity(4, 4);
+    this->Q.set(2,2,5);
     this->R = ModelMatrix::identity(1, 1);
 }
 
@@ -33,7 +34,7 @@ lqr_steer_control::~lqr_steer_control()
 
 }
 
-void lqr_steer_control::init(const double max_steer_angle, const double max_speed, const double wheel_base, const double gain)
+void lqr_steer_control::init(const double max_steer_angle, const double max_speed, const double wheel_base)
 {
     this->path_pid = pid_controller(1, 0, 0);
     this->points.clear();
@@ -41,7 +42,6 @@ void lqr_steer_control::init(const double max_steer_angle, const double max_spee
     this->max_steer_angle = max_steer_angle;
     this->max_speed = max_speed;
     this->wheel_base = wheel_base;
-    this->pid_gain = gain;
 }
 
 void lqr_steer_control::set_course(ControlState init_state, std::vector<Point> points)
@@ -191,7 +191,7 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
 {
     double e = 0;
     this->target_ind = this->calculate_nearest_index(state, this->points, this->target_ind, e);
-    int jump_point = this->target_ind + 2;
+    int jump_point = this->target_ind + 0;
     if (jump_point > (this->points.size() - 1)) {
         jump_point = this->target_ind;
     }
