@@ -38,7 +38,9 @@ pid_steer_control::~pid_steer_control()
 void pid_steer_control::init(const double max_steer_angle, const double max_speed, const double wheel_base)
 {
     this->path_accel_pid = pid_controller(1, 0, 0);
-    this->path_steer_pid = pid_controller(DEFAULT_STEER_PID_KP, DEFAULT_STEER_PID_KI, DEFAULT_STEER_PID_KD);
+    this->steer_kp = DEFAULT_STEER_PID_KP;
+    this->steer_ki = DEFAULT_STEER_PID_KI;
+    this->steer_kd = DEFAULT_STEER_PID_KD;
     this->path_distance_pid = pid_controller(DEFAULT_DISTANCE_PID_KP, DEFAULT_DISTANCE_PID_KI, DEFAULT_DISTANCE_PID_KD);
     this->points.clear();
 
@@ -176,8 +178,9 @@ int pid_steer_control::pid_steering_control(ControlState state, double& steer)
     if (current_target_ind < this->target_ind) {
         current_target_ind = this->target_ind;
     }
-    this->path_steer_pid.set_target(this->points[current_target_ind].yaw);
-    double th_e = this->path_steer_pid.calculate(state.yaw);
+    double yaw_error = pi_2_pi(this->points[current_target_ind].yaw - state.yaw);
+    double th_e = pi_2_pi(yaw_error * this->steer_kp + (yaw_error - this->steer_pre_e) * this->steer_kd);
+
     this->path_distance_pid.set_target(e);
     double steer_delta = std::atan2(this->path_distance_pid.calculate(0), state.v);
 

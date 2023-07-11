@@ -43,17 +43,16 @@ private:
     std::vector<double> oa;     // accel
     std::vector<double> odelta; // steer
     pid_controller path_accel_pid;
-    pid_controller path_steer_pid;
     pid_controller path_distance_pid;
 
     double max_steer_angle;
     double max_speed;
     double wheel_base;
 
-    double kp;
-    double ki;
-    double kd;
-    double pre_e;
+    double steer_kp;
+    double steer_ki;
+    double steer_kd;
+    double steer_pre_e;
 
 public:
     ControlState get_state() const {
@@ -95,13 +94,15 @@ public:
     }
 
     void get_steer_gain(double* kp, double* ki, double* kd) {
-        *kp = this->path_steer_pid.get_p_gain();
-        *ki = this->path_steer_pid.get_i_gain();
-        *kd = this->path_steer_pid.get_d_gain();
+        *kp = this->steer_kp;
+        *ki = this->steer_ki;
+        *kd = this->steer_kd;
     }
 
     void set_steer_gain(double kp, double ki, double kd) {
-        this->path_steer_pid.set_gain(kp, ki, kd);
+        this->steer_kp = kp;
+        this->steer_ki = ki;
+        this->steer_kd = kd;
     }
 };
 
