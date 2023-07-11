@@ -22,7 +22,19 @@ static double distance_between_point_and_line(Point point, Point line_point1, Po
     double c = line_point1.y - a * line_point1.x;
     double b = -1;
 
-    return abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
+    double error_distance = abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
+
+    if (point.y > (a * point.x + c)) { // 그래프 위쪽
+        if (line_point2.x > line_point1.x) { // 진행 방향 오른쪽
+            error_distance *= -1;
+        }
+    } else { // 그래프 아래쪽
+        if (line_point2.x < line_point1.x) { // 진행 방향 오른쪽
+            error_distance *= -1;
+        }
+    }
+
+    return error_distance;
 }
 
 pid_steer_control::pid_steer_control()
@@ -145,10 +157,17 @@ int pid_steer_control::calculate_target_index(ControlState state, std::vector<Po
             break;
         }
     }
-    double front_axle_vec_x = -std::cos(state.yaw + M_PI / 2);
-    double front_axle_vec_y = -std::sin(state.yaw + M_PI / 2);
 
-    err_front_axel = target_dx * front_axle_vec_x + target_dy * front_axle_vec_y;
+    // double front_axle_vec_x = -std::cos(state.yaw + M_PI / 2);
+    // double front_axle_vec_y = -std::sin(state.yaw + M_PI / 2);
+    // err_front_axel = target_dx * front_axle_vec_x + target_dy * front_axle_vec_y;
+
+    Point current_state = {this->state.x, this->state.y, 0, 0, 0};
+    if (min_point_index == 0) {
+        err_front_axel = 0;
+    } else {
+        err_front_axel = distance_between_point_and_line(current_state, this->points[min_point_index - 1], this->points[min_point_index]);
+    }
 
     return min_point_index;
 }
