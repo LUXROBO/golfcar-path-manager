@@ -186,6 +186,8 @@ int pid_steer_control::pid_steering_control(ControlState state, double& steer)
 
     steer = th_e + steer_delta;
 
+    steer_pre_e = yaw_error;
+
     return current_target_ind;
 }
 
