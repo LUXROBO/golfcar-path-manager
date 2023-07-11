@@ -261,7 +261,8 @@ ControlState pid_steer_control::update_state(ControlState state, double accel, d
     state.x = state.x + state.v * std::cos(state.yaw) * dt;
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
     state.yaw = state.yaw + state.v / this->wheel_base * std::tan(steer_delta) * dt;
-    state.v = state.v + accel * dt;
+    // state.v = state.v + accel * dt;
+    state.v = this->points[this->target_ind].speed;
 
     if (state.v > this->max_speed) {
         state.v = this->max_speed;
