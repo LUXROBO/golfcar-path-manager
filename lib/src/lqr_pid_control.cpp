@@ -9,9 +9,10 @@ pid_controller::pid_controller()
     this->parameter.error = this->parameter.pri_error = this->parameter.error_sum = 0;
     this->parameter.target = 0;
     this->parameter.output = 0;
+    this->parameter.error_sum_limit = 1.0;
 }
 
-void pid_controller::init(float p_gain, float i_gain, float d_gain)
+void pid_controller::init(double p_gain, double i_gain, double d_gain)
 {
     this->parameter.p_gain = p_gain;
     this->parameter.i_gain = i_gain;
@@ -19,14 +20,23 @@ void pid_controller::init(float p_gain, float i_gain, float d_gain)
     this->parameter.error = this->parameter.pri_error = this->parameter.error_sum = 0;
     this->parameter.target = 0;
     this->parameter.output = 0;
+    this->parameter.error_sum_limit = 1.0;
 }
 
-void pid_controller::set_target(float target)
+void pid_controller::set_gain(double p_gain, double i_gain, double d_gain)
+{
+    this->parameter.p_gain = p_gain;
+    this->parameter.i_gain = i_gain;
+    this->parameter.d_gain = d_gain;
+    this->parameter.error_sum = 0.0;
+}
+
+void pid_controller::set_target(double target)
 {
     this->parameter.target = target;
 }
 
-float pid_controller::calculate(float current_value)
+double pid_controller::calculate(double current_value)
 {
     this->parameter.error = this->parameter.target - current_value;
 
