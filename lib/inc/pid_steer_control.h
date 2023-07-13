@@ -18,7 +18,6 @@ public:
 public:
     void init(const double max_steer_angle, const double max_speed, const double wheel_base);
     bool update(double dt);
-    void generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds=1.0);
     void set_course(ControlState init_state, std::vector<Point> points);
     void add_course(ControlState init_state, std::vector<Point> points);
     double calculate_error();

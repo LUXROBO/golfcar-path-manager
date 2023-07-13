@@ -37,4 +37,6 @@ build
 *.out
 *.app
 
-/output/*
+*.csv
+
+output

@@ -6,13 +6,27 @@
 #include <algorithm>
 
 
-const double MAX_STEER = 45.0 * M_PI / 180.0;
-const double MAX_SPEED = 10.0 / 3.6;
-const double WB = 0.41;                      //앞 뒤 바퀴 사이 거리
+static const double DEFAULT_MAX_STEER = 45.0 * M_PI / 180.0;     // [rad] 45deg
+static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
+static const double DEFAULT_WHEEL_BASE = 0.41;                   // 앞 뒤 바퀴 사이 거리 [m]
+static const double DEFAULT_PID_GAIN = 1;                      // gain
+
+static double distance_between_point_and_line(ControlState point, Point line_point1, Point line_point2)
+{
+    double a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
+    double c = line_point1.y - a * line_point1.x;
+    double b = -1;
+
+    return abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
+}
+
 
 lqr_steer_control::lqr_steer_control()
 {
     this->path_pid = pid_controller(1, 0, 0);
+    this->Q = ModelMatrix::identity(4, 4);
+    this->Q.set(2,2,5);
+    this->R = ModelMatrix::identity(1, 1);
 }
 
 lqr_steer_control::~lqr_steer_control()
@@ -20,22 +34,32 @@ lqr_steer_control::~lqr_steer_control()
 
 }
 
-void lqr_steer_control::generate_spline(ControlState init_state, std::vector<WayPoint> waypoints, double target_speed, double ds)
+void lqr_steer_control::init(const double max_steer_angle, const double max_speed, const double wheel_base)
 {
-    CubicSpline2D spline(waypoints);
-    double xd =0;
-    this->points = spline.generate_spline_course(target_speed, ds); // get spline points
+    this->path_pid = pid_controller(1, 0, 0);
+    this->points.clear();
 
+    this->max_steer_angle = max_steer_angle;
+    this->max_speed = max_speed;
+    this->wheel_base = wheel_base;
+}
+
+void lqr_steer_control::set_course(ControlState init_state, std::vector<Point> points)
+{
+	double xd = 0;
     int goal_index = points.size() - 1;
 
-    this->init_state = init_state;  // init start state
+    this->init_state = init_state;
+    this->points = points;
+
     if (this->init_state.yaw - this->points[0].yaw >= M_PI) {
-        this->init_state.yaw -= 2.0 * M_PI;
+        this->init_state.yaw -= 2.0f * M_PI;
     } else if (this->init_state.yaw - this->points[0].yaw <= -M_PI) {
-        this->init_state.yaw += 2.0 * M_PI;
+        this->init_state.yaw += 2.0f * M_PI;
     }
+
     this->goal_state = ControlState(this->points[goal_index].x, this->points[goal_index].y, this->points[goal_index].yaw, 0, this->points[goal_index].speed);
-    this->t = 0.0;
+    this->t = 0.0f;
 
     this->target_ind = this->calculate_nearest_index(this->init_state, this->points, 0, xd);
     this->smooth_yaw(this->points);
@@ -63,6 +87,7 @@ void lqr_steer_control::add_course(ControlState init_state, std::vector<Point> p
     this->smooth_yaw(this->points);
     this->oa.clear();
     this->odelta.clear();
+    this->points.back().speed = 2.2;
 }
 
 int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<Point> points, int pind, double& min_distance_ref)
@@ -90,6 +115,11 @@ int lqr_steer_control::calculate_nearest_index(ControlState state, std::vector<P
     double dyl = points[min_index].y - state.y;
 
     double angle = 0;
+
+    if (min_index != 0) {
+        min_distance = distance_between_point_and_line(this->state, points[min_index], points[min_index - 1]);
+    }
+
     if ((abs(dxl) <= 0.00001) && (abs(dyl) <= 0.00001)) {
         angle = pi_2_pi(points[min_index].yaw);
     } else {
@@ -125,17 +155,17 @@ void lqr_steer_control::smooth_yaw(std::vector<Point> &points)
 ModelMatrix lqr_steer_control::solve_DARE(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R)
 {
     ModelMatrix X = Q;
-    double maxiter = 10;
-    double eps = 0.01;
+    int maxiter = 10;
+    q_format eps = 0.01;
 
     for (int i = 0; i < maxiter; i++) {
         // Xn =          A.T @ X @ A           - A.T @ X @ B @ la.inv(R + B.T @ X @ B) @ B.T @ X @ A + Q
         ModelMatrix Xn = (A.transpose() * X * A) - A.transpose() * X * B * (R + (B.transpose() * X * B)).inverse() * B.transpose() * X * A + Q;
         ModelMatrix riccati_equ = Xn - X;
-        double max = -100;
+        q_format max = 0;
         for (uint32_t j = 0; j < riccati_equ.row(); j++) {
             for (uint32_t k = 0; k < riccati_equ.column(); k++) {
-                double element = abs(riccati_equ.get(j, k));
+                q_format element = riccati_equ.get(j, k).abs();
                 if (max < element) {
                     max = element;
                 }
@@ -161,15 +191,17 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
 {
     double e = 0;
     this->target_ind = this->calculate_nearest_index(state, this->points, this->target_ind, e);
+    int jump_point = this->target_ind + 0;
+    if (jump_point > (this->points.size() - 1)) {
+        jump_point = this->target_ind;
+    }
 
-    double k = this->points[this->target_ind].k;
-    double v = state.v;
-    double th_e = pi_2_pi(state.yaw - this->points[this->target_ind].yaw);
+    q_format k = this->points[jump_point].k;
+    q_format v = state.v;
+    double tttt = pi_2_pi(state.yaw - this->points[jump_point].yaw);
+    q_format th_e = tttt;
 
-    double L = WB;
-
-    ModelMatrix Q = ModelMatrix::one(4, 4);
-    ModelMatrix R = ModelMatrix::one(1, 1);
+    q_format L = this->wheel_base;
 
     ModelMatrix A = ModelMatrix::zero(4, 4);
     A.set(0, 0, 1.0);
@@ -181,7 +213,7 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
     ModelMatrix B = ModelMatrix::zero(4, 1);
     B.set(3, 0, v / L);
 
-    ModelMatrix K = dlqr(A, B, Q, R);
+    ModelMatrix K = dlqr(A, B, this->Q, this->R);
 
     ModelMatrix x = ModelMatrix::zero(4, 1);
 
@@ -190,15 +222,15 @@ int lqr_steer_control::lqr_steering_control(ControlState state, double& steer, d
     x.set(2, 0, th_e);
     x.set(3, 0, (th_e - pth_e) / this->dt);
 
-    double ff = atan2(L * k, 1);
-    double fb = pi_2_pi((-1 * K * x).get(0, 0));
+    double ff = atan2((L * k).to_double(), 1);
+    double fb = pi_2_pi((-1 * K * x).get(0, 0).to_double());
 
     steer = ff + fb;
 
     pe = e;
     th_e = th_e;
 
-    return target_ind;
+    return jump_point;
 }
 
 bool lqr_steer_control::update(double dt) {
@@ -214,17 +246,17 @@ bool lqr_steer_control::update(double dt) {
         return false;
     }
 
-    uint32_t closest_point_index =lqr_steering_control (this->state, calculated_steer, pe, pth_e);
+    uint32_t closest_point_index = lqr_steering_control (this->state, calculated_steer, pe, pth_e);
     // PID로 가속도 값 계산
     this->path_pid.set_target(this->points[closest_point_index].speed);
 
     double calculated_accel = this->path_pid.calculate(this->state.v);
     // state update
     this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
-
     double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
+    size_t remain_point = get_remain_point();
 
-    if (state_to_goal_distance < 1 && (closest_point_index > this->points.size()/2)) {
+    if (remain_point == 0) {
         // finish
         return true;
     }
@@ -265,22 +297,22 @@ double lqr_steer_control::calculate_error()
 
 ControlState lqr_steer_control::update_state(ControlState state, double accel, double steer_delta, double dt)
 {
-    if (steer_delta > MAX_STEER) {
-        steer_delta = MAX_STEER;
-    } else if (steer_delta < -MAX_STEER) {
-        steer_delta = -MAX_STEER;
+    if (steer_delta > this->max_steer_angle) {
+        steer_delta = this->max_steer_angle;
+    } else if (steer_delta < -this->max_steer_angle) {
+        steer_delta = -this->max_steer_angle;
     }
     state.steer = steer_delta;
     // golfcar position, angle update
     state.x = state.x + state.v * std::cos(state.yaw) * dt;
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
-    state.yaw = state.yaw + state.v / WB * std::tan(steer_delta) * dt;
+    state.yaw = state.yaw + state.v / this->wheel_base * std::tan(steer_delta) * dt;
     state.v = state.v + accel * dt;
 
-    if (state.v > MAX_SPEED) {
-        state.v = MAX_SPEED;
-    } else if (state.v < -MAX_SPEED) {
-        state.v = -MAX_SPEED;
+    if (state.v > this->max_speed) {
+        state.v = this->max_speed;
+    } else if (state.v < -this->max_speed) {
+        state.v = -this->max_speed;
     }
 
     return state;

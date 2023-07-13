@@ -8,7 +8,7 @@
 
 CubicSpline1D::CubicSpline1D(std::vector<double> x, std::vector<double> y)
 {
-    std::vector<double> diff_x;
+    std::vector<q_format> diff_x;
     for (uint32_t i = 0; i < x.size() - 1; i++) {
         double diff = x[i + 1] - x[i];
         diff_x.push_back(diff);
@@ -27,8 +27,8 @@ CubicSpline1D::CubicSpline1D(std::vector<double> x, std::vector<double> y)
     this->c = coeff_a.inverse(0.001) * coeff_b;
 
     for (uint32_t i = 0; i < this->x.size() - 1; i++) {
-        double d_temp = (this->c.get(i + 1, 0) - this->c.get(i, 0)) / (3.0 * diff_x[i]);
-        double b_temp = 1.0 / diff_x[i] * (this->a[i + 1] - this->a[i]) - diff_x[i] / 3.0 * (2.0 * this->c.get(i, 0) + this->c.get(i + 1, 0));
+        double d_temp = ((this->c.get(i + 1, 0) - this->c.get(i, 0)) / (3.0 * diff_x[i])).to_double();
+        double b_temp = (1.0 / diff_x[i] * (this->a[i + 1] - this->a[i]) - diff_x[i] / 3.0 * (2.0 * this->c.get(i, 0) + this->c.get(i + 1, 0))).to_double();
         this->d.push_back(d_temp);
         this->b.push_back(b_temp);
     }
@@ -51,8 +51,8 @@ double CubicSpline1D::calculate_position(double x)
         i = 0;
     }
     double dx = x - this->x[i];
-    double position = this->a[i] + this->b[i] * dx + this->c.get(i, 0) * std::pow(dx, 2.0) + this->d[i] * std::pow(dx, 3.0);
-    return position;
+    q_format position = this->a[i] + this->b[i] * dx + this->c.get(i, 0) * std::pow(dx, 2.0) + this->d[i] * std::pow(dx, 3.0);
+    return position.to_double();
 }
 
 double CubicSpline1D::calculate_first_derivative(double x)
@@ -67,8 +67,8 @@ double CubicSpline1D::calculate_first_derivative(double x)
         i = 0;
     }
     double dx = x - this->x[i];
-    double dy = this->b[i] + 2.0 * this->c.get(i, 0) * dx + 3.0 * this->d[i] * std::pow(dx, 2.0);
-    return dy;
+    q_format dy = this->b[i] + 2.0 * this->c.get(i, 0) * dx + 3.0 * this->d[i] * std::pow(dx, 2.0);
+    return dy.to_double();
 }
 
 double CubicSpline1D::calculate_second_derivative(double x)
@@ -81,8 +81,8 @@ double CubicSpline1D::calculate_second_derivative(double x)
 
     int i = this->search_index(x);
     double dx = x - this->x[i];
-    double ddy = 2.0 * this->c.get(i, 0) + 6.0 * this->d[i] * dx;
-    return ddy;
+    q_format ddy = 2.0 * this->c.get(i, 0) + 6.0 * this->d[i] * dx;
+    return ddy.to_double();
 }
 
 int CubicSpline1D::search_index(double x)
@@ -95,7 +95,7 @@ int CubicSpline1D::search_index(double x)
     // return std::distance(this->x.begin(), itr) - 1;
 }
 
-ModelMatrix CubicSpline1D::calculate_a(std::vector<double> diff_x)
+ModelMatrix CubicSpline1D::calculate_a(std::vector<q_format> diff_x)
 {
     int nx = this->x.size();
     ModelMatrix mat_a = ModelMatrix::zero(nx, nx);
@@ -103,7 +103,7 @@ ModelMatrix CubicSpline1D::calculate_a(std::vector<double> diff_x)
 
     for (int i = 0; i < nx - 1; i++) {
         if (i != nx - 2) {
-            double ele = 2.0 * (diff_x[i] + diff_x[i + 1]);
+            q_format ele = 2.0 * (diff_x[i] + diff_x[i + 1]);
             mat_a.set(i + 1, i + 1, ele);
         }
         mat_a.set(i + 1, i, diff_x[i]);
@@ -116,13 +116,13 @@ ModelMatrix CubicSpline1D::calculate_a(std::vector<double> diff_x)
     return mat_a;
 }
 
-ModelMatrix CubicSpline1D::calculate_b(std::vector<double> diff_x, std::vector<double> coeff_a)
+ModelMatrix CubicSpline1D::calculate_b(std::vector<q_format> diff_x, std::vector<double> coeff_a)
 {
     int nx = this->x.size();
     ModelMatrix mat_b = ModelMatrix::zero(nx, 1);
 
     for (int i = 0; i < nx - 2; i++) {
-        double ele = 3.0 * (coeff_a[i + 2] - coeff_a[i + 1]) / diff_x[i + 1] - 3.0 * (coeff_a[i + 1] - coeff_a[i]) / diff_x[i];
+        q_format ele = 3.0 * (coeff_a[i + 2] - coeff_a[i + 1]) / diff_x[i + 1] - 3.0 * (coeff_a[i + 1] - coeff_a[i]) / diff_x[i];
         mat_b.set(i + 1, 0, ele);
     }
 
@@ -153,7 +153,6 @@ CubicSpline2D::~CubicSpline2D()
 std::vector<Point> CubicSpline2D::generate_spline_course(double speed, double ds)
 {
     std::vector<Point> points;
-
 
     // calc_spline_course //
     double last_s = this->s[this->s.size() - 1]; // 최종 변위량
