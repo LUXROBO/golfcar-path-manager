@@ -2,6 +2,7 @@
 #define PATH_MANAGER_H
 
 #include <vector>
+#include "model_matrix.h"
 // #include "resource.h"
 
 #define M_PI    3.14159265358979323846
@@ -59,6 +60,11 @@ typedef struct pid_gain_{
     double ki;
     double kd;
 } pid_gain_t;
+
+typedef struct lqr_gain_{
+    int lqr_select;
+    ModelMatrix weighting_matrix;
+} lqr_gain_t;
 
 class path_tracking_controller
 {

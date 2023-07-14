@@ -92,9 +92,8 @@ int pid_steer_control::velocity_control(ControlState state, double& accel)
 
 void pid_steer_control::set_gain(void* gain)
 {
-    pid_steer_control::pid_gain_select::distance;
     pid_gain_t received_gain = *(pid_gain_t*)gain;
-    std::cout << received_gain.kp << " " << received_gain.ki << " " << received_gain.kd << std::endl;
+
     if (received_gain.pid_select == pid_steer_control::pid_gain_select::distance) {
         this->path_distance_pid.set_gain(received_gain.kp, received_gain.ki, received_gain.kd);
     } else if (received_gain.pid_select == pid_steer_control::pid_gain_select::yaw) {
@@ -108,7 +107,6 @@ void pid_steer_control::set_gain(void* gain)
 
 void pid_steer_control::get_gain(void* gain)
 {
-    pid_steer_control::pid_gain_select::distance;
     pid_gain_t* received_gain = (pid_gain_t*)gain;
     if (received_gain->pid_select == pid_steer_control::pid_gain_select::distance) {
         received_gain->kp = this->path_distance_pid.get_p_gain();
@@ -121,6 +119,5 @@ void pid_steer_control::get_gain(void* gain)
     } else {
         
     }
-    std::cout << received_gain->kp << " " << received_gain->ki << " " << received_gain->kd << std::endl;
 }
 

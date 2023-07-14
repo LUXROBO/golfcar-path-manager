@@ -36,7 +36,6 @@ private:
 
 public:
     virtual void set_gain(void* gain);
-
     virtual void get_gain(void* gain);
 };
 

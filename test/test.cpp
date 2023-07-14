@@ -7,6 +7,7 @@
 #include <ctime>
 #include <sstream>
 #include <random>
+#include <typeinfo>
 
 #include <lqr_steer_control.h>
 #include <pid_steer_control.h>
@@ -24,9 +25,9 @@ static double distance_between_point_and_line(Point point, Point line_point1, Po
 
 int main(int argc, const char * argv[])
 {
-    // lqr_steer_control golfcar_path_tracker->
+    lqr_steer_control golfcar_lqr_path_tracker;
     pid_steer_control golfcar_pid_path_tracker;
-    path_tracking_controller* golfcar_path_tracker = &golfcar_pid_path_tracker;
+    path_tracking_controller* golfcar_path_tracker = &golfcar_lqr_path_tracker;
     
     ControlState current_state(0, 0, 0, 0, 0);
 
@@ -85,10 +86,21 @@ int main(int argc, const char * argv[])
         current_state.yaw = splined_points[0].yaw;
         golfcar_path_tracker->init(0.785398f, 10.0 / 3.6, 2.15);
 
-        pid_gain_t gain = {pid_steer_control::pid_gain_select::distance, 0.4, 0.05, 0.7};
-        golfcar_path_tracker->set_gain((void*)&gain);
-        gain = {pid_steer_control::pid_gain_select::yaw, 1.2, 0.0, 0.9};
-        golfcar_path_tracker->set_gain((void*)&gain);
+        if (typeid(*golfcar_path_tracker).name() == typeid(golfcar_pid_path_tracker).name()) {
+            pid_gain_t gain = {pid_steer_control::pid_gain_select::distance, 0.4, 0.05, 0.7};
+            golfcar_path_tracker->set_gain((void*)&gain);
+            gain = {pid_steer_control::pid_gain_select::yaw, 1.2, 0.0, 0.9};
+            golfcar_path_tracker->set_gain((void*)&gain);
+        } else if (typeid(*golfcar_path_tracker).name() == typeid(golfcar_lqr_path_tracker).name()){
+            lqr_gain_t gain;
+            gain.lqr_select = lqr_steer_control::lqr_gain_select::q;
+            gain.weighting_matrix = ModelMatrix::identity(4,4);
+            // gain.weighting_matrix.set(0,0,2);
+            golfcar_path_tracker->set_gain((void*)&gain);
+        } else {
+            std::cout << "tracker error!!!!" << std::endl;
+            return 0;
+        }
 
         golfcar_path_tracker->set_state(current_state);
         // add course to lqr path tracker
@@ -147,12 +159,12 @@ int main(int argc, const char * argv[])
             } else {
                 static int progress_signal = 0;
                 if (progress_signal >= 100) {
-                    // std::cout << golfcar_path_tracker->get_state().x << " " 
-                    //         << golfcar_path_tracker->get_state().y << " " 
-                    //         << golfcar_path_tracker->get_state().v << " " 
-                    //         << golfcar_path_tracker->get_state().yaw << " " 
-                    //         << golfcar_path_tracker->get_target_index() 
-                    //         << std::endl;
+                    std::cout << golfcar_path_tracker->get_state().x << " " 
+                            << golfcar_path_tracker->get_state().y << " " 
+                            << golfcar_path_tracker->get_state().v << " " 
+                            << golfcar_path_tracker->get_state().yaw << " " 
+                            << golfcar_path_tracker->get_target_index() 
+                            << std::endl;
                     move_path << std::to_string(golfcar_path_tracker->get_state().x) <<  "," << std::to_string(golfcar_path_tracker->get_state().y) << "\n";
                     if (golfcar_path_tracker->get_target_index() != 0) {
                         auto now_point = Point{golfcar_path_tracker->get_state().x, golfcar_path_tracker->get_state().y, 0, 0, 0};
