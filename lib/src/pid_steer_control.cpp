@@ -68,6 +68,7 @@ int pid_steer_control::steering_control(ControlState state, double& steer)
     if (current_target_ind < this->target_ind) {
         current_target_ind = this->target_ind;
     }
+
     double yaw_error = pi_2_pi(this->points[current_target_ind].yaw - state.yaw);
     double th_e = pi_2_pi(yaw_error * this->steer_kp + (yaw_error - this->steer_pre_e) * this->steer_kd);
 

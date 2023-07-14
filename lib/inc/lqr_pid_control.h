@@ -22,16 +22,7 @@ class pid_controller
         pid_controller();
         pid_controller(double p_gain, double i_gain, double d_gain)
         {
-            this->parameter.p_gain = p_gain;
-            this->parameter.i_gain = i_gain;
-            this->parameter.d_gain = d_gain;
-            this->parameter.target = 0;
-            this->parameter.error = 0;
-            this->parameter.pri_error = 0;
-            this->parameter.error_limit = 0;
-            this->parameter.error_sum = 0;
-            this->parameter.error_sum_limit = 0;
-            this->parameter.output = 0;
+            init(p_gain, i_gain, d_gain);
         }
         pid_controller(pid_parameter_t parameter)
         {

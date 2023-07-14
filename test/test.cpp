@@ -147,12 +147,13 @@ int main(int argc, const char * argv[])
             } else {
                 static int progress_signal = 0;
                 if (progress_signal >= 100) {
-                    std::cout << golfcar_path_tracker->get_state().x << " " 
-                            << golfcar_path_tracker->get_state().y << " " 
-                            << golfcar_path_tracker->get_state().v << " " 
-                            << golfcar_path_tracker->get_target_index() 
-                            << std::endl;
-                    // move_path << std::to_string(golfcar_path_tracker->get_state().x) <<  "," << std::to_string(golfcar_path_tracker->get_state().y) << "\n";
+                    // std::cout << golfcar_path_tracker->get_state().x << " " 
+                    //         << golfcar_path_tracker->get_state().y << " " 
+                    //         << golfcar_path_tracker->get_state().v << " " 
+                    //         << golfcar_path_tracker->get_state().yaw << " " 
+                    //         << golfcar_path_tracker->get_target_index() 
+                    //         << std::endl;
+                    move_path << std::to_string(golfcar_path_tracker->get_state().x) <<  "," << std::to_string(golfcar_path_tracker->get_state().y) << "\n";
                     if (golfcar_path_tracker->get_target_index() != 0) {
                         auto now_point = Point{golfcar_path_tracker->get_state().x, golfcar_path_tracker->get_state().y, 0, 0, 0};
                         double error_amount = distance_between_point_and_line(now_point, splined_points[golfcar_path_tracker->get_target_index()-1], splined_points[golfcar_path_tracker->get_target_index()]);
