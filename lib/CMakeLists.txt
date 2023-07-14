@@ -2,6 +2,9 @@ cmake_minimum_required (VERSION 3.0)
 
 project (golfcar_path_manager)
 
+SET(CMAKE_COLOR_MAKEFILE ON)
+SET(CMAKE_VERBOSE_MAKEFILE ON)
+
 # set (${PROJECT_NAME}_VERSION_MAJOR 1)
 # set (${PROJECT_NAME}_VERSION_MINOR 0)
 # set (${PROJECT_NAME}_VERSION_PATCH 0)
