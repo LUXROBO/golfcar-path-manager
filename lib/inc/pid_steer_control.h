@@ -8,12 +8,24 @@
 #include "lqr_pid_control.h"
 #include "path_manager.h"
 
+typedef struct pid_gain_{
+    int pid_select;
+    double kp;
+    double ki;
+    double kd;
+} pid_gain_t;
+
+// typedef struct pid_tracker_gain_{
+//     int pid_select;
+//     pid_gain_t gain;
+// } pid_tracker_gain_t;
+
 class pid_steer_control : public path_tracking_controller
 {
 public:
     enum pid_gain_select {
         distance,
-        yaw,
+        steer,
         accel
     };
     pid_steer_control();
@@ -35,8 +47,8 @@ private:
     double steer_pre_e;
 
 public:
-    virtual void set_gain(void* gain);
-    virtual void get_gain(void* gain);
+    virtual int set_gain(controller_gain_t gain);
+    virtual int get_gain(controller_gain_t* gain);
 };
 
 #endif // PID_STEER_CONTRL_H

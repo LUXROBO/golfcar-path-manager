@@ -108,27 +108,37 @@ int lqr_steer_control::steering_control(ControlState state, double& steer)
 int lqr_steer_control::velocity_control(ControlState state, double& accel)
 {
     accel = this->points[this->target_ind].speed - state.v;
-
     return 0;
 }
 
-void lqr_steer_control::set_gain(void* gain)
+int lqr_steer_control::set_gain(controller_gain_t gain)
 {
-    lqr_gain_t received_gain = *(lqr_gain_t*)gain;
-    
-    if (received_gain.lqr_select <= (int)lqr_steer_control::lqr_gain_select::q) {
-        this->Q = received_gain.weighting_matrix;
-    } else if (received_gain.lqr_select == lqr_steer_control::lqr_gain_select::r) {
-        this->R = received_gain.weighting_matrix;
+    if (gain.type <= (int)lqr_steer_control::lqr_gain_select::q) {
+        this->Q = ModelMatrix(4, 4, gain.data);
+        return 1;
+    } else if (gain.type == lqr_steer_control::lqr_gain_select::r) {
+        this->R = ModelMatrix(4, 4, gain.data);
+        return 1;
     }
+    return 0;
 }
 
-void lqr_steer_control::get_gain(void* gain)
+int lqr_steer_control::get_gain(controller_gain_t* gain)
 {
-    lqr_gain_t* received_gain = (lqr_gain_t*)gain;
-    if (received_gain->lqr_select <= (int)lqr_steer_control::lqr_gain_select::q) {
-        received_gain->weighting_matrix = this->Q;
-    } else if (received_gain->lqr_select == lqr_steer_control::lqr_gain_select::r) {
-        received_gain->weighting_matrix = this->R;
+    if (gain->type == CONTROLLER_GAIN_LQR_Q) {
+        for (unsigned int r = 0; r < this->Q.row(); r++) {
+            for (unsigned int c = 0; c < this->Q.column(); c++) {
+                gain->data[r * this->Q.column() + c] = this->Q.get(r,c).to_double();
+            }
+        }
+        return 16;
+    } else if (gain->type == CONTROLLER_GAIN_LQR_R) {
+        for (unsigned int r = 0; r < this->R.row(); r++) {
+            for (unsigned int c = 0; c < this->R.column(); c++) {
+                gain->data[r * this->R.column() + c] = this->R.get(r,c).to_double();
+            }
+        }
+        return 1;
     }
+    return 0;
 }

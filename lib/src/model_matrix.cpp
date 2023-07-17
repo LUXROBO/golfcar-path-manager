@@ -36,6 +36,16 @@ ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, cons
     }
 }
 
+ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const double *element)
+    : row_(row), column_(column) {
+    memset((void*)element_, 0, sizeof(q_format) * ModelMatrix::MAX_SIZE);
+    for (unsigned int r = 0; r < row; r++) {
+        for (unsigned int c = 0; c < column; c++) {
+            element_[r * column + c] = element[r * column + c];
+        }
+    }
+}
+
 ModelMatrix::ModelMatrix(const unsigned int row, const unsigned int column, const std::vector<q_format> element)
     : row_(row), column_(column){
     for (unsigned int r = 0; r < row; r++) {

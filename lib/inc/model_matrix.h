@@ -53,6 +53,14 @@ public:
      * @param[in] column matrix column.
      * @param[in] element matrix element.
      */
+    ModelMatrix(const unsigned int row, const unsigned int column, const double *element);
+
+    /**
+     * @brief Create a new ModelMatrix instance.
+     * @param[in] row matrix row.
+     * @param[in] column matrix column.
+     * @param[in] element matrix element.
+     */
     ModelMatrix(const unsigned int row, const unsigned int column, const std::vector<q_format> element);
 
     /**

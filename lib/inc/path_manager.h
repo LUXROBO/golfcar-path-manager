@@ -8,6 +8,18 @@
 #define M_PI    3.14159265358979323846
 #define M_PI_2  1.57079632679489661923
 
+#define CONTROLLER_TYPE_PID          0x00
+#define CONTROLLER_TYPE_LQR          0x10
+#define CONTROLLER_TYPE_MASK(X)      ((0xF0) & (X))
+
+#define CONTROLLER_GAIN_PID_DISTANCE 0x00
+#define CONTROLLER_GAIN_PID_STEER    0x01
+
+#define CONTROLLER_GAIN_LQR_Q        0x00
+#define CONTROLLER_GAIN_LQR_R        0x01
+
+#define CONTROLLER_GAIN_MASK(X)      ((0x0F) & (X))
+
 typedef struct WayPoint_
 {
     double x;
@@ -29,7 +41,6 @@ typedef struct Point_
     double k;
     double speed;
 } Point;
-
 
 typedef struct ControlState_
 {
@@ -54,20 +65,25 @@ typedef struct ControlState_
     }
 } ControlState;
 
-typedef struct pid_gain_{
-    int pid_select;
-    double kp;
-    double ki;
-    double kd;
-} pid_gain_t;
 
-typedef struct lqr_gain_{
-    int lqr_select;
-    ModelMatrix weighting_matrix;
-} lqr_gain_t;
+typedef struct controller_gain_ {
+    uint8_t type;
+    double *data;
+} controller_gain_t;
 
 class path_tracking_controller
 {
+public:
+    enum controller_type {
+        pid = 0,
+        lqr = 1,
+    };
+
+    typedef struct lqr_gain_{
+        int lqr_select;
+        ModelMatrix weighting_matrix;
+    } lqr_gain_t;
+
 public:
     path_tracking_controller();
     path_tracking_controller(const double max_steer_angle, const double max_speed, const double wheel_base);
@@ -130,8 +146,8 @@ public:
         return this->points.size() - target_ind - 1;
     }
 
-    virtual void get_gain(void*);
-    virtual void set_gain(void*);
+    virtual int set_gain(controller_gain_t);
+    virtual int get_gain(controller_gain_t*);
 };
 
 #endif

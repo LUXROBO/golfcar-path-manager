@@ -54,7 +54,7 @@ path_tracking_controller::path_tracking_controller(const double max_steer_angle,
 void path_tracking_controller::init(const double max_steer_angle, const double max_speed, const double wheel_base)
 {
     this->points.clear();
-    
+
     this->max_steer_angle = max_steer_angle;
     this->max_speed = max_speed;
     this->wheel_base = wheel_base;
@@ -225,12 +225,12 @@ int path_tracking_controller::velocity_control(ControlState state, double& accel
     return accel;
 }
 
-void path_tracking_controller::get_gain(void* gain)
+int path_tracking_controller::get_gain(controller_gain_t* gain)
 {
-
+    return 0;
 }
 
-void path_tracking_controller::set_gain(void* gain)
+int path_tracking_controller::set_gain(controller_gain_t gain)
 {
-
+    return 0;
 }

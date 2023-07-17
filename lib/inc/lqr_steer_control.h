@@ -31,8 +31,8 @@ private:
     ModelMatrix R;
 
 public :
-    virtual void set_gain(void* gain);
-    virtual void get_gain(void* gain);
+    virtual int set_gain(controller_gain_t gain);
+    virtual int get_gain(controller_gain_t* gain);
 };
 
 #endif // LQR_STEER_CONTROL_H

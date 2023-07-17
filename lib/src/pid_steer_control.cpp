@@ -90,34 +90,34 @@ int pid_steer_control::velocity_control(ControlState state, double& accel)
     return 0;
 }
 
-void pid_steer_control::set_gain(void* gain)
+int pid_steer_control::set_gain(controller_gain_t gain)
 {
-    pid_gain_t received_gain = *(pid_gain_t*)gain;
-
-    if (received_gain.pid_select == pid_steer_control::pid_gain_select::distance) {
-        this->path_distance_pid.set_gain(received_gain.kp, received_gain.ki, received_gain.kd);
-    } else if (received_gain.pid_select == pid_steer_control::pid_gain_select::yaw) {
-        this->steer_kp = received_gain.kp;
-        // this->steer_ki = received_gain.ki;
-        this->steer_kd = received_gain.kd;
+    int gain_type = CONTROLLER_GAIN_MASK(gain.type);
+    if (gain_type == pid_steer_control::pid_gain_select::distance) {
+        this->path_distance_pid.set_gain(gain.data[0], gain.data[1], gain.data[2]);
+    } else if (gain_type == pid_steer_control::pid_gain_select::steer) {
+        this->steer_kp = gain.data[0];
+        // this->steer_ki = gain.data[0];
+        this->steer_kd = gain.data[2];
     } else {
-
+        return 0;
     }
+    return 1;
 }
 
-void pid_steer_control::get_gain(void* gain)
+int pid_steer_control::get_gain(controller_gain_t* gain)
 {
-    pid_gain_t* received_gain = (pid_gain_t*)gain;
-    if (received_gain->pid_select == pid_steer_control::pid_gain_select::distance) {
-        received_gain->kp = this->path_distance_pid.get_p_gain();
-        received_gain->ki = this->path_distance_pid.get_i_gain();
-        received_gain->kd = this->path_distance_pid.get_d_gain();
-    } else if (received_gain->pid_select == pid_steer_control::pid_gain_select::yaw) {
-        received_gain->kp = this->steer_kp;
-        received_gain->ki = this->steer_ki;
-        received_gain->kd = this->steer_kd;
+    int gain_type = CONTROLLER_GAIN_MASK(gain->type);
+    if (gain_type == CONTROLLER_GAIN_PID_DISTANCE) {
+        gain->data[0] = this->path_distance_pid.get_p_gain();
+        gain->data[1] = this->path_distance_pid.get_i_gain();
+        gain->data[2] = this->path_distance_pid.get_d_gain();
+    } else if (gain_type == CONTROLLER_GAIN_PID_STEER) {
+        gain->data[0] = this->steer_kp;
+        gain->data[1] = this->steer_ki;
+        gain->data[2] = this->steer_kd;
     } else {
-        
+        return 0;
     }
+    return 3;
 }
-
