@@ -9,12 +9,12 @@
 static const double DEFAULT_MAX_STEER = 45.0 * M_PI / 180.0;     // [rad] 45deg
 static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
 static const double DEFAULT_WHEEL_BASE = 0.41;                   // 앞 뒤 바퀴 사이 거리 [m]
-static const double DEFAULT_DISTANCE_PID_KP = 0.3;                        // gain
-static const double DEFAULT_DISTANCE_PID_KI = 0.0;
-static const double DEFAULT_DISTANCE_PID_KD = 0.1;
-static const double DEFAULT_STEER_PID_KP = 1.0;
+static const double DEFAULT_DISTANCE_PID_KP = 0.4;                        // gain
+static const double DEFAULT_DISTANCE_PID_KI = 0.05;
+static const double DEFAULT_DISTANCE_PID_KD = 0.7;
+static const double DEFAULT_STEER_PID_KP = 1.2;
 static const double DEFAULT_STEER_PID_KI = 0.0;
-static const double DEFAULT_STEER_PID_KD = 0.0;
+static const double DEFAULT_STEER_PID_KD = 0.9;
 
 static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
 {

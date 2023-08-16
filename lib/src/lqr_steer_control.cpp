@@ -13,7 +13,7 @@ static const double DEFAULT_PID_GAIN = 1;                      // gain
 
 lqr_steer_control::lqr_steer_control()
 {
-    this->Q = ModelMatrix::identity(4, 4);
+    this->Q = ModelMatrix::identity(3, 3);
     this->R = ModelMatrix::identity(1, 1);
 }
 
@@ -60,49 +60,44 @@ ModelMatrix  lqr_steer_control::dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q
 int lqr_steer_control::steering_control(ControlState state, double& steer)
 {
     double e = 0;
-    static double pe = 0;
-    static double pth_e = 0;
+
     this->target_ind = this->calculate_target_index(state, this->points, this->target_ind, e);
-    int jump_point = this->target_ind + 0;
-    if (jump_point > (this->points.size() - 1)) {
+    int jump_point = this->target_ind + 2;
+    if (jump_point > (this->points.size() - 2)) {
         jump_point = this->target_ind;
     }
 
-    q_format k = this->points[jump_point].k;
-    q_format v = state.v;
-    double tttt = pi_2_pi(state.yaw - this->points[jump_point].yaw);
-    q_format th_e = tttt;
+    /* state matrix
+    x = [position_x
+         position_y
+         yaw ]
 
-    q_format L = this->wheel_base;
+    u = [angular velocity]
 
-    ModelMatrix A = ModelMatrix::zero(4, 4);
+    A = [1,  0, -sin(yaw) * v * dt,
+         0,  1,  cos(yaw) * v * dt,
+         0,  0,                  1 ] (jacobian)
+    */
+    ModelMatrix A = ModelMatrix::zero(3, 3);
     A.set(0, 0, 1.0);
-    A.set(0, 1, this->dt);
-    A.set(1, 2, v);
-    A.set(2, 2, 1.0);
-    A.set(2, 3, this->dt);
+    A.set(0, 2, -sin(state.yaw) * this->points[jump_point].speed * dt);
+    A.set(1, 1, 1.0);
+    A.set(1, 2, cos(state.yaw) * this->points[jump_point].speed * dt);
+    A.set(2, 2, 1);
 
-    ModelMatrix B = ModelMatrix::zero(4, 1);
-    B.set(3, 0, v / L);
-
+    ModelMatrix B = ModelMatrix::zero(3, 1);
+    B.set(2, 0, dt);
     ModelMatrix K = dlqr(A, B, this->Q, this->R);
+    ModelMatrix x = ModelMatrix::zero(3, 1);
 
-    ModelMatrix x = ModelMatrix::zero(4, 1);
+    x.set(0, 0, this->points[jump_point].x - state.x);
+    x.set(1, 0, this->points[jump_point].y - state.y);
+    x.set(2, 0, pi_2_pi(this->points[jump_point].yaw - state.yaw));
 
-    x.set(0, 0, e);
-    x.set(1, 0, (e - pe) / this->dt);
-    x.set(2, 0, th_e);
-    x.set(3, 0, (th_e - pth_e) / this->dt);
+    double target_angular_velocity = (K * x).get(0, 0).to_double();
+    steer = atan(target_angular_velocity * this->wheel_base / state.v);
 
-    double ff = atan2((L * k).to_double(), 1);
-    double fb = pi_2_pi((-1 * K * x).get(0, 0).to_double());
-
-    steer = ff + fb;
-
-    pe = e;
-    th_e = th_e;
-
-    return jump_point;
+    return this->target_ind;
 }
 
 int lqr_steer_control::velocity_control(ControlState state, double& accel)

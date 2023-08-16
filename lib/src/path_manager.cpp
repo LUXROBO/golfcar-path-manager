@@ -8,7 +8,7 @@
 
 static const double DEFAULT_MAX_STEER = 45.0 * M_PI / 180.0;     // [rad] 45deg
 static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
-static const double DEFAULT_WHEEL_BASE = 0.41;                   // 앞 뒤 바퀴 사이 거리 [m]
+static const double DEFAULT_WHEEL_BASE = 2.15;                   // 앞 뒤 바퀴 사이 거리 [m]
 
 static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
 {
@@ -16,7 +16,7 @@ static double distance_between_point_and_line(Point point, Point line_point1, Po
     double c = line_point1.y - a * line_point1.x;
     double b = -1;
 
-    double error_distance = abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
+    double error_distance = fabsf(a * point.x + b * point.y + c) / sqrtf(a * a + b * b);
 
     if (point.y > (a * point.x + c)) {
         if (line_point2.x > line_point1.x) {
@@ -27,7 +27,6 @@ static double distance_between_point_and_line(Point point, Point line_point1, Po
             error_distance *= -1;
         }
     }
-
     return error_distance;
 }
 
@@ -128,6 +127,7 @@ int path_tracking_controller::calculate_target_index(ControlState state, std::ve
     if (min_index != 0) {
         Point current_state = {this->state.x, this->state.y, 0, 0, 0};
         min_distance = distance_between_point_and_line(current_state, this->points[min_index - 1], this->points[min_index]);
+        
     } else {
         min_distance = 0;
     }
@@ -191,7 +191,7 @@ ControlState path_tracking_controller::update_state(ControlState state, double a
     state.x = state.x + state.v * std::cos(state.yaw) * dt;
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
     state.yaw = state.yaw + state.v / this->wheel_base * std::tan(steer_delta) * dt;
-    state.v = state.v + accel * dt;
+    state.v = 2.2;
 
     if (state.v > this->max_speed) {
         state.v = this->max_speed;
