@@ -35,8 +35,8 @@ private:
     double steer_pre_e;
 
 public:
-    virtual void set_gain(void* gain);
-    virtual void get_gain(void* gain);
+    virtual void set_gain(int gain_index, double* gain_value);
+    virtual void get_gain(int gain_index, double* gain_value);
 };
 
 #endif // PID_STEER_CONTRL_H

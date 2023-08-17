@@ -55,16 +55,26 @@ typedef struct ControlState_
 } ControlState;
 
 typedef struct pid_gain_{
-    int pid_select;
     double kp;
     double ki;
     double kd;
 } pid_gain_t;
 
-typedef struct lqr_gain_{
-    int lqr_select;
-    ModelMatrix weighting_matrix;
-} lqr_gain_t;
+// typedef enum pid_type_{
+//     pid_type_distance,
+//     pid_type_steer,
+// } pid_type;
+
+#define PATH_TRACKER_PID_TYPE_DISTANCE 0
+#define PATH_TRACKER_PID_TYPE_STEER 1
+
+// typedef enum lqr_type_{
+//     lqr_type_q,
+//     lqr_type_r,
+// } lqr_type;
+
+#define PATH_TRACKER_LQR_TYPE_Q 0
+#define PATH_TRACKER_LQR_TYPE_R 1
 
 class path_tracking_controller
 {
@@ -130,8 +140,8 @@ public:
         return this->points.size() - target_ind - 1;
     }
 
-    virtual void get_gain(void*);
-    virtual void set_gain(void*);
+    virtual void get_gain(int gain_index, double* gain_value);
+    virtual void set_gain(int gain_index, double* gain_value);
 };
 
 #endif

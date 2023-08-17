@@ -90,34 +90,31 @@ int pid_steer_control::velocity_control(ControlState state, double& accel)
     return 0;
 }
 
-void pid_steer_control::set_gain(void* gain)
+void pid_steer_control::set_gain(int gain_index, double* gain_value)
 {
-    pid_gain_t received_gain = *(pid_gain_t*)gain;
-
-    if (received_gain.pid_select == pid_steer_control::pid_gain_select::distance) {
-        this->path_distance_pid.set_gain(received_gain.kp, received_gain.ki, received_gain.kd);
-    } else if (received_gain.pid_select == pid_steer_control::pid_gain_select::yaw) {
-        this->steer_kp = received_gain.kp;
+    if (gain_index == PATH_TRACKER_PID_TYPE_DISTANCE) {
+        this->path_distance_pid.set_gain(gain_value[0], gain_value[1], gain_value[2]);
+    } else if (gain_index == PATH_TRACKER_PID_TYPE_STEER) {
+        this->steer_kp = gain_value[0];
         // this->steer_ki = received_gain.ki;
-        this->steer_kd = received_gain.kd;
+        this->steer_kd = gain_value[1];
     } else {
 
     }
 }
 
-void pid_steer_control::get_gain(void* gain)
+void pid_steer_control::get_gain(int gain_index, double* gain_value)
 {
-    pid_gain_t* received_gain = (pid_gain_t*)gain;
-    if (received_gain->pid_select == pid_steer_control::pid_gain_select::distance) {
-        received_gain->kp = this->path_distance_pid.get_p_gain();
-        received_gain->ki = this->path_distance_pid.get_i_gain();
-        received_gain->kd = this->path_distance_pid.get_d_gain();
-    } else if (received_gain->pid_select == pid_steer_control::pid_gain_select::yaw) {
-        received_gain->kp = this->steer_kp;
-        received_gain->ki = this->steer_ki;
-        received_gain->kd = this->steer_kd;
+    if (gain_index == PATH_TRACKER_PID_TYPE_DISTANCE) {
+        gain_value[0] = this->path_distance_pid.get_p_gain();
+        gain_value[1] = this->path_distance_pid.get_i_gain();
+        gain_value[2] = this->path_distance_pid.get_d_gain();
+    } else if (gain_index == PATH_TRACKER_PID_TYPE_STEER) {
+        gain_value[0] = this->steer_kp;
+        gain_value[1] = this->steer_ki;
+        gain_value[2] = this->steer_kd;
     } else {
-        
+
     }
 }
 

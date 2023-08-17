@@ -53,7 +53,7 @@ path_tracking_controller::path_tracking_controller(const double max_steer_angle,
 void path_tracking_controller::init(const double max_steer_angle, const double max_speed, const double wheel_base)
 {
     this->points.clear();
-    
+
     this->max_steer_angle = max_steer_angle;
     this->max_speed = max_speed;
     this->wheel_base = wheel_base;
@@ -127,7 +127,7 @@ int path_tracking_controller::calculate_target_index(ControlState state, std::ve
     if (min_index != 0) {
         Point current_state = {this->state.x, this->state.y, 0, 0, 0};
         min_distance = distance_between_point_and_line(current_state, this->points[min_index - 1], this->points[min_index]);
-        
+
     } else {
         min_distance = 0;
     }
@@ -225,12 +225,12 @@ int path_tracking_controller::velocity_control(ControlState state, double& accel
     return accel;
 }
 
-void path_tracking_controller::get_gain(void* gain)
+void path_tracking_controller::get_gain(int gain_index, double* gain_value)
 {
 
 }
 
-void path_tracking_controller::set_gain(void* gain)
+void path_tracking_controller::set_gain(int gain_index, double* gain_value)
 {
 
 }
