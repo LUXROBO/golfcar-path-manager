@@ -96,8 +96,8 @@ void pid_steer_control::set_gain(int gain_index, double* gain_value)
         this->path_distance_pid.set_gain(gain_value[0], gain_value[1], gain_value[2]);
     } else if (gain_index == PATH_TRACKER_PID_TYPE_STEER) {
         this->steer_kp = gain_value[0];
-        // this->steer_ki = received_gain.ki;
-        this->steer_kd = gain_value[1];
+        this->steer_ki = gain_value[1];
+        this->steer_kd = gain_value[2];
     } else {
 
     }
