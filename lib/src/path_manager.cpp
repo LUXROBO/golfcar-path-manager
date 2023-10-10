@@ -16,7 +16,7 @@ static double distance_between_point_and_line(Point point, Point line_point1, Po
     double c = line_point1.y - a * line_point1.x;
     double b = -1;
 
-    double error_distance = fabsf(a * point.x + b * point.y + c) / sqrtf(a * a + b * b);
+    double error_distance = abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
 
     if (point.y > (a * point.x + c)) {
         if (line_point2.x > line_point1.x) {
@@ -191,7 +191,7 @@ ControlState path_tracking_controller::update_state(ControlState state, double a
     state.x = state.x + state.v * std::cos(state.yaw) * dt;
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
     state.yaw = state.yaw + state.v / this->wheel_base * std::tan(steer_delta) * dt;
-    state.v = 2.2;
+    state.v = this->points[this->target_ind].speed;
 
     if (state.v > this->max_speed) {
         state.v = this->max_speed;
