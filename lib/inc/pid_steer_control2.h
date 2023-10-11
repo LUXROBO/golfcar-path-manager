@@ -27,7 +27,7 @@ private:
     int calculate_target_index(ControlState state, std::vector<Point> points, int pind, double& err_front_axel);
     void smooth_yaw(std::vector<Point> &points);
     ControlState update_state(ControlState state, double a, double delta, double dt);
-    int pid_steering_control(ControlState state, double& steer);
+    int pid_steering_control(ControlState state, int target_index, double distance_error, double& steer);
 
 private:
     double t;                    // 누적 시간
@@ -52,6 +52,12 @@ private:
     double steer_ki;
     double steer_kd;
     double steer_pre_e;
+
+    int jumping_point_count;
+    double ref_distance;
+
+    double adapted_pid_distance_gain;
+    double adapted_pid_steer_gain;
 
 public:
     ControlState get_state() const {

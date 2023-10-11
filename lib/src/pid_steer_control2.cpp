@@ -9,12 +9,12 @@
 static const double DEFAULT_MAX_STEER = 45.0 * M_PI / 180.0;     // [rad] 45deg
 static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
 static const double DEFAULT_WHEEL_BASE = 0.41;                   // 앞 뒤 바퀴 사이 거리 [m]
-static const double DEFAULT_DISTANCE_PID_KP = 0.3;                        // gain
-static const double DEFAULT_DISTANCE_PID_KI = 0.0;
-static const double DEFAULT_DISTANCE_PID_KD = 0.1;
-static const double DEFAULT_STEER_PID_KP = 1.0;
+static const double DEFAULT_DISTANCE_PID_KP = 0.4;                        // gain
+static const double DEFAULT_DISTANCE_PID_KI = 0.05;
+static const double DEFAULT_DISTANCE_PID_KD = 0.7;
+static const double DEFAULT_STEER_PID_KP = 0.9;
 static const double DEFAULT_STEER_PID_KI = 0.0;
-static const double DEFAULT_STEER_PID_KD = 0.0;
+static const double DEFAULT_STEER_PID_KD = 1.2;
 
 static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
 {
@@ -59,6 +59,12 @@ void pid_steer_control::init(const double max_steer_angle, const double max_spee
     this->max_steer_angle = max_steer_angle;
     this->max_speed = max_speed;
     this->wheel_base = wheel_base;
+
+    this->jumping_point_count = 1;
+    this->ref_distance = 0.1; // 10cm
+
+    this->adapted_pid_distance_gain = 1.2;
+    this->adapted_pid_steer_gain = 3;
 }
 
 void pid_steer_control::set_course(ControlState init_state, std::vector<Point> points)
@@ -178,42 +184,53 @@ void pid_steer_control::smooth_yaw(std::vector<Point> &points)
     }
 }
 
-int pid_steer_control::pid_steering_control(ControlState state, double& steer)
+int pid_steer_control::pid_steering_control(ControlState state, int target_index, double distance_error, double& steer)
 {
-    double e = 0.0f;
-    int current_target_ind = this->calculate_target_index(state, this->points, this->target_ind, e);
+    double yaw_error = 0;
 
-    if (current_target_ind < this->target_ind) {
-        current_target_ind = this->target_ind;
+    if (abs(distance_error) < this->ref_distance) {
+        path_distance_pid.set_target(distance_error);
+        yaw_error = pi_2_pi((this->points[target_index].yaw - state.yaw)) * this->adapted_pid_distance_gain;
+    } else {
+        path_distance_pid.set_target(distance_error * this->adapted_pid_steer_gain);
+        yaw_error = pi_2_pi(this->points[target_index].yaw - state.yaw);
     }
-    double yaw_error = pi_2_pi(this->points[current_target_ind].yaw - state.yaw);
+
     double th_e = pi_2_pi(yaw_error * this->steer_kp + (yaw_error - this->steer_pre_e) * this->steer_kd);
 
-    this->path_distance_pid.set_target(e);
     double steer_delta = std::atan2(this->path_distance_pid.calculate(0), state.v);
 
     steer = th_e + steer_delta;
 
     steer_pre_e = yaw_error;
 
-    return current_target_ind;
+    return target_index;
 }
 
 bool pid_steer_control::update(double dt) {
     double calculated_steer = 0;
+    double distance_error;
     this->dt = dt;
 
     if (dt == 0) {
         return false;
     }
 
-    this->target_ind = pid_steering_control(this->state, calculated_steer);
+    this->target_ind = this->calculate_target_index(state, this->points, this->target_ind, distance_error);
+    int jumped_point = target_ind + this->jumping_point_count;
+    if (target_ind > (this->points.size() - 1) - this->jumping_point_count) {
+        jumped_point = this->points.size() - 1;
+    }
+
+
+    pid_steering_control(this->state, jumped_point, distance_error, calculated_steer);
     // PID로 가속도 값 계산
-    this->path_accel_pid.set_target(this->points[this->target_ind].speed);
+    this->path_accel_pid.set_target(this->points[jumped_point].speed);
     double calculated_accel = this->path_accel_pid.calculate(this->state.v);
 
     // state update
     this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
+    this->state.v = this->points[jumped_point].speed;
     double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
     size_t remain_point = get_remain_point();
     if (remain_point == 0) {
@@ -270,7 +287,7 @@ ControlState pid_steer_control::update_state(ControlState state, double accel, d
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
     state.yaw = state.yaw + state.v / this->wheel_base * std::tan(steer_delta) * dt;
     // state.v = state.v + accel * dt;
-    state.v = this->points[this->target_ind].speed;
+    // state.v = this->points[this->target_ind].speed;
 
     if (state.v > this->max_speed) {
         state.v = this->max_speed;
