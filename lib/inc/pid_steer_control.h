@@ -68,6 +68,10 @@ public:
         this->state = state;
     }
 
+    void set_steer(double steer) {
+        this->state.steer = steer;
+    }
+
     void set_target_index(int target_index) {
         this->target_ind = target_index;
     }

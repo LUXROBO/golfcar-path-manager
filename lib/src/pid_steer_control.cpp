@@ -40,6 +40,12 @@ static double distance_between_point_and_line(Point point, Point line_point1, Po
 pid_steer_control::pid_steer_control()
 {
     this->init(DEFAULT_MAX_STEER, DEFAULT_MAX_SPEED, DEFAULT_WHEEL_BASE);
+
+    this->jumping_point_count = 0;
+    this->ref_distance = 0.1; // 10cm
+
+    this->adapted_pid_distance_gain = 1.0;
+    this->adapted_pid_steer_gain = 1.0;
 }
 
 pid_steer_control::~pid_steer_control()
@@ -59,12 +65,6 @@ void pid_steer_control::init(const double max_steer_angle, const double max_spee
     this->max_steer_angle = max_steer_angle;
     this->max_speed = max_speed;
     this->wheel_base = wheel_base;
-
-    this->jumping_point_count = 1;
-    this->ref_distance = 0.1; // 10cm
-
-    this->adapted_pid_distance_gain = 1.2;
-    this->adapted_pid_steer_gain = 3;
 }
 
 void pid_steer_control::set_course(ControlState init_state, std::vector<Point> points)
