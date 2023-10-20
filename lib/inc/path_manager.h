@@ -89,7 +89,7 @@ public:
     double pi_2_pi(double angle);
 
 protected:
-    int calculate_target_index(ControlState state, std::vector<Point> points, int pind, double& err_front_axel);
+    int calculate_target_index(ControlState state, std::vector<Point> points, int pind);
     void smooth_yaw(std::vector<Point> &points);
     ControlState update_state(ControlState state, double a, double delta, double dt);
     virtual int steering_control(ControlState state, double& steer);
@@ -107,6 +107,8 @@ protected:
     double max_speed;
     double wheel_base;
 
+    double distance_error;
+
 public:
     ControlState get_state() const {
         return this->state;
@@ -114,6 +116,11 @@ public:
 
     void set_state(ControlState state) {
         this->state = state;
+        // std::cout << "state -> x : " << this->state.x << 
+        //                      " y : " << this->state.y <<
+        //                      " yaw : " << this->state.yaw <<
+        //                      " v : " << this->state.v <<
+        //                      " steer : " << this->state.steer << std::endl;
     }
 
     void set_target_index(int target_index) {
@@ -138,6 +145,10 @@ public:
 
     size_t get_remain_point() const {
         return this->points.size() - target_ind - 1;
+    }
+
+    double get_distance_error() {
+        
     }
 
     virtual void get_gain(int gain_index, double* gain_value);
