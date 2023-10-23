@@ -118,11 +118,19 @@ public:
 
     void set_state(ControlState state) {
         this->state = state;
-        // std::cout << "state -> x : " << this->state.x << 
+        // std::cout << "state -> x : " << this->state.x <<
         //                      " y : " << this->state.y <<
         //                      " yaw : " << this->state.yaw <<
         //                      " v : " << this->state.v <<
         //                      " steer : " << this->state.steer << std::endl;
+    }
+
+    void set_steer(double steer) {
+        this->state.steer = steer;
+    }
+
+    void set_yaw(double yaw) {
+        this->state.yaw = yaw;
     }
 
     void set_target_index(int target_index) {
