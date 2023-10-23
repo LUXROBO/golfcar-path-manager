@@ -68,15 +68,15 @@ int pid_steer_control::steering_control(ControlState state, double& steer)
             current_target_ind = this->target_ind;
         }
 
-        double yaw_error = pi_2_pi(this->points[current_target_ind].yaw - state.yaw);
-        double th_e = pi_2_pi(yaw_error * this->steer_kp + (yaw_error - this->steer_pre_e) * this->steer_kd);
+        this->yaw_error = pi_2_pi(this->points[current_target_ind].yaw - state.yaw);
+        double th_e = pi_2_pi(this->yaw_error * this->steer_kp + (this->yaw_error - this->steer_pre_e) * this->steer_kd);
 
         this->path_distance_pid.set_target(this->distance_error);
         double steer_delta = std::atan2(this->path_distance_pid.calculate(0), state.v);
 
         steer = th_e + steer_delta;
 
-        steer_pre_e = yaw_error;
+        steer_pre_e = this->yaw_error;
     }
 
     return current_target_ind;

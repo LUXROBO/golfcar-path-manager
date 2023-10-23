@@ -248,19 +248,12 @@ ControlState path_tracking_controller::update_state(ControlState state, double a
     } else if (target_steer < -this->max_steer_angle) {
         target_steer = -this->max_steer_angle;
     }
+
     int velocity_control_level = (int)(fabsf(state.steer - steer_delta) / THRESHOLD_STEER_DIFF_ANGLE);
-    double v_temp = this->points[this->target_ind].speed - (this->points[this->target_ind].speed - 0.5) * ((double)velocity_control_level / 10);
-    if (state.v < v_temp) { // 가속
-        state.v = state.v * 0.95 + v_temp * 0.05;
-    } else {                // 감속
-        state.v = state.v * 0.5 + v_temp * 0.5;
-    }
-    if (velocity_control_level > 10) {
-        state.v = 0;
-    }
-    
-    state.steer = target_steer;
+    state.v = this->points[this->target_ind].speed - (this->points[this->target_ind].speed - 0.5) * ((double)velocity_control_level / 10);
     // state.v = this->points[this->target_ind].speed;
+
+    state.steer = target_steer;
 
     // golfcar position, angle update
     state.x = state.x + state.v * std::cos(state.yaw) * dt;

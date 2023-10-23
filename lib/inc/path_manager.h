@@ -108,6 +108,8 @@ protected:
     double wheel_base;
 
     double distance_error;
+    double yaw_error;
+    double steer_error;
 
 public:
     ControlState get_state() const {
