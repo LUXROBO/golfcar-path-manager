@@ -34,6 +34,10 @@ private:
     double steer_kd;
     double steer_pre_e;
 
+    double adapted_pid_distance_threshold;
+    double adapted_pid_distance_gain;
+    double adapted_pid_yaw_gain;
+
 public:
     virtual void set_gain(int gain_index, double* gain_value);
     virtual void get_gain(int gain_index, double* gain_value);

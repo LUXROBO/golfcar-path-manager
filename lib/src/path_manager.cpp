@@ -134,8 +134,8 @@ int path_tracking_controller::calculate_target_index(ControlState state, std::ve
                     flag = true;
                 }
             }
-            // std::cout << i << " -> target anlge : " << atan2(dy, dx) * 180 / M_PI << 
-            //                   " cw_angle : " << pi_2_pi(state.yaw + state.steer - MAX_TAGET_VALID_ANGLE) * 180 / M_PI << 
+            // std::cout << i << " -> target anlge : " << atan2(dy, dx) * 180 / M_PI <<
+            //                   " cw_angle : " << pi_2_pi(state.yaw + state.steer - MAX_TAGET_VALID_ANGLE) * 180 / M_PI <<
             //                   " ccw_angle : " << pi_2_pi(state.yaw + state.steer + MAX_TAGET_VALID_ANGLE) * 180 / M_PI <<
             //                   " steer : " << (state.steer) * 180 / M_PI <<
             //                   " yaw : " << state.yaw * 180 / M_PI << std::endl;
@@ -259,7 +259,7 @@ ControlState path_tracking_controller::update_state(ControlState state, double a
     state.x = state.x + state.v * std::cos(state.yaw) * dt;
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
     state.yaw = state.yaw + state.v / this->wheel_base * std::tan(state.steer) * dt;
-    
+
 
     if (state.v > this->max_speed) {
         state.v = this->max_speed;

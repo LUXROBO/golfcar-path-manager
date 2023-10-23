@@ -16,6 +16,10 @@ static const double DEFAULT_STEER_PID_KP = 1.2;
 static const double DEFAULT_STEER_PID_KI = 0.0;
 static const double DEFAULT_STEER_PID_KD = 0.9;
 
+static const double DEFAULT_ADAPTED_PID_DISTANCE_THRESHOLD = 0.2;
+static const double DEFAULT_ADAPTED_PID_DISTANCE_GAIN = 1.5;
+static const double DEFAULT_ADAPTED_PID_YAW_GAIN = 1.5;
+
 static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
 {
     double a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
@@ -53,6 +57,10 @@ pid_steer_control::pid_steer_control()
     this->steer_ki = DEFAULT_STEER_PID_KI;
     this->steer_kd = DEFAULT_STEER_PID_KD;
     this->steer_pre_e = 0;
+
+    this->adapted_pid_distance_threshold = DEFAULT_ADAPTED_PID_DISTANCE_THRESHOLD;
+    this->adapted_pid_distance_gain = DEFAULT_ADAPTED_PID_DISTANCE_GAIN;
+    this->adapted_pid_yaw_gain = DEFAULT_ADAPTED_PID_YAW_GAIN;
 }
 
 pid_steer_control::~pid_steer_control()
@@ -69,6 +77,12 @@ int pid_steer_control::steering_control(ControlState state, double& steer)
         }
 
         this->yaw_error = pi_2_pi(this->points[current_target_ind].yaw - state.yaw);
+        if (this->adapted_pid_distance_threshold > abs(this->distance_error)) {
+            this->distance_error *= this->adapted_pid_distance_gain;
+        } else {
+            this->yaw_error = pi_2_pi(this->yaw_error * this->adapted_pid_yaw_gain);
+        }
+
         double th_e = pi_2_pi(this->yaw_error * this->steer_kp + (this->yaw_error - this->steer_pre_e) * this->steer_kd);
 
         this->path_distance_pid.set_target(this->distance_error);
@@ -96,7 +110,7 @@ void pid_steer_control::set_gain(int gain_index, double* gain_value)
         this->path_distance_pid.set_gain(gain_value[0], gain_value[1], gain_value[2]);
     } else if (gain_index == PATH_TRACKER_PID_TYPE_STEER) {
         this->steer_kp = gain_value[0];
-        // this->steer_ki = gain_value[1];
+        this->steer_ki = gain_value[1];
         this->steer_kd = gain_value[2];
     } else {
 
