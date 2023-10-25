@@ -17,7 +17,7 @@ static const double DEFAULT_STEER_PID_KI = 0.0;
 static const double DEFAULT_STEER_PID_KD = 0.9;
 
 static const double DEFAULT_ADAPTED_PID_DISTANCE_THRESHOLD = 0.2;
-static const double DEFAULT_ADAPTED_PID_DISTANCE_GAIN = 1.5;
+static const double DEFAULT_ADAPTED_PID_DISTANCE_GAIN = 2;
 static const double DEFAULT_ADAPTED_PID_YAW_GAIN = 1.5;
 
 static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)

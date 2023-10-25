@@ -11,7 +11,7 @@ static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
 static const double DEFAULT_WHEEL_BASE = 2.15;                   // 앞 뒤 바퀴 사이 거리 [m]
 
 static const double DEGREE1_RAD = 1.5 * 180 / M_PI;
-static const double DEFAULT_STEER_MAX_VELOCITY = 6.0 * M_PI / 180.0; // [rad/s] 7deg/s
+static const double DEFAULT_STEER_MAX_VELOCITY = 15.0 * M_PI / 180.0; // [rad/s] 7deg/s
 static const double THRESHOLD_STEER_DIFF_ANGLE = 3 * M_PI / 180.0; // [rad] 5deg
 static const double MAX_STEER_DIFF_ANGLE = 15.0 * M_PI / 180.0; // [rad] 10deg
 static const double MAX_TAGET_VALID_ANGLE = 30.0 * M_PI / 180.0; // 화각? 현재 스티어 + yaw 위치에서 이 각도 내에 있는 점을 선택
@@ -220,6 +220,9 @@ bool path_tracking_controller::update(double dt) {
 
     // state update
     this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
+    this->target_steer = calculated_steer;
+    this->target_velocity = this->state.v;
+    
     double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
     size_t remain_point = get_remain_point();
 

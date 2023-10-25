@@ -111,6 +111,9 @@ protected:
     double yaw_error;
     double steer_error;
 
+    double target_steer;
+    double target_velocity;
+
 public:
     ControlState get_state() const {
         return this->state;
@@ -159,6 +162,14 @@ public:
 
     double get_distance_error() {
         
+    }
+
+    double get_target_steer() {
+        return this->target_steer;
+    }
+    
+    double get_target_velocity() {
+        return this->target_velocity;
     }
 
     virtual void get_gain(int gain_index, double* gain_value);
