@@ -71,12 +71,17 @@ pid_steer_control::~pid_steer_control()
 int pid_steer_control::steering_control(ControlState state, double& steer)
 {
     int current_target_ind = this->calculate_target_index(state, this->points, this->target_ind);
+    int jumped_point = current_target_ind + this->jumping_point;
     if (current_target_ind != -1) {
         if (current_target_ind < this->target_ind) {
             current_target_ind = this->target_ind;
         }
+        
+        if (jumped_point >= this->points.size()) {
+            jumped_point = current_target_ind;
+        }
 
-        this->yaw_error = pi_2_pi(this->points[current_target_ind].yaw - state.yaw);
+        this->yaw_error = pi_2_pi(this->points[jumped_point].yaw - state.yaw);
         if (this->adapted_pid_distance_threshold > abs(this->distance_error)) {
             this->distance_error *= this->adapted_pid_distance_gain;
         } else {

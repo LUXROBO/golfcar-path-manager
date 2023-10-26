@@ -114,6 +114,8 @@ protected:
     double target_steer;
     double target_velocity;
 
+    double jumping_point;
+
 public:
     ControlState get_state() const {
         return this->state;

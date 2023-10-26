@@ -11,7 +11,7 @@ static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
 static const double DEFAULT_WHEEL_BASE = 2.15;                   // 앞 뒤 바퀴 사이 거리 [m]
 
 static const double DEGREE1_RAD = 1.5 * 180 / M_PI;
-static const double DEFAULT_STEER_MAX_VELOCITY = 15.0 * M_PI / 180.0; // [rad/s] 7deg/s
+static const double DEFAULT_STEER_MAX_VELOCITY = 20.0 * M_PI / 180.0; // [rad/s] 7deg/s
 static const double THRESHOLD_STEER_DIFF_ANGLE = 3 * M_PI / 180.0; // [rad] 5deg
 static const double MAX_STEER_DIFF_ANGLE = 15.0 * M_PI / 180.0; // [rad] 10deg
 static const double MAX_TAGET_VALID_ANGLE = 30.0 * M_PI / 180.0; // 화각? 현재 스티어 + yaw 위치에서 이 각도 내에 있는 점을 선택
@@ -48,6 +48,8 @@ path_tracking_controller::path_tracking_controller()
     this->max_steer_angle = DEFAULT_MAX_STEER;
     this->max_speed = DEFAULT_MAX_SPEED;
     this->wheel_base = DEFAULT_WHEEL_BASE;
+
+    this->jumping_point = 1;
 }
 
 path_tracking_controller::path_tracking_controller(const double max_steer_angle, const double max_speed, const double wheel_base)
@@ -55,6 +57,8 @@ path_tracking_controller::path_tracking_controller(const double max_steer_angle,
     this->max_steer_angle = max_steer_angle;
     this->max_speed = max_speed;
     this->wheel_base = wheel_base;
+
+    this->jumping_point = 1;
 }
 
 void path_tracking_controller::init(const double max_steer_angle, const double max_speed, const double wheel_base)
