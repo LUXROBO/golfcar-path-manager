@@ -43,7 +43,7 @@ static double distance_between_point_and_line(Point point, Point line_point1, Po
 
 int pid_steer_control::test_funtion()
 {
-    std::cout << "testtt" << std::endl;
+    // std::cout << "test" << std::endl;
     return 0;
 }
 

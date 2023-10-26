@@ -84,7 +84,6 @@ void path_tracking_controller::set_course(ControlState init_state, std::vector<P
     this->target_ind = this->calculate_target_index(this->init_state, this->points, 0);
     this->set_state(this->init_state);
     this->smooth_yaw(this->points);
-
 }
 
 void path_tracking_controller::add_course(ControlState init_state, std::vector<Point> points)
@@ -156,7 +155,7 @@ int path_tracking_controller::calculate_target_index(ControlState state, std::ve
     // can not find target
     if (min_point_index >= (N_IND_SEARCH + pind)) {
         if (this->state.steer >= max_steer_angle || this->state.steer <= -max_steer_angle) {
-            std::cout << "can not find target" << std::endl;
+            // std::cout << "can not find target" << std::endl;
             return -1;
         } else {
             min_distance = min_temp;
@@ -222,7 +221,7 @@ bool path_tracking_controller::update(double dt) {
     this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
     this->target_steer = calculated_steer;
     this->target_velocity = this->state.v;
-    
+
     double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
     size_t remain_point = get_remain_point();
 
@@ -254,7 +253,6 @@ ControlState path_tracking_controller::update_state(ControlState state, double a
 
     int velocity_control_level = (int)(fabsf(state.steer - steer_delta) / THRESHOLD_STEER_DIFF_ANGLE);
     state.v = this->points[this->target_ind].speed - (this->points[this->target_ind].speed - 0.5) * ((double)velocity_control_level / 10);
-    // state.v = this->points[this->target_ind].speed;
 
     state.steer = target_steer;
 
@@ -284,10 +282,9 @@ double path_tracking_controller::pi_2_pi(double angle)
     return angle;
 }
 
-
 int path_tracking_controller::steering_control(ControlState state, double& steer)
 {
-    std::cout << "steering no init" << std::endl;
+    // std::cout << "steering no init" << std::endl;
     return steer;
 }
 
