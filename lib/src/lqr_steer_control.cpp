@@ -60,8 +60,8 @@ ModelMatrix  lqr_steer_control::dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q
 int lqr_steer_control::steering_control(ControlState state, double& steer)
 {
     this->target_ind = this->calculate_target_index(state, this->points, this->target_ind);
-    int jump_point = this->target_ind + 2;
-    if (jump_point > (this->points.size() - 2)) {
+    int jump_point = this->target_ind + this->jumping_point;
+    if (jump_point > (this->points.size() - this->jumping_point)) {
         jump_point = this->target_ind;
     }
 

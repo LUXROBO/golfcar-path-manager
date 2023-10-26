@@ -76,9 +76,15 @@ int pid_steer_control::steering_control(ControlState state, double& steer)
         if (current_target_ind < this->target_ind) {
             current_target_ind = this->target_ind;
         }
-        
         if (jumped_point >= this->points.size()) {
             jumped_point = current_target_ind;
+        }
+
+        if (jumped_point != 0) {
+            Point current_state = {this->state.x, this->state.y, 0, 0, 0};
+            this->distance_error = distance_between_point_and_line(current_state, this->points[jumped_point - 1], this->points[jumped_point]);
+        } else {
+            this->distance_error = 0;
         }
 
         this->yaw_error = pi_2_pi(this->points[jumped_point].yaw - state.yaw);

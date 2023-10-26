@@ -170,15 +170,6 @@ int path_tracking_controller::calculate_target_index(ControlState state, std::ve
         min_index = min_point_index;
     }
 
-    if (min_index != 0) {
-        Point current_state = {this->state.x, this->state.y, 0, 0, 0};
-        min_distance = distance_between_point_and_line(current_state, this->points[min_index - 1], this->points[min_index]);
-
-    } else {
-        min_distance = 0;
-    }
-    this->distance_error = min_distance;
-
     return min_index;
 }
 
