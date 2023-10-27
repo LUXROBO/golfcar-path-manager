@@ -108,48 +108,45 @@ void path_tracking_controller::add_course(ControlState init_state, std::vector<P
     this->smooth_yaw(this->points);
 }
 
+bool path_tracking_controller::is_point_in_correct_range(double dx, double dy, double yaw, double steer, double range_angle)
+{
+    double target_angle = sin(atan2(dy, dx) / 4);
+    double cw_angle = sin(pi_2_pi(yaw + steer - range_angle) / 4);
+    double ccw_angle = sin(pi_2_pi(yaw + steer + range_angle) / 4);
+    bool flag = false;
+
+    if (cw_angle < ccw_angle) {
+        if (target_angle < ccw_angle && target_angle > cw_angle) {
+            flag = true;
+        }
+    } else {
+        if (target_angle < ccw_angle || target_angle > cw_angle) {
+            flag = true;
+        }
+    }
+    // std::cout << "cw_angle : " << pi_2_pi(yaw + steer - range_angle) / 4 * 180 / M_PI 
+    //           << " ccw_angle : " << pi_2_pi(yaw + steer + range_angle) / 4 * 180 / M_PI
+    //           << " target_angle : " << atan2(dy, dx) / 4 * 180 / M_PI << std::endl;
+    return flag;
+}
+
 int path_tracking_controller::calculate_target_index(ControlState state, std::vector<Point> points, int pind)
 {
     const int N_IND_SEARCH = 5;
     double min = 10000;
-    double min_temp = 10000;
-    double min_distance = 0;
-    uint32_t min_index = 0;
+    int min_index = -1;
     uint32_t min_point_index = N_IND_SEARCH + pind;
-    uint32_t min_point_index_temp = N_IND_SEARCH + pind;
 
     for (uint32_t i = pind; i < (pind + N_IND_SEARCH); i++) {
         double dx = points[i].x - state.x;
         double dy = points[i].y - state.y;
         double point_to_distance = dx * dx + dy * dy;
         if (min > point_to_distance) {
-            double target_angle = sin(atan2(dy, dx) / 4);
-            double cw_angle = sin(pi_2_pi(state.yaw + state.steer - MAX_TAGET_VALID_ANGLE) / 4);
-            double ccw_angle = sin(pi_2_pi(state.yaw + state.steer + MAX_TAGET_VALID_ANGLE) / 4);
-            bool flag = false;
-
-            if (cw_angle < ccw_angle) {
-                if (target_angle < ccw_angle && target_angle > cw_angle) {
-                    flag = true;
-                }
-            } else {
-                if (target_angle < ccw_angle || target_angle > cw_angle) {
-                    flag = true;
-                }
-            }
-            // std::cout << i << " -> target anlge : " << atan2(dy, dx) * 180 / M_PI <<
-            //                   " cw_angle : " << pi_2_pi(state.yaw + state.steer - MAX_TAGET_VALID_ANGLE) * 180 / M_PI <<
-            //                   " ccw_angle : " << pi_2_pi(state.yaw + state.steer + MAX_TAGET_VALID_ANGLE) * 180 / M_PI <<
-            //                   " steer : " << (state.steer) * 180 / M_PI <<
-            //                   " yaw : " << state.yaw * 180 / M_PI << std::endl;
-            if (flag) {
+            // 현재 steer를 기준으로 좌 우 30도 내에 가장 가까운 점을 타겟으로 설정
+            if (is_point_in_correct_range(dx, dy, state.yaw, state.steer, MAX_TAGET_VALID_ANGLE)) {
                 min = point_to_distance;
                 min_point_index = i;
             }
-        }
-        if (min_temp > point_to_distance) {
-            min_temp = point_to_distance;
-            min_point_index_temp = i;
         }
         if (i >= (points.size() - 1)) {
             break;
@@ -158,16 +155,28 @@ int path_tracking_controller::calculate_target_index(ControlState state, std::ve
 
     // can not find target
     if (min_point_index >= (N_IND_SEARCH + pind)) {
-        if (this->state.steer >= max_steer_angle || this->state.steer <= -max_steer_angle) {
-            // std::cout << "can not find target" << std::endl;
+        for (int i = 0; i < N_IND_SEARCH; i++) {
+            double dx = points[i + pind].x - state.x;
+            double dy = points[i + pind].y - state.y;
+            if (is_point_in_correct_range(dx, dy, state.yaw, this->max_steer_angle, MAX_TAGET_VALID_ANGLE) ||
+                is_point_in_correct_range(dx, dy, state.yaw, -this->max_steer_angle, MAX_TAGET_VALID_ANGLE)) {
+                min_index = i + pind;
+                break;
+            }
+        }
+        if (min_index == -1) {
+            std::cout << "can not find target" << std::endl;
             return -1;
-        } else {
-            min_distance = min_temp;
-            min_index = min_point_index_temp;
         }
     } else {
-        min_distance = min;
         min_index = min_point_index;
+    }
+
+    Point current_state = {this->state.x, this->state.y, 0, 0, 0};
+    if (min_index != 0) {
+        this->distance_error = distance_between_point_and_line(current_state, this->points[min_index - 1], this->points[min_index]);
+    } else {
+        this->distance_error = distance_between_point_and_line(current_state, this->points[min_index], this->points[min_index + 1]);
     }
 
     return min_index;

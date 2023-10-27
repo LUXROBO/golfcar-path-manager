@@ -92,6 +92,7 @@ protected:
     int calculate_target_index(ControlState state, std::vector<Point> points, int pind);
     void smooth_yaw(std::vector<Point> &points);
     ControlState update_state(ControlState state, double a, double delta, double dt);
+    bool is_point_in_correct_range(double dx, double dy, double yaw, double steer, double range_angle);
     virtual int steering_control(ControlState state, double& steer);
     virtual int velocity_control(ControlState state, double& accel);
 
@@ -163,7 +164,7 @@ public:
     }
 
     double get_distance_error() {
-        
+        return this->distance_error;
     }
 
     double get_target_steer() {

@@ -72,6 +72,7 @@ int pid_steer_control::steering_control(ControlState state, double& steer)
 {
     int current_target_ind = this->calculate_target_index(state, this->points, this->target_ind);
     int jumped_point = current_target_ind + this->jumping_point;
+    double jumped_distance_error = 0;
     if (current_target_ind != -1) {
         if (current_target_ind < this->target_ind) {
             current_target_ind = this->target_ind;
@@ -82,21 +83,21 @@ int pid_steer_control::steering_control(ControlState state, double& steer)
 
         if (jumped_point != 0) {
             Point current_state = {this->state.x, this->state.y, 0, 0, 0};
-            this->distance_error = distance_between_point_and_line(current_state, this->points[jumped_point - 1], this->points[jumped_point]);
+            jumped_distance_error = distance_between_point_and_line(current_state, this->points[jumped_point - 1], this->points[jumped_point]);
         } else {
-            this->distance_error = 0;
+            jumped_distance_error = 0;
         }
 
         this->yaw_error = pi_2_pi(this->points[jumped_point].yaw - state.yaw);
-        if (this->adapted_pid_distance_threshold > abs(this->distance_error)) {
-            this->distance_error *= this->adapted_pid_distance_gain;
+        if (this->adapted_pid_distance_threshold > abs(jumped_distance_error)) {
+            jumped_distance_error *= this->adapted_pid_distance_gain;
         } else {
             this->yaw_error = pi_2_pi(this->yaw_error * this->adapted_pid_yaw_gain);
         }
 
         double th_e = pi_2_pi(this->yaw_error * this->steer_kp + (this->yaw_error - this->steer_pre_e) * this->steer_kd);
 
-        this->path_distance_pid.set_target(this->distance_error);
+        this->path_distance_pid.set_target(jumped_distance_error);
         double steer_delta = std::atan2(this->path_distance_pid.calculate(0), state.v);
 
         steer = th_e + steer_delta;
