@@ -87,7 +87,7 @@ public:
     void set_course(ControlState init_state, std::vector<Point> points);
     void add_course(ControlState init_state, std::vector<Point> points);
     double pi_2_pi(double angle);
-    bool get_target_steer(Point point, double* steer);
+    bool get_target_steer_at(Point point, double* steer);
 
 protected:
     int calculate_target_index(ControlState state, std::vector<Point> points, int pind);

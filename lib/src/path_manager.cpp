@@ -287,7 +287,7 @@ double path_tracking_controller::pi_2_pi(double angle)
     return angle;
 }
 
-bool path_tracking_controller::get_target_steer(Point point, double* steer)
+bool path_tracking_controller::get_target_steer_at(Point point, double* steer)
 {
     double target_yaw = pi_2_pi(atan2(point.y - this->state.y, point.x - this->state.x));
     double target_steer = pi_2_pi(target_yaw - this->state.yaw);
