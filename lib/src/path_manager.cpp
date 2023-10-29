@@ -105,6 +105,7 @@ void path_tracking_controller::add_course(ControlState init_state, std::vector<P
     this->goal_state = ControlState(this->points[goal_index].x, this->points[goal_index].y, this->points[goal_index].yaw, 0, this->points[goal_index].speed);
 
     this->target_ind = this->calculate_target_index(this->init_state, this->points, 0);
+    this->set_state(this->init_state);
     this->smooth_yaw(this->points);
 }
 
@@ -124,7 +125,7 @@ bool path_tracking_controller::is_point_in_correct_range(double dx, double dy, d
             flag = true;
         }
     }
-    // std::cout << "cw_angle : " << pi_2_pi(yaw + steer - range_angle) / 4 * 180 / M_PI 
+    // std::cout << "cw_angle : " << pi_2_pi(yaw + steer - range_angle) / 4 * 180 / M_PI
     //           << " ccw_angle : " << pi_2_pi(yaw + steer + range_angle) / 4 * 180 / M_PI
     //           << " target_angle : " << atan2(dy, dx) / 4 * 180 / M_PI << std::endl;
     return flag;
@@ -284,6 +285,20 @@ double path_tracking_controller::pi_2_pi(double angle)
         angle = angle + 2.0 * M_PI;
     }
     return angle;
+}
+
+bool path_tracking_controller::get_target_steer(Point point, double* steer)
+{
+    double target_yaw = pi_2_pi(atan2(point.y - this->state.y, point.x - this->state.x));
+    double target_steer = pi_2_pi(target_yaw - this->state.yaw);
+
+    if (abs(target_steer) > this->max_steer_angle) {
+        return false;
+    }
+
+    *steer = target_steer;
+
+    return true;
 }
 
 int path_tracking_controller::steering_control(ControlState state, double& steer)
