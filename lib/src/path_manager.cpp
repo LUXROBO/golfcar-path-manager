@@ -270,10 +270,8 @@ ControlState path_tracking_controller::update_state(ControlState state, double a
 
     if (state.v > this->max_speed) {
         state.v = this->max_speed;
-    } else if (state.v < DEFAULT_MIN_SPEED && state.v != 0) {
+    } else if (state.v < DEFAULT_MIN_SPEED && state.v > 0) {
         state.v = DEFAULT_MIN_SPEED;
-    } else {
-        state.v = 0;
     }
 
     return state;
