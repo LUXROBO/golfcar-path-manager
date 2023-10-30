@@ -17,8 +17,8 @@ static const double DEFAULT_STEER_PID_KI = 0.0;
 static const double DEFAULT_STEER_PID_KD = 0.9;
 
 static const double DEFAULT_ADAPTED_PID_DISTANCE_THRESHOLD = 0.2;
-static const double DEFAULT_ADAPTED_PID_DISTANCE_GAIN = 2;
-static const double DEFAULT_ADAPTED_PID_YAW_GAIN = 1.5;
+static const double DEFAULT_ADAPTED_PID_DISTANCE_GAIN = 1;
+static const double DEFAULT_ADAPTED_PID_YAW_GAIN = 1;
 
 static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
 {
@@ -98,7 +98,7 @@ int pid_steer_control::steering_control(ControlState state, double& steer)
         double th_e = pi_2_pi(this->yaw_error * this->steer_kp + (this->yaw_error - this->steer_pre_e) * this->steer_kd);
 
         this->path_distance_pid.set_target(jumped_distance_error);
-        double steer_delta = std::atan2(this->path_distance_pid.calculate(0), state.v);
+        double steer_delta = std::atan2(this->path_distance_pid.calculate(0), 1.6);
 
         steer = th_e + steer_delta;
 
