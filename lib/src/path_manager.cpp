@@ -9,6 +9,7 @@
 static const double DEFAULT_MAX_STEER = 25.0 * M_PI / 180.0;     // [rad] 45deg
 static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
 static const double DEFAULT_WHEEL_BASE = 2.15;                   // 앞 뒤 바퀴 사이 거리 [m]
+static const double DEFAULT_MIN_SPEED = 0.5;                     // [ms]
 
 static const double DEGREE1_RAD = 1.5 * 180 / M_PI;
 static const double DEFAULT_STEER_MAX_VELOCITY = 20.0 * M_PI / 180.0; // [rad/s] 7deg/s
@@ -49,7 +50,7 @@ path_tracking_controller::path_tracking_controller()
     this->max_speed = DEFAULT_MAX_SPEED;
     this->wheel_base = DEFAULT_WHEEL_BASE;
 
-    this->jumping_point = 1;
+    this->jumping_point = 2;
 }
 
 path_tracking_controller::path_tracking_controller(const double max_steer_angle, const double max_speed, const double wheel_base)
@@ -269,7 +270,9 @@ ControlState path_tracking_controller::update_state(ControlState state, double a
 
     if (state.v > this->max_speed) {
         state.v = this->max_speed;
-    } else if (state.v < 0) {
+    } else if (state.v < DEFAULT_MIN_SPEED && state.v != 0) {
+        state.v = DEFAULT_MIN_SPEED;
+    } else {
         state.v = 0;
     }
 
