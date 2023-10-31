@@ -18,13 +18,29 @@ static const double MAX_STEER_DIFF_ANGLE = 15.0 * M_PI / 180.0; // [rad] 10deg
 static const double MAX_TAGET_VALID_ANGLE = 30.0 * M_PI / 180.0; // 화각? 현재 스티어 + yaw 위치에서 이 각도 내에 있는 점을 선택
 static const int MAX_STEER_ERROR_LEVEL = 10; // steer error 세분화
 
+// 왼쪽 -, 오른쪽 +
 static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
 {
-    double a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
-    double c = line_point1.y - a * line_point1.x;
+    double error_distance = 0;
+    double a = 0;
     double b = -1;
+    double c = 0;
 
-    double error_distance = fabsf(a * point.x + b * point.y + c) / sqrtf(a * a + b * b);
+    if (line_point1.x == line_point2.x) {
+        error_distance = (point.x - line_point1.x);
+
+        // 진행 방향 아래쪽
+        if (line_point1.y > line_point2.y) {
+            error_distance *= -1;
+        }
+
+        return error_distance;
+    }
+
+    a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
+    c = line_point1.y - a * line_point1.x;
+
+    error_distance = abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
 
     if (point.y > (a * point.x + c)) {
         if (line_point2.x > line_point1.x) {
