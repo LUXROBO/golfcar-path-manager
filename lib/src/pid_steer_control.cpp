@@ -20,27 +20,6 @@ static const double DEFAULT_ADAPTED_PID_DISTANCE_THRESHOLD = 0.2;
 static const double DEFAULT_ADAPTED_PID_DISTANCE_GAIN = 1;
 static const double DEFAULT_ADAPTED_PID_YAW_GAIN = 1;
 
-static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
-{
-    double a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
-    double c = line_point1.y - a * line_point1.x;
-    double b = -1;
-
-    double error_distance = abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
-
-    if (point.y > (a * point.x + c)) { // 그래프 위쪽
-        if (line_point2.x > line_point1.x) { // 진행 방향 오른쪽
-            error_distance *= -1;
-        }
-    } else { // 그래프 아래쪽
-        if (line_point2.x < line_point1.x) { // 진행 방향 오른쪽
-            error_distance *= -1;
-        }
-    }
-
-    return error_distance;
-}
-
 int pid_steer_control::test_funtion()
 {
     // std::cout << "test" << std::endl;

@@ -19,7 +19,7 @@ static const double MAX_TAGET_VALID_ANGLE = 30.0 * M_PI / 180.0; // 화각? 현�
 static const int MAX_STEER_ERROR_LEVEL = 10; // steer error 세분화
 
 // 왼쪽 -, 오른쪽 +
-static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
+double path_tracking_controller::distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
 {
     double error_distance = 0;
     double a = 0;
