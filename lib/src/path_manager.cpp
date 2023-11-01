@@ -183,7 +183,7 @@ int path_tracking_controller::calculate_target_index(ControlState state, std::ve
             }
         }
         if (min_index == -1) {
-            std::cout << "can not find target" << std::endl;
+            // std::cout << "can not find target" << std::endl;
             return -1;
         }
     } else {
