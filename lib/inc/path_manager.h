@@ -155,7 +155,7 @@ public:
 
     int get_jumped_target_index() const {
         if (this->target_ind + this->jumping_point >= this->points.size()) {
-            return this->points.size();
+            return this->points.size() - 1;
         } else {
             return this->target_ind + this->jumping_point;
         }
