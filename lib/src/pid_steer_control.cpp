@@ -16,30 +16,9 @@ static const double DEFAULT_STEER_PID_KP = 1.2;
 static const double DEFAULT_STEER_PID_KI = 0.0;
 static const double DEFAULT_STEER_PID_KD = 0.9;
 
-static const double DEFAULT_ADAPTED_PID_DISTANCE_THRESHOLD = 0.2;
-static const double DEFAULT_ADAPTED_PID_DISTANCE_GAIN = 2;
-static const double DEFAULT_ADAPTED_PID_YAW_GAIN = 1.5;
-
-static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
-{
-    double a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
-    double c = line_point1.y - a * line_point1.x;
-    double b = -1;
-
-    double error_distance = abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
-
-    if (point.y > (a * point.x + c)) { // 그래프 위쪽
-        if (line_point2.x > line_point1.x) { // 진행 방향 오른쪽
-            error_distance *= -1;
-        }
-    } else { // 그래프 아래쪽
-        if (line_point2.x < line_point1.x) { // 진행 방향 오른쪽
-            error_distance *= -1;
-        }
-    }
-
-    return error_distance;
-}
+static const double DEFAULT_ADAPTED_PID_DISTANCE_THRESHOLD = 0.25;
+static const double DEFAULT_ADAPTED_PID_DISTANCE_GAIN = 1.3;
+static const double DEFAULT_ADAPTED_PID_YAW_GAIN = 1;
 
 int pid_steer_control::test_funtion()
 {
@@ -83,22 +62,24 @@ int pid_steer_control::steering_control(ControlState state, double& steer)
 
         if (jumped_point != 0) {
             Point current_state = {this->state.x, this->state.y, 0, 0, 0};
-            jumped_distance_error = distance_between_point_and_line(current_state, this->points[jumped_point - 1], this->points[jumped_point]);
+            jumped_distance_error = distance_between_point_and_line(current_state,
+                                                                    this->points[jumped_point - 1],
+                                                                    this->points[jumped_point]);
         } else {
             jumped_distance_error = 0;
         }
 
         this->yaw_error = pi_2_pi(this->points[jumped_point].yaw - state.yaw);
-        if (this->adapted_pid_distance_threshold > abs(jumped_distance_error)) {
-            jumped_distance_error *= this->adapted_pid_distance_gain;
+        if (this->adapted_pid_distance_threshold > abs(/*jumped_distance_error*/this->distance_error)) {
+            /*jumped_distance_error*/this->distance_error *= this->adapted_pid_distance_gain;
         } else {
             this->yaw_error = pi_2_pi(this->yaw_error * this->adapted_pid_yaw_gain);
         }
 
         double th_e = pi_2_pi(this->yaw_error * this->steer_kp + (this->yaw_error - this->steer_pre_e) * this->steer_kd);
 
-        this->path_distance_pid.set_target(jumped_distance_error);
-        double steer_delta = std::atan2(this->path_distance_pid.calculate(0), state.v);
+        this->path_distance_pid.set_target(/*jumped_distance_error*/this->distance_error);
+        double steer_delta = std::atan2(this->path_distance_pid.calculate(0), 1.6);
 
         steer = th_e + steer_delta;
 

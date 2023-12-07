@@ -9,6 +9,7 @@
 static const double DEFAULT_MAX_STEER = 25.0 * M_PI / 180.0;     // [rad] 45deg
 static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
 static const double DEFAULT_WHEEL_BASE = 2.15;                   // 앞 뒤 바퀴 사이 거리 [m]
+static const double DEFAULT_MIN_SPEED = 0.5;                     // [ms]
 
 static const double DEGREE1_RAD = 1.5 * 180 / M_PI;
 static const double DEFAULT_STEER_MAX_VELOCITY = 20.0 * M_PI / 180.0; // [rad/s] 7deg/s
@@ -17,13 +18,29 @@ static const double MAX_STEER_DIFF_ANGLE = 15.0 * M_PI / 180.0; // [rad] 10deg
 static const double MAX_TAGET_VALID_ANGLE = 30.0 * M_PI / 180.0; // 화각? 현재 스티어 + yaw 위치에서 이 각도 내에 있는 점을 선택
 static const int MAX_STEER_ERROR_LEVEL = 10; // steer error 세분화
 
-static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
+// 왼쪽 -, 오른쪽 +
+double path_tracking_controller::distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
 {
-    double a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
-    double c = line_point1.y - a * line_point1.x;
+    double error_distance = 0;
+    double a = 0;
     double b = -1;
+    double c = 0;
 
-    double error_distance = fabsf(a * point.x + b * point.y + c) / sqrtf(a * a + b * b);
+    if (line_point1.x == line_point2.x) {
+        error_distance = (point.x - line_point1.x);
+
+        // 진행 방향 아래쪽
+        if (line_point1.y > line_point2.y) {
+            error_distance *= -1;
+        }
+
+        return error_distance;
+    }
+
+    a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
+    c = line_point1.y - a * line_point1.x;
+
+    error_distance = abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
 
     if (point.y > (a * point.x + c)) {
         if (line_point2.x > line_point1.x) {
@@ -49,7 +66,7 @@ path_tracking_controller::path_tracking_controller()
     this->max_speed = DEFAULT_MAX_SPEED;
     this->wheel_base = DEFAULT_WHEEL_BASE;
 
-    this->jumping_point = 1;
+    this->jumping_point = 2;
 }
 
 path_tracking_controller::path_tracking_controller(const double max_steer_angle, const double max_speed, const double wheel_base)
@@ -105,6 +122,7 @@ void path_tracking_controller::add_course(ControlState init_state, std::vector<P
     this->goal_state = ControlState(this->points[goal_index].x, this->points[goal_index].y, this->points[goal_index].yaw, 0, this->points[goal_index].speed);
 
     this->target_ind = this->calculate_target_index(this->init_state, this->points, 0);
+    this->set_state(this->init_state);
     this->smooth_yaw(this->points);
 }
 
@@ -124,7 +142,7 @@ bool path_tracking_controller::is_point_in_correct_range(double dx, double dy, d
             flag = true;
         }
     }
-    // std::cout << "cw_angle : " << pi_2_pi(yaw + steer - range_angle) / 4 * 180 / M_PI 
+    // std::cout << "cw_angle : " << pi_2_pi(yaw + steer - range_angle) / 4 * 180 / M_PI
     //           << " ccw_angle : " << pi_2_pi(yaw + steer + range_angle) / 4 * 180 / M_PI
     //           << " target_angle : " << atan2(dy, dx) / 4 * 180 / M_PI << std::endl;
     return flag;
@@ -165,7 +183,7 @@ int path_tracking_controller::calculate_target_index(ControlState state, std::ve
             }
         }
         if (min_index == -1) {
-            std::cout << "can not find target" << std::endl;
+            // std::cout << "can not find target" << std::endl;
             return -1;
         }
     } else {
@@ -268,8 +286,8 @@ ControlState path_tracking_controller::update_state(ControlState state, double a
 
     if (state.v > this->max_speed) {
         state.v = this->max_speed;
-    } else if (state.v < 0) {
-        state.v = 0;
+    } else if (state.v < DEFAULT_MIN_SPEED && state.v > 0) {
+        state.v = DEFAULT_MIN_SPEED;
     }
 
     return state;
@@ -284,6 +302,20 @@ double path_tracking_controller::pi_2_pi(double angle)
         angle = angle + 2.0 * M_PI;
     }
     return angle;
+}
+
+bool path_tracking_controller::get_target_steer_at(Point point, double* steer)
+{
+    double target_yaw = pi_2_pi(atan2(point.y - this->state.y, point.x - this->state.x));
+    double target_steer = pi_2_pi(target_yaw - this->state.yaw);
+
+    if (abs(target_steer) > this->max_steer_angle) {
+        return false;
+    }
+
+    *steer = target_steer;
+
+    return true;
 }
 
 int path_tracking_controller::steering_control(ControlState state, double& steer)

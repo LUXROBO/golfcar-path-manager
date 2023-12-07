@@ -87,6 +87,8 @@ public:
     void set_course(ControlState init_state, std::vector<Point> points);
     void add_course(ControlState init_state, std::vector<Point> points);
     double pi_2_pi(double angle);
+    bool get_target_steer_at(Point point, double* steer);
+    double distance_between_point_and_line(Point point, Point line_point1, Point line_point2);
 
 protected:
     int calculate_target_index(ControlState state, std::vector<Point> points, int pind);
@@ -151,6 +153,14 @@ public:
         return this->target_ind;
     }
 
+    int get_jumped_target_index() const {
+        if (this->target_ind + this->jumping_point >= this->points.size()) {
+            return this->points.size() - 1;
+        } else {
+            return this->target_ind + this->jumping_point;
+        }
+    }
+
     void remove_points(size_t num) {
         if (num == 0) {
             this->points.clear();
@@ -170,7 +180,7 @@ public:
     double get_target_steer() {
         return this->target_steer;
     }
-    
+
     double get_target_velocity() {
         return this->target_velocity;
     }
