@@ -70,15 +70,15 @@ int pid_steer_control::steering_control(ControlState state, double& steer)
         }
 
         this->yaw_error = pi_2_pi(this->points[jumped_point].yaw - state.yaw);
-        if (this->adapted_pid_distance_threshold > abs(/*jumped_distance_error*/this->distance_error)) {
-            /*jumped_distance_error*/this->distance_error *= this->adapted_pid_distance_gain;
+        if (this->adapted_pid_distance_threshold > abs(this->distance_error)) {
+            this->distance_error *= this->adapted_pid_distance_gain;
         } else {
             this->yaw_error = pi_2_pi(this->yaw_error * this->adapted_pid_yaw_gain);
         }
 
         double th_e = pi_2_pi(this->yaw_error * this->steer_kp + (this->yaw_error - this->steer_pre_e) * this->steer_kd);
 
-        this->path_distance_pid.set_target(/*jumped_distance_error*/this->distance_error);
+        this->path_distance_pid.set_target(this->distance_error);
         double steer_delta = std::atan2(this->path_distance_pid.calculate(0), 1.6);
 
         steer = th_e + steer_delta;

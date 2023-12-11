@@ -83,19 +83,92 @@ public:
     path_tracking_controller(const double max_steer_angle, const double max_speed, const double wheel_base);
     ~path_tracking_controller();
     void init(const double max_steer_angle, const double max_speed, const double wheel_base);
+    /**
+     * @brief 경로 추종을 위한 목표 상태값 및 예측 위치 계산
+     * @param [in] dt 스텝 시간
+     */
     bool update(double dt);
+    /**
+     * @brief 경로 저장
+     * @param [in] init_state 현재 위치
+     * @param [in] points 추가할 맵 데이터
+     */
     void set_course(ControlState init_state, std::vector<Point> points);
+    /**
+     * @brief 경로 추가
+     * @param [in] init_state 현재 위치
+     * @param [in] points 추가할 맵 데이터
+     */
     void add_course(ControlState init_state, std::vector<Point> points);
-    double pi_2_pi(double angle);
+    /**
+     * @brief 목표 지점 까지의 각도 계산
+     * @details 주행 시작 시 경로로 이동하기 위한 조향각 계산을 위해 사용
+     * @param [in] point 목표 위치
+     * @param [out] steer 계산된 조향각
+     * @return 주행 가능 여부
+     */
     bool get_target_steer_at(Point point, double* steer);
+    /**
+     * @brief 현재 위치와 경로 사이 거리 계산
+     * @param [in] point 현재 위치
+     * @param [in] line_point1 경로 뒷점 위치
+     * @param [in] line_point2 경로 앞점 위치
+     * @return 경로와의 거리(m)
+     */
     double distance_between_point_and_line(Point point, Point line_point1, Point line_point2);
+    /**
+     * @brief 각도 범위 지정
+     * @details 입력된 각도 값을 -180º ~ 180º 로 변경
+     * @param [in] angle 가공할 각도 값
+     * @return 가공한 각도 값
+     */
+    double pi_2_pi(double angle);
 
 protected:
+    /**
+     * @brief 현재 이동 가능한 가장 가까운 포인트 인덱스를 계산
+     * @param [in] state 현재 상태(위치, 속도, 조향각)
+     * @param [in] points 맵 데이터
+     * @param [in] pind 가장 최근 타겟 포인트 인덱스
+     * @return 타겟 포인트 인덱스
+     */
     int calculate_target_index(ControlState state, std::vector<Point> points, int pind);
+    /**
+     * @brief 타켓 포인트들의 yaw 값 범위 설정(-180 ~ 180 사이로 변경)
+     * @param [in] points 맵 데이터
+     */
     void smooth_yaw(std::vector<Point> &points);
+    /**
+     * @brief 다음 스텝 위치값 계산
+     * @param [in] state 현재 상태(위치, 속도, 조향각)
+     * @param [in] a 목표 가속도
+     * @param [in] delta 목표 조향각
+     * @param [in] dt 스텝 시간
+     */
     ControlState update_state(ControlState state, double a, double delta, double dt);
+    /**
+     * @brief 목표 지점으로 이동 가능한지 확인
+     * @param [in] dx 현재 위치와 목표 위치 x 값 차이
+     * @param [in] dy 현재 위치와 목표 위치 y 값 차이
+     * @param [in] yaw 현재 yaw
+     * @param [in] steer 현재 조향각
+     * @param [in] range_angle 좌우 최대 범위 각도
+     * @return 이동 가능 여부
+     */
     bool is_point_in_correct_range(double dx, double dy, double yaw, double steer, double range_angle);
+    /**
+     * @brief 목표 지점까지 이동할 수 있는 조향각 값 계산
+     * @param [in] state 현재 상태(위치, 속도, 조향각)
+     * @param [out] steer 목표 조향각
+     * @return 현재 타겟 포인트 인덱스
+     */
     virtual int steering_control(ControlState state, double& steer);
+    /**
+     * @brief 목표 지점까지 이동할 수 있는 가속도 값 계산
+     * @param [in] state 현재 상태(위치, 속도, 조향각)
+     * @param [out] accel 목표 가속도 값
+     * @return 현재 타겟 포인트 인덱스
+     */
     virtual int velocity_control(ControlState state, double& accel);
 
 protected:
@@ -126,11 +199,6 @@ public:
 
     void set_state(ControlState state) {
         this->state = state;
-        // std::cout << "state -> x : " << this->state.x <<
-        //                      " y : " << this->state.y <<
-        //                      " yaw : " << this->state.yaw <<
-        //                      " v : " << this->state.v <<
-        //                      " steer : " << this->state.steer << std::endl;
     }
 
     void set_steer(double steer) {
