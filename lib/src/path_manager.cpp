@@ -330,22 +330,19 @@ double path_tracking_controller::velocity_control_depend_on_steer_error(ControlS
     } else if (calculated_velocity < DEFAULT_MIN_SPEED && calculated_velocity > 0) {
         calculated_velocity = DEFAULT_MIN_SPEED;
     }
+
+    this->predict_state.steer = revise_target_steer;
+    this->predict_state.v = calculated_velocity;
+
     return calculated_velocity;
 }
 
 ControlState path_tracking_controller::update_state_for_predict(ControlState state, double dt)
 {
     // golfcar position, angle update
+    state.yaw = state.yaw + state.v / this->wheel_base * std::tan(state.steer) * dt;
     state.x = state.x + state.v * std::cos(state.yaw) * dt;
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
-    state.yaw = state.yaw + state.v / this->wheel_base * std::tan(state.steer) * dt;
-    state.v = this->target_velocity;
-
-    if (state.v > this->max_speed) {
-        state.v = this->max_speed;
-    } else if (state.v < DEFAULT_MIN_SPEED && state.v > 0) {
-        state.v = DEFAULT_MIN_SPEED;
-    }
 
     return state;
 }
