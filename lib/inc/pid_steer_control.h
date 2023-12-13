@@ -22,8 +22,8 @@ public:
     int test_funtion();
 
 private:
-    virtual int steering_control(ControlState state, double& steer);
-    virtual int velocity_control(ControlState state, double& accel);
+    virtual double steering_control(ControlState state, Point target_point);
+    virtual double velocity_control(ControlState state, Point target_point);
 
 private:
     pid_controller path_accel_pid;

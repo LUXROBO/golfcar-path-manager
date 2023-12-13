@@ -85,9 +85,9 @@ public:
     void init(const double max_steer_angle, const double max_speed, const double wheel_base);
     /**
      * @brief 경로 추종을 위한 목표 상태값 및 예측 위치 계산
-     * @param [in] dt 스텝 시간
+     * @param [in] time 현재 시간
      */
-    bool update(double dt);
+    bool update(double time);
     /**
      * @brief 경로 저장
      * @param [in] init_state 현재 위치
@@ -147,6 +147,14 @@ protected:
      */
     ControlState update_state(ControlState state, double a, double delta, double dt);
     /**
+     * @brief 다음 스텝 위치값 계산
+     * @param [in] state 현재 상태(위치, 속도, 조향각)
+     * @param [in] a 목표 가속도
+     * @param [in] delta 목표 조향각
+     * @param [in] dt 스텝 시간
+     */
+    ControlState update_state_for_predict(ControlState state, double dt);
+    /**
      * @brief 목표 지점으로 이동 가능한지 확인
      * @param [in] dx 현재 위치와 목표 위치 x 값 차이
      * @param [in] dy 현재 위치와 목표 위치 y 값 차이
@@ -157,27 +165,38 @@ protected:
      */
     bool is_point_in_correct_range(double dx, double dy, double yaw, double steer, double range_angle);
     /**
+     * @brief 현재 조향각과 목표 조향각 오차에 따른 속도 조정
+     * @param [in] state 현재 상태(위치, 속도, 조향각)
+     * @param [in] target_velocity 목표 속도
+     * @param [in] target_steer 목표 조향각
+     * @return 조정된 속도
+     */
+    double velocity_control_depend_on_steer_error(ControlState state, double target_velocity, double target_steer);
+    /**
      * @brief 목표 지점까지 이동할 수 있는 조향각 값 계산
      * @param [in] state 현재 상태(위치, 속도, 조향각)
-     * @param [out] steer 목표 조향각
-     * @return 현재 타겟 포인트 인덱스
+     * @param [in] target_point 목표 위치
+     * @return steer 목표 조향각
      */
-    virtual int steering_control(ControlState state, double& steer);
+    virtual double steering_control(ControlState state, Point target_point);
     /**
      * @brief 목표 지점까지 이동할 수 있는 가속도 값 계산
      * @param [in] state 현재 상태(위치, 속도, 조향각)
-     * @param [out] accel 목표 가속도 값
-     * @return 현재 타겟 포인트 인덱스
+     * @param [in] target_point 목표 위치
+     * @return accel 목표 가속도 값
      */
-    virtual int velocity_control(ControlState state, double& accel);
+    virtual double velocity_control(ControlState state, Point target_point);
 
 protected:
     double dt;
     ControlState init_state;
     ControlState goal_state;
     std::vector<Point> points;
-    int target_ind;
     ControlState state;
+    ControlState predict_state;
+    int target_ind;
+
+    uint32_t updated_time;
 
     double max_steer_angle;
     double max_speed;
@@ -190,23 +209,36 @@ protected:
     double target_steer;
     double target_velocity;
 
-    double jumping_point;
+    int jumping_point;
 
 public:
     ControlState get_state() const {
         return this->state;
     }
 
+    ControlState get_predict_state() const {
+        return this->predict_state;
+    }
+
     void set_state(ControlState state) {
         this->state = state;
+        this->predict_state = state;
+    }
+
+    void set_state(ControlState state, uint32_t time) {
+        this->state = state;
+        this->updated_time = time;
+        this->predict_state = state;
     }
 
     void set_steer(double steer) {
         this->state.steer = steer;
+        this->predict_state.steer = steer;
     }
 
     void set_yaw(double yaw) {
         this->state.yaw = yaw;
+        this->predict_state.yaw = yaw;
     }
 
     void set_target_index(int target_index) {
@@ -244,6 +276,15 @@ public:
     double get_distance_error() {
         return this->distance_error;
     }
+
+    double get_yaw_error() {
+        return this->yaw_error;
+    }
+
+    double get_steer_error() {
+        return this->steer_error;
+    }
+
 
     double get_target_steer() {
         return this->target_steer;

@@ -9,12 +9,12 @@
 static const double DEFAULT_MAX_STEER = 25.0 * M_PI / 180.0;     // [rad] 45deg
 static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
 static const double DEFAULT_WHEEL_BASE = 2.15;                   // 앞 뒤 바퀴 사이 거리 [m]
-static const double DEFAULT_MIN_SPEED = 0.5;                     // [ms]
+static const double DEFAULT_MIN_SPEED = 1;                     // [ms]
 
 static const double DEGREE1_RAD = 1.5 * 180 / M_PI;
-static const double DEFAULT_STEER_MAX_VELOCITY = 20.0 * M_PI / 180.0; // [rad/s] 7deg/s
-static const double THRESHOLD_STEER_DIFF_ANGLE = 3 * M_PI / 180.0; // [rad] 5deg
-static const double MAX_STEER_DIFF_ANGLE = 15.0 * M_PI / 180.0; // [rad] 10deg
+static const double DEFAULT_STEER_MAX_VELOCITY = 20.0 * M_PI / 180.0; // 조향각 최대 각속도 [rad/s]
+static const double THRESHOLD_STEER_DIFF_ANGLE = 3 * M_PI / 180.0; // 조향각에 따른 속도 조절을 위한 조향각 레졸루션 단위[rad] 5deg
+static const double MAX_STEER_DIFF_ANGLE = 15.0 * M_PI / 180.0; // 조향각에 따른 속도 조절을 위한 조향각 최대 오차(이 시점 이후론 최저 속도로 주행)[rad] 10deg
 static const double MAX_TAGET_VALID_ANGLE = 30.0 * M_PI / 180.0; // 화각? 현재 스티어 + yaw 위치에서 이 각도 내에 있는 점을 선택
 static const int MAX_STEER_ERROR_LEVEL = 10; // steer error 세분화
 
@@ -218,34 +218,44 @@ void path_tracking_controller::smooth_yaw(std::vector<Point> &points)
     }
 }
 
-bool path_tracking_controller::update(double dt) {
+bool path_tracking_controller::update(double time) {
     // dt 저장
 
     double calculated_steer = 0;
-    double calculated_accel = 0;
-    this->dt = dt;
+    double calculated_velocity = 0;
+    int jumped_point = 0;
+    this->dt = time - updated_time;
     if (dt == 0) {
         return false;
     }
 
-    this->target_ind = steering_control(this->state, calculated_steer);
+    this->predict_state = this->update_state_for_predict(this->predict_state, dt);
+
+    this->target_ind = this->calculate_target_index(this->predict_state, this->points, this->target_ind);
     if (this->target_ind == -1) {
+        // 경로를 찾을 수 없는 경우
         return true;
     }
+    jumped_point = this->target_ind + this->jumping_point;
+    if (jumped_point >= this->points.size()) {
+        jumped_point = this->target_ind;
+    }
+
+    calculated_steer = steering_control(this->predict_state, this->points[jumped_point]);
     if (calculated_steer > this->max_steer_angle) {
         calculated_steer = this->max_steer_angle;
     } else if (calculated_steer < -this->max_steer_angle) {
         calculated_steer = -this->max_steer_angle;
     }
-    velocity_control(this->state, calculated_accel);
+    calculated_velocity = velocity_control(this->predict_state, this->points[jumped_point]);
+    calculated_velocity = velocity_control_depend_on_steer_error(this->predict_state, calculated_velocity, calculated_steer);
 
-    // state update
-    this->state = this->update_state(this->state, calculated_accel, calculated_steer, this->dt);
     this->target_steer = calculated_steer;
-    this->target_velocity = this->state.v;
+    this->target_velocity = calculated_velocity;
 
-    double state_to_goal_distance = sqrt(pow(this->goal_state.x - this->state.x, 2) + pow(this->goal_state.y - this->state.y, 2));
     size_t remain_point = get_remain_point();
+
+    updated_time = time;
 
     if (remain_point == 0) {
         // finish
@@ -273,8 +283,8 @@ ControlState path_tracking_controller::update_state(ControlState state, double a
         target_steer = -this->max_steer_angle;
     }
 
-    int velocity_control_level = (int)(fabsf(state.steer - steer_delta) / THRESHOLD_STEER_DIFF_ANGLE);
-    state.v = this->points[this->target_ind].speed - (this->points[this->target_ind].speed - 0.5) * ((double)velocity_control_level / 10);
+    int velocity_control_level = (int)(fabsf(dsteer) / THRESHOLD_STEER_DIFF_ANGLE);
+    state.v = this->points[this->target_ind].speed - (this->points[this->target_ind].speed - 0.5) * ((double)velocity_control_level / MAX_STEER_ERROR_LEVEL);
 
     state.steer = target_steer;
 
@@ -283,6 +293,53 @@ ControlState path_tracking_controller::update_state(ControlState state, double a
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
     state.yaw = state.yaw + state.v / this->wheel_base * std::tan(state.steer) * dt;
 
+    if (state.v > this->max_speed) {
+        state.v = this->max_speed;
+    } else if (state.v < DEFAULT_MIN_SPEED && state.v > 0) {
+        state.v = DEFAULT_MIN_SPEED;
+    }
+
+    return state;
+}
+
+double path_tracking_controller::velocity_control_depend_on_steer_error(ControlState state, double target_velocity, double target_steer)
+{
+    double max_steer_change_amount = DEFAULT_STEER_MAX_VELOCITY * dt;
+    double dsteer = target_steer - state.steer;
+    double revise_target_steer = state.steer;
+    double calculated_velocity = 0;
+    if (dsteer > max_steer_change_amount) {
+        revise_target_steer += max_steer_change_amount;
+    } else if (dsteer < -max_steer_change_amount) {
+        revise_target_steer -= max_steer_change_amount;
+    } else {
+        revise_target_steer = target_steer;
+    }
+
+    if (revise_target_steer > this->max_steer_angle) {
+        revise_target_steer = this->max_steer_angle;
+    } else if (revise_target_steer < -this->max_steer_angle) {
+        revise_target_steer = -this->max_steer_angle;
+    }
+
+    int velocity_control_level = (int)(fabsf(dsteer) / THRESHOLD_STEER_DIFF_ANGLE);
+    calculated_velocity = target_velocity - (target_velocity - DEFAULT_MIN_SPEED) * ((double)velocity_control_level / MAX_STEER_ERROR_LEVEL);
+
+    if (calculated_velocity > this->max_speed) {
+        calculated_velocity = this->max_speed;
+    } else if (calculated_velocity < DEFAULT_MIN_SPEED && calculated_velocity > 0) {
+        calculated_velocity = DEFAULT_MIN_SPEED;
+    }
+    return calculated_velocity;
+}
+
+ControlState path_tracking_controller::update_state_for_predict(ControlState state, double dt)
+{
+    // golfcar position, angle update
+    state.x = state.x + state.v * std::cos(state.yaw) * dt;
+    state.y = state.y + state.v * std::sin(state.yaw) * dt;
+    state.yaw = state.yaw + state.v / this->wheel_base * std::tan(state.steer) * dt;
+    state.v = this->target_velocity;
 
     if (state.v > this->max_speed) {
         state.v = this->max_speed;
@@ -318,15 +375,15 @@ bool path_tracking_controller::get_target_steer_at(Point point, double* steer)
     return true;
 }
 
-int path_tracking_controller::steering_control(ControlState state, double& steer)
+double path_tracking_controller::steering_control(ControlState state, Point target_point)
 {
     // std::cout << "steering no init" << std::endl;
-    return steer;
+    return 0;
 }
 
-int path_tracking_controller::velocity_control(ControlState state, double& accel)
+double path_tracking_controller::velocity_control(ControlState state, Point target_point)
 {
-    return accel;
+    return 0;
 }
 
 void path_tracking_controller::get_gain(int gain_index, double* gain_value)
