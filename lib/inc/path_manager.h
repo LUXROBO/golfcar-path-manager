@@ -8,6 +8,15 @@
 #define M_PI    3.14159265358979323846
 #define M_PI_2  1.57079632679489661923
 
+typedef enum path_tracking_update_result_
+{
+    RUNNING = 0x00,
+    GOAL,
+    OUT_OF_RANGE,
+    INVAILED_TIME,
+    NOT_READY,
+} path_tracking_update_result_t;
+
 typedef struct WayPoint_
 {
     double x;
@@ -60,18 +69,8 @@ typedef struct pid_gain_{
     double kd;
 } pid_gain_t;
 
-// typedef enum pid_type_{
-//     pid_type_distance,
-//     pid_type_steer,
-// } pid_type;
-
 #define PATH_TRACKER_PID_TYPE_DISTANCE 0
 #define PATH_TRACKER_PID_TYPE_STEER 1
-
-// typedef enum lqr_type_{
-//     lqr_type_q,
-//     lqr_type_r,
-// } lqr_type;
 
 #define PATH_TRACKER_LQR_TYPE_Q 0
 #define PATH_TRACKER_LQR_TYPE_R 1
@@ -87,7 +86,7 @@ public:
      * @brief 경로 추종을 위한 목표 상태값 및 예측 위치 계산
      * @param [in] time 현재 시간
      */
-    bool update(double time);
+    path_tracking_update_result_t update(double time);
     /**
      * @brief 경로 저장
      * @param [in] init_state 현재 위치

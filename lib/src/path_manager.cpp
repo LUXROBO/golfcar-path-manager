@@ -218,23 +218,27 @@ void path_tracking_controller::smooth_yaw(std::vector<Point> &points)
     }
 }
 
-bool path_tracking_controller::update(double time) {
+path_tracking_update_result_t path_tracking_controller::update(double time) {
     // dt 저장
 
     double calculated_steer = 0;
     double calculated_velocity = 0;
     int jumped_point = 0;
-    this->dt = time - updated_time;
-    if (dt == 0) {
-        return false;
+    if (time == 0) {
+        return INVAILED_TIME;
     }
+    if (updated_time == 0) {
+        updated_time = time;
+        return NOT_READY;
+    }
+    this->dt = (time - updated_time) / 1000;
 
     this->predict_state = this->update_state_for_predict(this->predict_state, dt);
 
     this->target_ind = this->calculate_target_index(this->predict_state, this->points, this->target_ind);
     if (this->target_ind == -1) {
         // 경로를 찾을 수 없는 경우
-        return true;
+        return OUT_OF_RANGE;
     }
     jumped_point = this->target_ind + this->jumping_point;
     if (jumped_point >= this->points.size()) {
@@ -259,9 +263,9 @@ bool path_tracking_controller::update(double time) {
 
     if (remain_point == 0) {
         // finish
-        return true;
+        return GOAL;
     }
-    return false;
+    return RUNNING;
 }
 
 ControlState path_tracking_controller::update_state(ControlState state, double accel, double steer_delta, double dt)
