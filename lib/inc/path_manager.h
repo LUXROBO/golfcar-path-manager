@@ -8,6 +8,10 @@
 #define M_PI    3.14159265358979323846
 #define M_PI_2  1.57079632679489661923
 
+/**
+ * @brief 경로 트레킹을 위한 업데이트 함수 결과
+ * @details 주행 중, 목표 도착 등 업데이트 함수 결과 값
+ */
 typedef enum path_tracking_update_result_
 {
     RUNNING = 0x00,
@@ -17,19 +21,10 @@ typedef enum path_tracking_update_result_
     NOT_READY,
 } path_tracking_update_result_t;
 
-typedef struct WayPoint_
-{
-    double x;
-    double y;
-
-    WayPoint_(double x, double y)
-    {
-        this->x = x;
-        this->y = y;
-    }
-
-} WayPoint;
-
+/**
+ * @brief 경로 위치 정보
+ * @details 경로의 각 점들에 대한 목표 및 상태 값들을 저장
+ */
 typedef struct Point_
 {
     double x;
@@ -39,7 +34,10 @@ typedef struct Point_
     double speed;
 } Point;
 
-
+/**
+ * @brief 현재 차량의 상태
+ * @details 현재 차량의 상태를 저장
+ */
 typedef struct ControlState_
 {
     double x;
@@ -187,71 +185,103 @@ protected:
     virtual double velocity_control(ControlState state, Point target_point);
 
 protected:
-    double dt;
-    ControlState init_state;
-    ControlState goal_state;
-    std::vector<Point> points;
-    ControlState state;
-    ControlState predict_state;
-    int target_ind;
+    double dt;                  /** 업데이트 시간 */
+    ControlState init_state;    /** 초기 상태 */
+    ControlState goal_state;    /** 끝점 상태 */
+    std::vector<Point> points;  /** 맵 데이터 */
+    ControlState state;         /** 현재 상태 */
+    ControlState predict_state; /** 예측 상태 */
+    int target_ind;             /** 현재 목표 맵 위치 인덱스 */
 
-    uint32_t updated_time;
+    uint32_t updated_tick;      /** 업데이트된 시간(freertos tick) */
 
-    double max_steer_angle;
-    double max_speed;
-    double wheel_base;
+    double max_steer_angle;     /** 최대 동작 가능한 조향 각도 */
+    double max_speed;           /** 최대 동작 가능한 차량 속도 */
+    double wheel_base;          /** 차량 앞 바퀴와 뒷 바퀴 사이 거리 */
 
-    double distance_error;
-    double yaw_error;
-    double steer_error;
+    double distance_error;      /** 경로와의 거리 오차 */
+    double yaw_error;           /** 경로와의 각도 오차 */
+    double steer_error;         /** 실 조향 각도와 목표 조향 각도 오차 */
 
-    double target_steer;
-    double target_velocity;
+    double target_steer;        /** 목표 조향 각 */
+    double target_velocity;     /** 목표 속도 */
 
-    int jumping_point;
+    int jumping_point;          /** 앞점 추가 인덱스 */
 
 public:
+    /**
+     * @brief 현재 상태 반환
+     * @return 가장 최근에 갱신된 현재 상태
+     */
     ControlState get_state() const {
         return this->state;
     }
-
+    /**
+     * @brief 예측 상태 반환
+     * @return 예측된 상태
+     */
     ControlState get_predict_state() const {
         return this->predict_state;
     }
-
+    /**
+     * @brief 현재 상태 갱신
+     * @param state 위치 및 정보(속도, 조향)
+     */
     void set_state(ControlState state) {
         this->state = state;
         this->predict_state = state;
     }
-
+    /**
+     * @brief 현재 상태 갱신
+     * @param state 위치 및 정보(속도, 조향)
+     * @param time 갱신 시간(freertos tick)
+     */
     void set_state(ControlState state, uint32_t time) {
         this->state = state;
-        this->updated_time = time;
+        this->updated_tick = time;
         this->predict_state = state;
     }
-
+    /**
+     * @brief 현재 조향 각도 갱신
+     * @param steer 변경할 조향 각도
+     */
     void set_steer(double steer) {
         this->state.steer = steer;
         this->predict_state.steer = steer;
     }
-
+    /**
+     * @brief 현재 yaw 갱신
+     * @param steer 변경할 yaw
+     */
     void set_yaw(double yaw) {
         this->state.yaw = yaw;
         this->predict_state.yaw = yaw;
     }
-
+    /**
+     * @brief 현재 목표 포인트 인덱스 변경
+     * @param target_index 변경할 목표 인덱스
+     */
     void set_target_index(int target_index) {
         this->target_ind = target_index;
     }
-
+    /**
+     * @brief 맵 데이터 반환
+     * @return 맵 데이터
+     */
     std::vector<Point> get_points() const {
         return this->points;
     }
-
+    /**
+     * @brief 현재 목표 포인트 인덱스 반환
+     * @return 현재 목표 포인트 인덱스
+     */
     int get_target_index() const {
         return this->target_ind;
     }
-
+    /**
+     * @brief 현재 목표점에서 예측을 위한 앞점 인덱스 반환
+     * @return 현재 목표점에서 예측을 위한 앞점 인덱스
+     */
     int get_jumped_target_index() const {
         if (this->target_ind + this->jumping_point >= this->points.size()) {
             return this->points.size() - 1;
@@ -259,7 +289,10 @@ public:
             return this->target_ind + this->jumping_point;
         }
     }
-
+    /**
+     * @brief 맵 데이터 제거
+     * @param num 앞점부터 제거할 포인트 개수
+     */
     void remove_points(size_t num) {
         if (num == 0) {
             this->points.clear();
@@ -267,28 +300,45 @@ public:
             this->points.erase(begin(this->points), begin(this->points) + num);
         }
     }
-
+    /**
+     * @brief 현재 가지고 있는 맵 데이터 개수 반환
+     * @return 현재 가지고 있는 맵 데이터 개수
+     */
     size_t get_remain_point() const {
         return this->points.size() - target_ind - 1;
     }
-
+    /**
+     * @brief 현재 경로와의 거리 오차 반환
+     * @return 현재 경로와의 거리 오차
+     */
     double get_distance_error() {
         return this->distance_error;
     }
-
+    /**
+     * @brief 현재 경로와의 각도 오차 반환
+     * @return 현재 경로와의 각도 오차
+     */
     double get_yaw_error() {
         return this->yaw_error;
     }
-
+    /**
+     * @brief 현재 경로와의 조향 각도 오차 반환
+     * @return 현재 경로와의 조향 각도 오차
+     */
     double get_steer_error() {
         return this->steer_error;
     }
-
-
+    /**
+     * @brief 현재 목표 조향 각도 반환
+     * @return 현재 목표 조향 각도
+     */
     double get_target_steer() {
         return this->target_steer;
     }
-
+    /**
+     * @brief 현재 목표 속도 반환
+     * @return 현재 목표 속도
+     */
     double get_target_velocity() {
         return this->target_velocity;
     }

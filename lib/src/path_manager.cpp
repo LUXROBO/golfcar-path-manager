@@ -227,11 +227,11 @@ path_tracking_update_result_t path_tracking_controller::update(double time) {
     if (time == 0) {
         return INVAILED_TIME;
     }
-    if (updated_time == 0) {
-        updated_time = time;
+    if (updated_tick == 0) {
+        updated_tick = time;
         return NOT_READY;
     }
-    this->dt = (time - updated_time) / 1000;
+    this->dt = (time - updated_tick) / 1000;
 
     this->predict_state = this->update_state_for_predict(this->predict_state, dt);
 
@@ -259,7 +259,7 @@ path_tracking_update_result_t path_tracking_controller::update(double time) {
 
     size_t remain_point = get_remain_point();
 
-    updated_time = time;
+    updated_tick = time;
 
     if (remain_point == 0) {
         // finish

@@ -4,7 +4,6 @@
 #include <vector>
 #include <fstream>
 
-#include "cubic_spline_planner.h"
 #include "lqr_pid_control.h"
 #include "path_manager.h"
 
