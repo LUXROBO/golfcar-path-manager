@@ -1,37 +1,33 @@
-#ifndef LQR_STEER_CONTROL_H
-#define LQR_STEER_CONTROL_H
+#pragma once
 
+// std
 #include <vector>
 #include <fstream>
 
 #include "lqr_pid_control.h"
 #include "path_manager.h"
+#include "model_matrix.h"
 
 
-class lqr_steer_control : public path_tracking_controller
+class lqr_steer_control : public path_tracker
 {
 public:
-    enum lqr_gain_select {
-        q = 0,
-        r = 1
-    };
     lqr_steer_control();
+    lqr_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base);
     ~lqr_steer_control();
+
+public:
+    virtual double steering_control(pt_control_state_t state, path_point_t target_point);
+    virtual double velocity_control(pt_control_state_t state, path_point_t target_point);
+
+    virtual void set_gain(int gain_index, double* gain_value);
+    virtual void get_gain(int gain_index, double* gain_value);
 
 private:
     ModelMatrix dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R);
-    int lqr_steering_control(ControlState state, double& steer, double& pe, double& pth_e);
     ModelMatrix solve_DARE(ModelMatrix A, ModelMatrix B, ModelMatrix Q, ModelMatrix R);
-    virtual int steering_control(ControlState state, double& steer);
-    virtual int velocity_control(ControlState state, double& accel);
 
 private:
     ModelMatrix Q;
     ModelMatrix R;
-
-public :
-    virtual void set_gain(int gain_index, double* gain_value);
-    virtual void get_gain(int gain_index, double* gain_value);
 };
-
-#endif // LQR_STEER_CONTROL_H

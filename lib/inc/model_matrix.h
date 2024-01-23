@@ -1,5 +1,4 @@
-#ifndef MODEL_MATRIX_H
-#define MODEL_MATRIX_H
+#pragma once
 
 #include <vector>
 #include <qformat.h>
@@ -198,5 +197,3 @@ private:
     unsigned int column_;
     q_format element_[ModelMatrix::MAX_RAW * ModelMatrix::MAX_COL];
 };
-
-#endif // MODEL_MATRIX_H

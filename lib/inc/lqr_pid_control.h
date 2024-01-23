@@ -1,6 +1,4 @@
-#ifndef LQR_PID_CONTROL_H
-#define LQR_PID_CONTROL_H
-
+#pragma once
 
 typedef struct pid_parameter
 {
@@ -45,5 +43,3 @@ class pid_controller
     private:
         pid_parameter_t parameter;
 };
-
-#endif
