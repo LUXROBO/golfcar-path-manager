@@ -225,14 +225,6 @@ public:
     }
 
     /**
-     * @brief 예측을 위한 앞점 인덱스 오프셋 반환
-     * @return 앞점 인덱스 오프셋
-     */
-    int get_target_point_index_offset() const {
-        return this->target_index_offset;
-    }
-
-    /**
      * @brief 남은 경로점 개수 반환
      * @return 남은 경로점 개수
      */
@@ -324,13 +316,21 @@ protected:
 
 public:
     /**
+     * @brief 현재 위치와 경로점 거리 계산
+     * @param [in] current_point 현재 위치
+     * @param [in] point 경로점
+     * @return 경로점과의 거리[m]
+     */
+    static double get_point_distance(path_point_t current_point, path_point_t point);
+
+    /**
      * @brief 현재 위치와 경로 사이 거리 계산
-     * @param [in] point 현재 위치
+     * @param [in] current_point 현재 위치
      * @param [in] line_point1 경로 뒷점 위치
      * @param [in] line_point2 경로 앞점 위치
-     * @return 경로와의 거리[m]
+     * @return 경로와의 거리[m] (-: 왼쪽에 위치 함, +: 오른쪽에 위치 함)
      */
-    static double distance_between_point_and_line(path_point_t point, path_point_t line_point1, path_point_t line_point2);
+    static double get_line_distance(path_point_t current_point, path_point_t line_point1, path_point_t line_point2);
 
     /**
      * @brief 경로점들의 yaw 값 범위를 -π ~ π로 변경

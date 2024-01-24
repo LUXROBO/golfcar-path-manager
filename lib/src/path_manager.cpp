@@ -270,9 +270,9 @@ int path_tracker::calculate_target_index(pt_control_state_t current_state, std::
 
     // 거리 오차 계산
     if (target_point_index != 0) {
-        this->distance_error = this->distance_between_point_and_line(current_point, this->points[target_point_index - 1], this->points[target_point_index]);
+        this->distance_error = this->get_line_distance(current_point, this->points[target_point_index - 1], this->points[target_point_index]);
     } else {
-        this->distance_error = this->distance_between_point_and_line(current_point, this->points[target_point_index], this->points[target_point_index + 1]);
+        this->distance_error = this->get_line_distance(current_point, this->points[target_point_index], this->points[target_point_index + 1]);
     }
 
     // 방향 오차 계산
@@ -316,41 +316,50 @@ double path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t s
     return calculated_velocity;
 }
 
-double path_tracker::distance_between_point_and_line(path_point_t point, path_point_t line_point1, path_point_t line_point2)
+double path_tracker::get_point_distance(path_point_t current_point, path_point_t point)
 {
-    double error_distance = 0.0;
+    double x = point.x - current_point.x;
+    double y = point.y - current_point.y;
+    double distance = sqrt(x * x + y * y);
+
+    return distance;
+}
+
+double path_tracker::get_line_distance(path_point_t current_point, path_point_t line_point1, path_point_t line_point2)
+{
+    double distance = 0.0;
     double a = 0.0;
     double b = -1.0;
     double c = 0.0;
 
     if (line_point1.x == line_point2.x) {
-        error_distance = (point.x - line_point1.x);
+        distance = (current_point.x - line_point1.x);
 
         // 진행 방향 아래쪽
         if (line_point1.y > line_point2.y) {
-            error_distance *= -1;
+            distance *= -1;
         }
 
-        return error_distance;
+        return distance;
     }
 
     a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
     c = line_point1.y - a * line_point1.x;
 
-    error_distance = abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
+    distance = abs(a * current_point.x + b * current_point.y + c) / sqrt(a * a + b * b);
 
-    if (point.y > (a * point.x + c)) {
+    if (current_point.y > (a * current_point.x + c)) {
         if (line_point2.x > line_point1.x) {
-            error_distance *= -1;
+            distance *= -1;
         }
     } else {
         if (line_point2.x < line_point1.x) {
-            error_distance *= -1;
+            distance *= -1;
         }
     }
 
     // 왼쪽(-) 오른쪽(+)
-    return error_distance;
+    return distance;
 }
 
 void path_tracker::smooth_yaw(std::vector<path_point_t> &points)
