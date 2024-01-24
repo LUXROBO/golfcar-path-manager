@@ -48,17 +48,20 @@ void path_tracker::init(const double max_steer_angle, const double max_speed, co
 
 void path_tracker::set_path_points(pt_control_state_t init_state, std::vector<path_point_t> points)
 {
-    path_point_t first_point = points[0];
-    int goal_index = points.size() - 1;
+    int start_index = 0;
+    int goal_index = 0;
 
     this->points = points;
     this->smooth_yaw(this->points);
 
+    start_index = 0;
+    goal_index = points.size() - 1;
+
     // 초기 상태 설정
     this->init_state = init_state;
-    if (this->init_state.yaw - first_point.yaw >= PT_M_PI) {
+    if (this->init_state.yaw - points[start_index].yaw >= PT_M_PI) {
         this->init_state.yaw -= 2.0 * PT_M_PI;
-    } else if (this->init_state.yaw - first_point.yaw <= -PT_M_PI) {
+    } else if (this->init_state.yaw - points[start_index].yaw <= -PT_M_PI) {
         this->init_state.yaw += 2.0 * PT_M_PI;
     }
 
@@ -81,6 +84,7 @@ pt_update_result_t path_tracker::update(double time)
     double calculated_steer = 0;
     double calculated_velocity = 0;
     int front_point_index = 0;
+    int goal_point_index = 0;
     path_point_t front_point;
     size_t remain_point = 0;
 
@@ -88,7 +92,7 @@ pt_update_result_t path_tracker::update(double time)
         return PT_UPDATE_RESULT_INVAILED_TIME;
     }
 
-    if (this->updated_time == 0) {
+    if (this->updated_time == 0 || this->points.size() == 0) {
         this->updated_time = time;
         return PT_UPDATE_RESULT_NOT_READY;
     }
@@ -113,6 +117,9 @@ pt_update_result_t path_tracker::update(double time)
     front_point_index = this->get_front_target_point_index();
     front_point = this->points[front_point_index];
 
+    // 도착 경로점 계산
+    goal_point_index = this->points.size() - 1;
+
     // 조향각 계산
     calculated_steer = steering_control(this->predict_state, front_point);
     if (calculated_steer > this->max_steer_angle) {
@@ -133,7 +140,8 @@ pt_update_result_t path_tracker::update(double time)
 
     // 목표지점 도착 확인
     remain_point = get_remain_point_num();
-    if (remain_point == 0) {
+    if (remain_point == 0 || front_point_index == goal_point_index) {
+        this->target_velocity = 0.0;
         return PT_UPDATE_RESULT_GOAL;
     }
 
