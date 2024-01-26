@@ -1,5 +1,7 @@
 cmake_minimum_required (VERSION 3.0)
 
+# project(golfcar_path_manager_test)
+
 SET(CMAKE_COLOR_MAKEFILE ON)
 
 # add_subdirectory(${PROJECT_SOURCE_DIR}/lib)

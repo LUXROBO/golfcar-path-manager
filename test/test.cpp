@@ -11,177 +11,153 @@
 
 #include <lqr_steer_control.h>
 #include <pid_steer_control.h>
-#include <cubic_spline_planner.h>
+#include <curvature_steer_control.h>
 
+#define TRACK_POINT_SPLIT_MAX 256
+#define TRACK_POINT_SPLIT_HALF 128
 
-static double distance_between_point_and_line(Point point, Point line_point1, Point line_point2)
+std::vector<path_point> spline_points;
+int splined_points_cursor = 0;
+double time_sum = 1;
+
+std::vector<std::string> splitString(const std::string& input, char delimiter)
 {
-    double a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
-    double c = line_point1.y - a * line_point1.x;
-    double b = -1;
+    std::vector<std::string> tokens;
+    std::istringstream stream(input);
+    std::string token;
 
-    return abs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
+    while (std::getline(stream, token, delimiter)) {
+        tokens.push_back(token);
+    }
+
+    return tokens;
 }
 
 int main(int argc, const char * argv[])
 {
-    lqr_steer_control golfcar_lqr_path_tracker;
-    pid_steer_control golfcar_pid_path_tracker;
-    path_tracking_controller* golfcar_path_tracker = &golfcar_lqr_path_tracker;
+    // path_tracker* tracker;
+    curvature_steer_control tracker(PT_M_PI_2/2, 2.5, 2.18);
 
-    ControlState current_state(0, 0, 0, 0, 0);
+    // path_point_t current1 = {27.549156,-2.941727,0.604129, 0, 0};
+    // path_point_t target1 = {28.307000,-1.742000,1.031300, 0, 0};
+    // path_point_t current2 = {27.639037,-2.880933,0.586837, 0, 0};
+    // path_point_t target2 = {28.307000,-1.742000,1.031300, 0, 0};
+    // tracker.test_function(current1, target1);
+    // tracker.test_function(current2, target2);
+    // return 0;
+    // tracker = &curvature_tracker;
 
-    std::cout << "stardt" << std::endl;
+    // std::string filePath = "../../../path_gps_smi_p_final.csv";path_new_map
+    std::string filePath = "D:\\git\\git_luxrobo\\golfcart_vehicle_control_unit_stm32\\application\\User\\lib\\golfcar_lqr_path_manager\\path_gps_smi_p_final.csv";
+    // std::string filePath = "D:\\git\\git_luxrobo\\golfcart_vehicle_control_unit_stm32\\application\\User\\lib\\golfcar_lqr_path_manager\\path_new_map.csv";
+    std::ifstream inputFile(filePath);
 
-    std::ifstream spline_list;
-    std::string waypoints_str;
-    spline_list.open("./spline_kwang_woon.csv");
+    filePath = "log.csv";
+    std::ofstream outputFile(filePath);
+    outputFile.close();
 
-    if (spline_list.is_open() == false) {
-        std::cout << "cannot find spline data" << std::endl;
-        return 0;
+    // 파일이 열렸는지 확인
+    if (!inputFile.is_open()) {
+        std::cerr << "can not open." << std::endl;
+        return 1;
     }
-
-    std::vector<Point> splined_points;
-    while (std::getline(spline_list, waypoints_str)){
-        float x_f = 0;
-        float y_f = 0;
-        float yaw_f = 0;
-        float v_f = 0;
-        float k_f = 0;
-        sscanf(waypoints_str.c_str(),"%f,%f,%f,%f,%f\n", &x_f, &y_f, &yaw_f, &k_f, &v_f);
-        Point ttt = {x_f, y_f, yaw_f, v_f, k_f};
-        splined_points.push_back(ttt);
-    }
-
-    std::cout << "generating spline complete\n" << "size = " << splined_points.size() << std::endl;
-
-    time_t timer = time(NULL);
-    struct tm* t = localtime(&timer);
-
-    std::string time_string = std::to_string(t->tm_mday) + "-" + std::to_string(t->tm_hour) + "-" + std::to_string(t->tm_min) + "-" + std::to_string(t->tm_sec) + ".csv";
-
-    std::ofstream move_path;
-    std::ofstream error_measure;
-    spline_list.open("spline_list.csv");
-    move_path.open("move_path_" + time_string, std::ofstream::out);
-
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> dis(1, 200);
-
-    std::cout << "lqr test start" << std::endl;
-    for (int i=0; i<1; i++) {
-        std::vector<double> error_list;
-        double error_average = 0;
-
-        static double min_var = 100;
-        double max_err = 0;
-        double min_err = 0;
-        double selected_gain = 0;
-        current_state.x = splined_points[0].x;
-        current_state.y = splined_points[0].y;
-        current_state.v = splined_points[0].speed;
-        current_state.steer = 0;
-        current_state.yaw = splined_points[0].yaw;
-        golfcar_path_tracker->init(0.785398f, 10.0 / 3.6, 2.15);
-
-        if (typeid(*golfcar_path_tracker).name() == typeid(golfcar_pid_path_tracker).name()) {
-            pid_gain_t gain = {pid_steer_control::pid_gain_select::distance, 0.4, 0.05, 0.7};
-            golfcar_path_tracker->set_gain((void*)&gain);
-            gain = {pid_steer_control::pid_gain_select::yaw, 1.2, 0.0, 0.9};
-            golfcar_path_tracker->set_gain((void*)&gain);
-        } else if (typeid(*golfcar_path_tracker).name() == typeid(golfcar_lqr_path_tracker).name()){
-            lqr_gain_t gain;
-            gain.lqr_select = lqr_steer_control::lqr_gain_select::q;
-            gain.weighting_matrix = ModelMatrix::identity(4,4);
-            // gain.weighting_matrix.set(0,0,2);
-            golfcar_path_tracker->set_gain((void*)&gain);
+    std::string line;
+    while (std::getline(inputFile, line)) {
+        std::vector<std::string> result = splitString(line, ',');
+        path_point splined_point = {std::stod(result[0]), std::stod(result[1]), std::stod(result[2]), std::stod(result[3]), std::stod(result[4])};
+        static path_point origin_splined_point = {0, 0, 0, 0, 0};
+        if (spline_points.size() == 0) {
+            origin_splined_point = splined_point;
+            splined_point.x = 0;
+            splined_point.y = 0;
         } else {
-            std::cout << "tracker error!!!!" << std::endl;
-            return 0;
+            splined_point.x -= origin_splined_point.x;
+            splined_point.y -= origin_splined_point.y;
         }
+        spline_points.push_back(splined_point);
+    }
+    inputFile.close();
 
-        golfcar_path_tracker->set_state(current_state);
-        // add course to lqr path tracker
-        golfcar_path_tracker->add_course(current_state, splined_points);
+    pt_control_state_t init_state = {spline_points[0].x, spline_points[0].y, spline_points[0].yaw, 0, 0};
 
-        // for (int j=0; j<4; j++) {
-        //     golfcar_path_tracker->set_q(j,j,(double)dis(gen) / 10);
+    // std::vector<path_point_t> splined_points_size_cutting;
+    // if (spline_points.size() < TRACK_POINT_SPLIT_MAX) {
+    //     splined_points_size_cutting = spline_points;
+    //     splined_points_cursor += spline_points.size();
+    // } else {
+    //     splined_points_size_cutting = std::vector<path_point_t>(spline_points.begin(), spline_points.begin() + TRACK_POINT_SPLIT_MAX);
+    //     splined_points_cursor += TRACK_POINT_SPLIT_MAX;
+    // }
+
+    // tracker.set_path_points(init_state, splined_points_size_cutting);
+    tracker.set_path_points(init_state, spline_points);
+
+
+    // path_point current = {0, 0, 0, 0, 0};
+    // path_point target = {2, 2, PT_M_PI_2, 0, 0};
+
+    // path_point new_circle = tracker.test_function(current, target);
+    // std::cout << new_circle.x << ", " << new_circle.y << ", " << new_circle.k << ", " << 1 / new_circle.k << ", " <<std::endl;
+
+    while (true) {
+        // if (tracker.get_remain_point_num() < TRACK_POINT_SPLIT_HALF && (splined_points_cursor != (int)spline_points.size())) {
+        //     std::vector<path_point_t> splined_points_size_cutting;
+        //     if (spline_points.size() - splined_points_cursor < TRACK_POINT_SPLIT_MAX) { // 남은 개수가 절반보다 남지 않은 경우
+        //         splined_points_size_cutting = std::vector<path_point_t>(spline_points.begin() + splined_points_cursor, spline_points.end());
+        //         splined_points_cursor = spline_points.size();
+        //     } else {
+        //         splined_points_size_cutting = std::vector<path_point_t>(spline_points.begin() + splined_points_cursor,
+        //                                                             spline_points.begin() + splined_points_cursor + TRACK_POINT_SPLIT_MAX);
+        //         splined_points_cursor += TRACK_POINT_SPLIT_HALF;
+        //     }
+        //     tracker.set_path_points(tracker.get_last_updated_state(), splined_points_size_cutting);
+        //     // tracker.remove_points(TRACK_POINT_SPLIT_HALF);
+        //     // tracker.add_course(tracker.get_last_updated_state(), splined_points_size_cutting);
         // }
-        // golfcar_path_tracker->set_r(0,0,(double)dis(gen) / 10);
-        std::cout << "let's go" << std::endl;
-        while (true) {
-            if (golfcar_path_tracker->update(0.01)) {
-                static int loop_count = 1;
-                std::cout << "finish test " << loop_count++ << std::endl;
-
-
-                error_average /= error_list.size();
-                double variance = 0;
-                for (auto x : error_list) {
-                    variance += pow(x - error_average, 2);
-                }
-                variance /= error_list.size();
-                if (min_var > variance) {
-                    min_var = variance;
-                    max_err = *max_element(error_list.begin(), error_list.end());
-                    min_err = *min_element(error_list.begin(), error_list.end());
-                    // std::cout << "Q : ";
-                    // for (int j=0; j<4; j++) {
-                    //     q[j] = golfcar_path_tracker->get_q(j,j);
-                    //     std::cout << golfcar_path_tracker->get_q(j,j) << " ";
-                    // }
-                    // r[0] = golfcar_path_tracker->get_r(0,0);
-                    // std::cout << "R : " << golfcar_path_tracker->get_r(0,0) << std::endl;
-                    std::cout << "min_var : " << min_var << " min_err : " << min_err << " max_err : " << max_err << " gain : " << selected_gain << std::endl;
-                }
-                // if (loop_count >= 1000) {
-                //     std::cout << "min_var : " << min_var << " min_err : " << min_err << " max_err : " << max_err << " gain : " << selected_gain << std::endl;
-
-                //     // golfcar_path_tracker->= pid_steer_control();
-                //     golfcar_path_tracker->= lqr_steer_control();
-
-                //     memset((void*)&current_state, 0, sizeof(ControlState));
-                //     golfcar_path_tracker->set_state(current_state);
-                //     golfcar_path_tracker->add_course(current_state, splined_points);
-                //     while (!golfcar_path_tracker->update(0.01)) {
-                //         move_path << std::to_string(golfcar_path_tracker->get_state().x) <<  "," << std::to_string(golfcar_path_tracker->get_state().y) << "\n";
-                //     }
-                //     move_path.close();
-                //     return 0;
-                // }
-
-                error_list.clear();
-                error_average = 0;
-                break;
-                // return 0;
-            } else {
-                static int progress_signal = 0;
-                if (progress_signal >= 100) {
-                    std::cout << golfcar_path_tracker->get_state().x << " "
-                            << golfcar_path_tracker->get_state().y << " "
-                            << golfcar_path_tracker->get_state().v << " "
-                            << golfcar_path_tracker->get_state().yaw << " "
-                            << golfcar_path_tracker->get_target_point_index()
-                            << std::endl;
-                    move_path << std::to_string(golfcar_path_tracker->get_state().x) <<  "," << std::to_string(golfcar_path_tracker->get_state().y) << "\n";
-                    if (golfcar_path_tracker->get_target_point_index() != 0) {
-                        auto now_point = Point{golfcar_path_tracker->get_state().x, golfcar_path_tracker->get_state().y, 0, 0, 0};
-                        double error_amount = distance_between_point_and_line(now_point, splined_points[golfcar_path_tracker->get_target_point_index()-1], splined_points[golfcar_path_tracker->get_target_point_index()]);
-                        error_list.push_back(error_amount);
-                        error_average += error_amount;
-                    }
-                    progress_signal = 0;
-                } else {
-                    progress_signal++;
-                }
-                // move_path << std::to_string(golfcar_path_tracker->get_state().x) <<  "," << std::to_string(golfcar_path_tracker->get_state().y) << "\n";
+        pt_update_result_t update_result = tracker.update(time_sum);
+        time_sum += 0.01;
+        if (update_result != PT_UPDATE_RESULT_RUNNING) {
+            if (update_result == PT_UPDATE_RESULT_NOT_READY) {
+                continue;
             }
+            printf("finish %d", (int)update_result);
+            return 0;
+        } else {
+            static int debug_count = 0;
+            if (debug_count % 10 == 0) {
+                filePath = "log.csv";
+                outputFile = std::ofstream(filePath, std::ios::app);
+
+                // 파일이 열렸는지 확인
+                if (!outputFile.is_open()) {
+                    std::cerr << "can not open." << std::endl;
+                    return 1;
+                }
+
+                pt_control_state_t current_state = tracker.get_predict_state();
+                char debug_string[200];
+                int index = tracker.get_front_target_point_index();
+                sprintf(debug_string, "%lf,%lf,%lf,%lf,%lf,,%lf,%lf,%lf,%d,,%lf,%lf,%lf",current_state.x,
+                                                                    current_state.y,
+                                                                    current_state.yaw,
+                                                                    current_state.steer,
+                                                                    tracker.get_yaw_error(),
+                                                                    spline_points[index].x,
+                                                                    spline_points[index].y,
+                                                                    spline_points[index].yaw,
+                                                                    index,
+                                                                    tracker.past_path_circle.x,
+                                                                    tracker.past_path_circle.y,
+                                                                    1 / tracker.past_path_circle.k);
+                outputFile << debug_string << "\n";
+                // std::cout << debug_string << std::endl;
+                outputFile.close();
+            }
+            debug_count++;
         }
     }
 
-    // move_path.close();
+
     return 0;
 }
 

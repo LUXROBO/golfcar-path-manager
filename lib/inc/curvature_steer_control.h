@@ -20,9 +20,6 @@ public:
     virtual void set_gain(int gain_index, double* gain_value);
     virtual void get_gain(int gain_index, double* gain_value);
 
-private:
-    virtual double steering_control(pt_control_state_t state, path_point_t target_point);
-    virtual double velocity_control(pt_control_state_t state, path_point_t target_point);
     /**
      * @brief point1을 지나는 yaw각도를 가진 직선위에 있는 점 중 point2와의 거리가 point1와의 거리와 일치하는 점을 탐색
      * @param [in] points1 직선위의 점
@@ -33,11 +30,23 @@ private:
      */
     path_point_t get_path_circle(path_point_t point1, path_point_t point2, double slope);
 
-
-
+    path_point_t test_function(path_point_t current, path_point_t target_point);
 
 
 private:
+    virtual double steering_control(pt_control_state_t state, path_point_t target_point);
+    virtual double velocity_control(pt_control_state_t state, path_point_t target_point);
+private:
+    pid_controller path_yaw_pid;
+    pid_controller path_distance_pid;
+
+
+
+    double yaw_kp;
+    double yaw_ki;
+    double yaw_kd;
+    double yaw_pre_e;
 
 public:
+    path_point_t past_path_circle;
 };

@@ -1,4 +1,4 @@
-#include "path_manager.h"
+﻿#include "path_manager.h"
 
 // std
 #include <stdio.h>
@@ -23,13 +23,15 @@ static const int MAX_STEER_ERROR_LEVEL = 10;                                    
 path_tracker::path_tracker()
 {
     this->init(DEFAULT_MAX_STEER_ANGLE, DEFAULT_MAX_SPEED, DEFAULT_WHEEL_BASE);
-    this->target_index_offset = 2;
+    this->updated_time = 0;
+    this->target_index_offset = 1;
 }
 
 path_tracker::path_tracker(const double max_steer_angle, const double max_speed, const double wheel_base)
 {
     this->init(max_steer_angle, max_speed, wheel_base);
-    this->target_index_offset = 2;
+    this->updated_time = 0;
+    this->target_index_offset = 1;
 }
 
 path_tracker::~path_tracker()
