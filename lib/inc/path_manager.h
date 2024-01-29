@@ -345,4 +345,6 @@ public:
      * @return 가공된 각도 값[rad]
      */
     static double pi_to_pi(double angle);
+
+    double debug_target_yaw;
 };

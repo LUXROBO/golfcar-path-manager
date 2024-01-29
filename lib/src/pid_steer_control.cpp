@@ -96,8 +96,6 @@ double pid_steer_control::steering_control(pt_control_state_t state, path_point_
 
 double pid_steer_control::velocity_control(pt_control_state_t state, path_point_t target_point)
 {
-    // this->path_accel_pid.set_target(this->points[this->target_point_index].speed);
-    // accel = this->path_accel_pid.calculate(this->state.v);
 
     return target_point.speed;
 }

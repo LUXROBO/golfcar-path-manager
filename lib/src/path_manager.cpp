@@ -203,7 +203,7 @@ bool path_tracker::get_steer_at_moveable_point(pt_control_state_t current, path_
 pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, double dt)
 {
     // golfcar position, angle update
-    state.yaw = state.yaw + state.v / this->wheel_base * std::tan(state.steer) * dt;
+    state.yaw = path_tracker::pi_to_pi(state.yaw + state.v / this->wheel_base * std::tan(state.steer) * dt);
     state.x = state.x + state.v * std::cos(state.yaw) * dt;
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
 
