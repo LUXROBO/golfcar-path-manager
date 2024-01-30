@@ -272,6 +272,9 @@ private:
      */
     pt_control_state_t update_predict_state(pt_control_state_t state, double dt);
 
+    pt_control_state_t update_predict_state2(pt_control_state_t state, double dt);
+    path_point_t get_path_circle_for_debug(path_point_t point1, path_point_t point2, double slope);
+
     /**
      * @brief 목표점 인덱스를 계산
      * @param [in] state 현재 상태

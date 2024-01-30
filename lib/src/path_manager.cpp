@@ -14,6 +14,7 @@ static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;                             
 
 static const double DEFAULT_MAX_STEER_ANGLE = 25.0 * PT_M_PI / 180.0;           /**< 기본 최대 조향 각도[rad] */
 static const double DEFAULT_MAX_STEER_VELOCITY = 20.0 * PT_M_PI / 180.0;        /**< 기본 최대 조향 각속도[rad/s] */
+static const double DEFAULT_MAX_VEHICLE_ACCEL = 0.8333333;                      /**< 기본 최대 주행 가속도[m/s^2] */
 
 static const double DEFAULT_MAX_MOVEABLE_RANGE = 30.0 * PT_M_PI / 180.0;        /**< 이동 가능한 방향 범위[rad] */
 
@@ -106,7 +107,8 @@ pt_update_result_t path_tracker::update(double time)
     this->updated_time = time;
 
     // 예측 상태 갱신
-    this->predict_state = this->update_predict_state(this->predict_state, this->dt);
+    // this->predict_state = this->update_predict_state(this->predict_state, this->dt);
+    this->predict_state = this->update_predict_state2(this->predict_state, this->dt);
 
     // 목표 경로점 찾기
     this->target_point_index = this->calculate_target_index(this->predict_state, this->points, this->target_point_index);
@@ -172,11 +174,6 @@ bool path_tracker::is_moveable_point(pt_control_state_t current, path_point_t ta
             res = true;
         }
     }
-
-    // std::cout << "cw_angle : " << cw_angle / scale * 180.0 / PT_M_PI
-    //           << " ccw_angle : " << ccw_angle / scale * 180.0 / PT_M_PI
-    //           << " target_angle : " << target_angle / scale * 180.0 / PT_M_PI << std::endl;
-
     return res;
 }
 
@@ -200,12 +197,80 @@ bool path_tracker::get_steer_at_moveable_point(pt_control_state_t current, path_
     return true;
 }
 
+path_point_t path_tracker::get_path_circle_for_debug(path_point_t point1, path_point_t point2, double slope)
+{
+    // double orthogonal_yaw = path_tracker::pi_to_pi(yaw + PT_M_PI_2);
+    double x = 0;
+    double y = 0;
+    double xx1 = pow(point1.x, 2);
+    double yy1 = pow(point1.y, 2);
+    double xx2 = pow(point2.x, 2);
+    double yy2 = pow(point2.y, 2);
+
+    if (abs(slope) > 10000) {
+        x = point1.x;
+        y = (yy1 - pow(point2.x - point1.x, 2) - yy2) / (2 * (point1.y - point2.y));
+    } else if (abs(slope) < 0.001){
+        y = point1.y;
+        x = (xx1 - pow(point2.y - point1.y, 2) - xx2) / (2 * (point1.x - point2.x));
+    } else {
+        double a = slope;
+        double b = point1.y - a * point1.x;
+        double c = point1.y - b;
+        double d = point2.y - b;
+        x = (xx1 - 2 * b * point1.y + yy1 - xx2 + 2 * b * point2.y - yy2) / (2 * (point1.x + a * point1.y - point2.x - a * point2.y));
+        y = a * x + b;
+    }
+    double distance = sqrt(pow(x - point1.x, 2) + pow(y - point1.y, 2));
+
+    return path_point_t{x, y, 0, 1 / distance, 0};
+}
+
 pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, double dt)
 {
     // golfcar position, angle update
     state.yaw = path_tracker::pi_to_pi(state.yaw + state.v / this->wheel_base * std::tan(state.steer) * dt);
     state.x = state.x + state.v * std::cos(state.yaw) * dt;
     state.y = state.y + state.v * std::sin(state.yaw) * dt;
+
+    return state;
+}
+
+pt_control_state_t path_tracker::update_predict_state2(pt_control_state_t state, double dt)
+{
+    // golfcar position, angle update
+    double lf = 1.075 - 0.77;
+    double lr = 1.075 + 0.77;
+
+    if (state.steer == 0) {
+        state.x = state.x + state.v * std::cos(state.yaw) * dt;
+        state.y = state.y + state.v * std::sin(state.yaw) * dt;
+        state.yaw = path_tracker::pi_to_pi(state.yaw + state.v / this->wheel_base * std::tan(state.steer) * dt);
+        return state;
+    }
+
+    path_point_t front_wheel_point = {state.x + lf * std::cos(state.yaw), state.y + lf * std::sin(state.yaw), 0, 0, 0};
+    path_point_t rear_wheel_point = {state.x - lr * std::cos(state.yaw), state.y - lr * std::sin(state.yaw), 0, 0, 0};
+
+    path_point_t rotation_origin_circle = this->get_path_circle_for_debug(front_wheel_point, rear_wheel_point, std::tan(path_tracker::pi_to_pi(state.yaw + state.steer + PT_M_PI_2)));
+    double g_slope = path_tracker::pi_to_pi(std::atan2(rotation_origin_circle.y - state.y, rotation_origin_circle.x - state.x));
+
+    if (abs(path_tracker::pi_to_pi(g_slope + PT_M_PI_2 - state.yaw)) < abs(path_tracker::pi_to_pi(g_slope - PT_M_PI_2 - state.yaw))) {
+        g_slope += PT_M_PI_2;
+    } else {
+        g_slope -= PT_M_PI_2;
+    }
+
+    double v_to_g_slope_diff_angle = path_tracker::pi_to_pi(g_slope - state.yaw);
+    double vl = state.v * std::cos(v_to_g_slope_diff_angle);
+    double vr = state.v * std::sin(v_to_g_slope_diff_angle);
+
+    state.yaw = state.yaw + vl * std::tan(state.steer) * dt / lf + vr / lf;
+
+    state.x = state.x + vl * std::cos(state.yaw) * dt - vr * std::sin(state.yaw) * dt;
+    state.y = state.y + vl * std::sin(state.yaw) * dt + vr * std::cos(state.yaw) * dt;
+    // state.x = state.x + state.v * std::cos(g_slope) * dt;
+    // state.y = state.y + state.v * std::sin(g_slope) * dt;
 
     return state;
 }
@@ -285,7 +350,7 @@ int path_tracker::calculate_target_index(pt_control_state_t current_state, std::
 
 double path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t state, double target_velocity, double target_steer)
 {
-    double max_steer_change_amount = DEFAULT_MAX_STEER_VELOCITY * dt;
+    double max_steer_change_amount = DEFAULT_MAX_STEER_VELOCITY * this->dt;
     double dsteer = target_steer - state.steer;
     double revise_target_steer = state.steer;
     double calculated_velocity = 0;
@@ -308,12 +373,23 @@ double path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t s
 
     if (calculated_velocity > this->max_speed) {
         calculated_velocity = this->max_speed;
-    } else if (calculated_velocity < DEFAULT_MIN_SPEED && calculated_velocity > 0) {
+    } else if (calculated_velocity < DEFAULT_MIN_SPEED) {
         calculated_velocity = DEFAULT_MIN_SPEED;
     }
 
+    double max_velocity_change_amount = DEFAULT_MAX_VEHICLE_ACCEL * this->dt;
+    double d_velocity = calculated_velocity - state.v;
+    double predict_velocity = state.v;
+    if (d_velocity > max_velocity_change_amount) {
+        predict_velocity += max_velocity_change_amount;
+    } else if (d_velocity < -max_velocity_change_amount) {
+        predict_velocity -= max_velocity_change_amount;
+    } else {
+        predict_velocity  = calculated_velocity;
+    }
+
     this->predict_state.steer = revise_target_steer;
-    this->predict_state.v = calculated_velocity;
+    this->predict_state.v = predict_velocity;
 
     return calculated_velocity;
 }

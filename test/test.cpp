@@ -51,12 +51,12 @@ std::vector<path_point_t> get_path(std::string file_name, int length, int cursor
         }
         std::vector<std::string> splited_line = splitString(line, ',');
         path_point splined_point = {std::stod(splited_line[0]), std::stod(splited_line[1]), std::stod(splited_line[2]), std::stod(splited_line[4]), std::stod(splited_line[3])};
-        // if (cursor == 0 && flag == 0) {
-        //     origin = splined_point;
-        //     flag = 1;
-        // }
-        // splined_point.x -= origin.x;
-        // splined_point.y -= origin.y;
+        if (cursor == 0 && flag == 0) {
+            origin = splined_point;
+            flag = 1;
+        }
+        splined_point.x -= origin.x;
+        splined_point.y -= origin.y;
         result.push_back(splined_point);
         if ((line_num - cursor + 1) >= length) {
             break;
@@ -97,7 +97,7 @@ int main(int argc, const char * argv[])
     std::string log_name = "log.csv";
 
     // std::string map_file_path = "../../../path_gps_smi_p_final.csv";path_new_map   path_smi_new_mrp2000_7km   path_smi_new_mrp2000_7km path_debug
-    std::string map_file_path = "D:\\git\\git_luxrobo\\golfcart_vehicle_control_unit_stm32\\application\\User\\lib\\golfcar_lqr_path_manager\\path_new_map.csv";
+    std::string map_file_path = "D:\\git\\git_luxrobo\\golfcart_vehicle_control_unit_stm32\\application\\User\\lib\\golfcar_lqr_path_manager\\path_cl.csv";
     // std::string map_file_path = "D:\\git\\git_luxrobo\\golfcart_vehicle_control_unit_stm32\\application\\User\\lib\\golfcar_lqr_path_manager\\path_new_map.csv";
 
     std::ofstream outputFile(log_name);
