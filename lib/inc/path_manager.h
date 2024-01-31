@@ -263,6 +263,7 @@ public:
     double get_target_velocity() {
         return this->target_velocity;
     }
+    pt_control_state_t update_predict_state2(pt_control_state_t state, double dt);
 
 private:
     /**
@@ -272,7 +273,6 @@ private:
      */
     pt_control_state_t update_predict_state(pt_control_state_t state, double dt);
 
-    pt_control_state_t update_predict_state2(pt_control_state_t state, double dt);
     path_point_t get_path_circle_for_debug(path_point_t point1, path_point_t point2, double slope);
 
     /**
@@ -316,6 +316,12 @@ protected:
 
     int target_point_index;                     /** 현재 목표 맵 위치 인덱스 */
     int target_index_offset;                    /** 앞점 추가 인덱스 */
+
+    double g_vl;
+    double g_vr;
+
+    double lf;
+    double lr;
 
 public:
     /**

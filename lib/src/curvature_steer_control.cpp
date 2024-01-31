@@ -19,6 +19,8 @@ curvature_steer_control::curvature_steer_control()
     this->yaw_ki = DEFAULT_YAW_PID_KI;
     this->yaw_kd = DEFAULT_YAW_PID_KD;
     this->yaw_pre_e = 0;
+    this->lf = 1.075 - 0.77;
+    this->lr = 1.075 + 0.77;
 }
 
 curvature_steer_control::curvature_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base)
@@ -29,6 +31,8 @@ curvature_steer_control::curvature_steer_control(const double max_steer_angle, c
     this->yaw_kp = DEFAULT_YAW_PID_KP;
     this->yaw_ki = DEFAULT_YAW_PID_KI;
     this->yaw_kd = DEFAULT_YAW_PID_KD;
+    this->lf = 1.075 - 0.77;
+    this->lr = 1.075 + 0.77;
 }
 
 curvature_steer_control::~curvature_steer_control()
@@ -115,6 +119,8 @@ double curvature_steer_control::steering_control(pt_control_state_t state, path_
 
     double steer_delta2 = this->yaw_error * this->yaw_kp + (this->yaw_error - this->yaw_pre_e) * this->yaw_kd;
     this->yaw_pre_e = this->yaw_error;
+
+    // this->yaw_error = this->g_vl * std::tan(state.steer) * dt / lf + this->g_vr / lf;
 
     return steer_delta2;
 

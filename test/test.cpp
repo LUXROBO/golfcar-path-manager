@@ -51,12 +51,12 @@ std::vector<path_point_t> get_path(std::string file_name, int length, int cursor
         }
         std::vector<std::string> splited_line = splitString(line, ',');
         path_point splined_point = {std::stod(splited_line[0]), std::stod(splited_line[1]), std::stod(splited_line[2]), std::stod(splited_line[4]), std::stod(splited_line[3])};
-        if (cursor == 0 && flag == 0) {
-            origin = splined_point;
-            flag = 1;
-        }
-        splined_point.x -= origin.x;
-        splined_point.y -= origin.y;
+        // if (cursor == 0 && flag == 0) {
+        //     origin = splined_point;
+        //     flag = 1;
+        // }
+        // splined_point.x -= origin.x;
+        // splined_point.y -= origin.y;
         result.push_back(splined_point);
         if ((line_num - cursor + 1) >= length) {
             break;
@@ -70,6 +70,20 @@ int main(int argc, const char * argv[])
 {
     // path_tracker* tracker;
     curvature_steer_control tracker(PT_M_PI_2/2, 2.5, 2.18);
+
+    pt_control_state_t debug_init_state = {0, 0, PT_M_PI_2/2, 0.5, 1};
+
+    for (int i = 0; i < 1000; i++) {
+        debug_init_state = tracker.update_predict_state2(debug_init_state, 0.01);
+        printf("%d. x : %lf, y : %lf, yaw : %lf, steer : %lf, v : %lf\n", i,
+                                                                      debug_init_state.x,
+                                                                      debug_init_state.y,
+                                                                      path_tracker::pi_to_pi(debug_init_state.yaw),
+                                                                      debug_init_state.steer,
+                                                                      debug_init_state.v);
+    }
+    return 0;
+
     // pid_steer_control tracker(PT_M_PI_2/2, 2.5, 2.18);
 
     // path_point_t current1 = {-52186.522601,3998336.599293,-2.067044,0,0};
@@ -139,7 +153,7 @@ int main(int argc, const char * argv[])
             tracker.set_path_points(tracker.get_last_updated_state(), splined_points_size_cutting);
         }
         pt_update_result_t update_result = tracker.update(time_sum);
-        time_sum += 0.01;
+        time_sum += 0.05;
         if (update_result != PT_UPDATE_RESULT_RUNNING) {
             if (update_result == PT_UPDATE_RESULT_NOT_READY) {
                 continue;
@@ -148,7 +162,7 @@ int main(int argc, const char * argv[])
             return 0;
         } else {
             static int debug_count = 0;
-            if (debug_count % 10 == 0) {
+            // if (debug_count % 10 == 0) {
                 outputFile = std::ofstream(log_name, std::ios::app);
 
                 // 파일이 열렸는지 확인
@@ -173,7 +187,7 @@ int main(int argc, const char * argv[])
                 outputFile << debug_string << "\n";
                 // std::cout << debug_string << std::endl;
                 outputFile.close();
-            }
+            // }
             debug_count++;
         }
     }
