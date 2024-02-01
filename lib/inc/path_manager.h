@@ -273,7 +273,7 @@ private:
      */
     pt_control_state_t update_predict_state(pt_control_state_t state, double dt);
 
-    path_point_t get_path_circle_for_debug(path_point_t point1, path_point_t point2, double slope);
+    path_point_t get_point_cross_two_line(path_point_t point1, double slope1, path_point_t point2, double slope2);
 
     /**
      * @brief 목표점 인덱스를 계산
@@ -355,5 +355,14 @@ public:
      */
     static double pi_to_pi(double angle);
 
-    double debug_target_yaw;
+    /**
+     * @brief point1을 지나는 yaw각도를 가진 직선위에 있는 점 중 point2와의 거리가 point1와의 거리와 일치하는 점을 탐색
+     * @param [in] points1 직선위의 점
+     * @param [in] points2 거리가 동일해야하는 점
+     * @param [in] points2 point1을 지나는 직선의 기울기
+     * @return point1, point2와 거리가 동일한 점(곡률 적용)
+     * @TODO 직선일 경우 구분해야함
+     */
+    static path_point_t get_path_circle(path_point_t point1, path_point_t point2, double slope);
+
 };

@@ -107,8 +107,7 @@ pt_update_result_t path_tracker::update(double time)
     this->updated_time = time;
 
     // 예측 상태 갱신
-    // this->predict_state = this->update_predict_state(this->predict_state, this->dt);
-    this->predict_state = this->update_predict_state2(this->predict_state, this->dt);
+    this->predict_state = this->update_predict_state(this->predict_state, this->dt);
 
     // 목표 경로점 찾기
     this->target_point_index = this->calculate_target_index(this->predict_state, this->points, this->target_point_index);
@@ -188,7 +187,7 @@ bool path_tracker::get_steer_at_moveable_point(pt_control_state_t current, path_
     }
 
     // 최대 조향각보다 크면 오류
-    if (abs(target_steer) > this->max_steer_angle) {
+    if (fabsf(target_steer) > this->max_steer_angle) {
         return false;
     }
 
@@ -197,7 +196,18 @@ bool path_tracker::get_steer_at_moveable_point(pt_control_state_t current, path_
     return true;
 }
 
-path_point_t path_tracker::get_path_circle_for_debug(path_point_t point1, path_point_t point2, double slope)
+path_point_t path_tracker::get_point_cross_two_line(path_point_t point1, double slope1, path_point_t point2, double slope2)
+{
+    double b1 = point1.y - slope1 * point1.x;
+    double b2 = point2.y - slope2 * point2.x;
+
+    double x3 = (b2 - b1) / (slope1 - slope2);
+    double y3 = slope1 * x3 + b1;
+
+    return path_point_t{x3, y3, 0, 0, 0};
+}
+
+path_point_t path_tracker::get_path_circle(path_point_t point1, path_point_t point2, double slope)
 {
     // double orthogonal_yaw = path_tracker::pi_to_pi(yaw + PT_M_PI_2);
     double x = 0;
@@ -207,10 +217,10 @@ path_point_t path_tracker::get_path_circle_for_debug(path_point_t point1, path_p
     double xx2 = pow(point2.x, 2);
     double yy2 = pow(point2.y, 2);
 
-    if (abs(slope) > 10000) {
+    if (fabsf(slope) > 10000) {
         x = point1.x;
         y = (yy1 - pow(point2.x - point1.x, 2) - yy2) / (2 * (point1.y - point2.y));
-    } else if (abs(slope) < 0.001){
+    } else if (fabsf(slope) < 0.001){
         y = point1.y;
         x = (xx1 - pow(point2.y - point1.y, 2) - xx2) / (2 * (point1.x - point2.x));
     } else {
@@ -228,49 +238,28 @@ path_point_t path_tracker::get_path_circle_for_debug(path_point_t point1, path_p
 
 pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, double dt)
 {
-    // golfcar position, angle update
-    state.yaw = path_tracker::pi_to_pi(state.yaw + state.v / this->wheel_base * std::tan(state.steer) * dt);
-    state.x = state.x + state.v * std::cos(state.yaw) * dt;
-    state.y = state.y + state.v * std::sin(state.yaw) * dt;
-
-    return state;
-}
-
-pt_control_state_t path_tracker::update_predict_state2(pt_control_state_t state, double dt)
-{
-    // golfcar position, angle update
-    // double lf = 1.075 - 0.77;
-    // double lr = 1.075 + 0.77;
-
-    if (abs(state.steer) < 0.01) {
-        state.x = state.x + state.v * std::cos(state.yaw) * dt;
-        state.y = state.y + state.v * std::sin(state.yaw) * dt;
-        state.yaw = path_tracker::pi_to_pi(state.yaw + state.v / this->wheel_base * std::tan(state.steer) * dt);
-        return state;
-    }
-
     path_point_t front_wheel_point = {state.x + this->lf * std::cos(state.yaw), state.y + this->lf * std::sin(state.yaw), 0, 0, 0};
     path_point_t rear_wheel_point = {state.x - this->lr * std::cos(state.yaw), state.y - this->lr * std::sin(state.yaw), 0, 0, 0};
 
-    path_point_t rotation_origin_circle = this->get_path_circle_for_debug(front_wheel_point, rear_wheel_point, std::tan(path_tracker::pi_to_pi(state.yaw + state.steer + PT_M_PI_2)));
-    double g_slope = path_tracker::pi_to_pi(std::atan2(rotation_origin_circle.y - state.y, rotation_origin_circle.x - state.x));
+    path_point_t rotation_origin_point = this->get_point_cross_two_line(rear_wheel_point, std::tan(path_tracker::pi_to_pi(state.yaw + PT_M_PI_2)),
+                                                                               front_wheel_point, std::tan(path_tracker::pi_to_pi(state.yaw + state.steer + PT_M_PI_2)));
+    double g_slope = path_tracker::pi_to_pi(std::atan2(rotation_origin_point.y - state.y, rotation_origin_point.x - state.x));
 
-    if (abs(path_tracker::pi_to_pi(g_slope + PT_M_PI_2 - state.yaw)) < abs(path_tracker::pi_to_pi(g_slope - PT_M_PI_2 - state.yaw))) {
+    if (fabsf(path_tracker::pi_to_pi(g_slope + PT_M_PI_2 - state.yaw)) < fabsf(path_tracker::pi_to_pi(g_slope - PT_M_PI_2 - state.yaw))) {
         g_slope += PT_M_PI_2;
     } else {
         g_slope -= PT_M_PI_2;
     }
 
-    double v_to_g_slope_diff_angle = path_tracker::pi_to_pi(-g_slope + state.yaw);
+    double v_to_g_slope_diff_angle = path_tracker::pi_to_pi(g_slope - state.yaw);
     this->g_vl = state.v * std::cos(v_to_g_slope_diff_angle);
     this->g_vr = state.v * std::sin(v_to_g_slope_diff_angle);
 
-    state.x = state.x + this->g_vl * std::cos(state.yaw) * dt - this->g_vr * std::sin(state.yaw) * dt;
-    state.y = state.y + this->g_vl * std::sin(state.yaw) * dt + this->g_vr * std::cos(state.yaw) * dt;
+    state.x += this->g_vl * std::cos(state.yaw) * dt - this->g_vr * std::sin(state.yaw) * dt;
+    state.y += this->g_vl * std::sin(state.yaw) * dt + this->g_vr * std::cos(state.yaw) * dt;
 
-    state.yaw = state.yaw + this->g_vl * std::tan(state.steer) * dt / this->lf + this->g_vr / this->lr * dt;
-    // state.x = state.x + state.v * std::cos(g_slope) * dt;
-    // state.y = state.y + state.v * std::sin(g_slope) * dt;
+    state.yaw += state.v * dt * std::sin(v_to_g_slope_diff_angle) / this->lr;
+    state.yaw = path_tracker::pi_to_pi(state.yaw);
 
     return state;
 }
@@ -424,7 +413,7 @@ double path_tracker::get_line_distance(path_point_t current_point, path_point_t 
     a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
     c = line_point1.y - a * line_point1.x;
 
-    distance = abs(a * current_point.x + b * current_point.y + c) / sqrt(a * a + b * b);
+    distance = fabsf(a * current_point.x + b * current_point.y + c) / sqrt(a * a + b * b);
 
     if (current_point.y > (a * current_point.x + c)) {
         if (line_point2.x > line_point1.x) {

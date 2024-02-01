@@ -70,20 +70,6 @@ int main(int argc, const char * argv[])
 {
     // path_tracker* tracker;
     curvature_steer_control tracker(PT_M_PI_2/2, 2.5, 2.18);
-
-    pt_control_state_t debug_init_state = {0, 0, PT_M_PI_2/2, 0.5, 1};
-
-    for (int i = 0; i < 1000; i++) {
-        debug_init_state = tracker.update_predict_state2(debug_init_state, 0.01);
-        printf("%d. x : %lf, y : %lf, yaw : %lf, steer : %lf, v : %lf\n", i,
-                                                                      debug_init_state.x,
-                                                                      debug_init_state.y,
-                                                                      path_tracker::pi_to_pi(debug_init_state.yaw),
-                                                                      debug_init_state.steer,
-                                                                      debug_init_state.v);
-    }
-    return 0;
-
     // pid_steer_control tracker(PT_M_PI_2/2, 2.5, 2.18);
 
     // path_point_t current1 = {-52186.522601,3998336.599293,-2.067044,0,0};
@@ -174,7 +160,7 @@ int main(int argc, const char * argv[])
                 pt_control_state_t current_state = tracker.get_predict_state();
                 char debug_string[200];
                 int index = tracker.get_front_target_point_index();
-                sprintf(debug_string, "%lf,%lf,%lf,%lf,%lf,%lf,,%lf,%lf,%lf,%lf",current_state.x,
+                sprintf(debug_string, "%lf,%lf,%lf,%lf,%lf,%lf,,%lf,%lf,%lf",current_state.x,
                                                                     current_state.y,
                                                                     current_state.yaw,
                                                                     current_state.steer,
@@ -182,8 +168,7 @@ int main(int argc, const char * argv[])
                                                                     current_state.v,
                                                                     splined_points_size_cutting[index].x,
                                                                     splined_points_size_cutting[index].y,
-                                                                    splined_points_size_cutting[index].yaw,
-                                                                    tracker.debug_target_yaw);
+                                                                    splined_points_size_cutting[index].yaw);
                 outputFile << debug_string << "\n";
                 // std::cout << debug_string << std::endl;
                 outputFile.close();
