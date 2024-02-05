@@ -119,15 +119,10 @@ double curvature_steer_control::steering_control(pt_control_state_t state, path_
     double steer_delta2 = this->yaw_error * this->yaw_kp + (this->yaw_error - this->yaw_pre_e) * this->yaw_kd;
     this->yaw_pre_e = this->yaw_error;
 
+    double v_to_g_slope_diff_angle = std::asin(this->yaw_error * this->lr / state.v);
+    steer_delta2 = std::atan(std::tan(v_to_g_slope_diff_angle) * this->lr / this->wheel_base);
+
     return steer_delta2;
-
-    double steer = atan(steer_delta2 * this->wheel_base);
-
-    if (std::isnan(steer)) {
-        steer = 0;
-    }
-
-    return steer;
 }
 
 double curvature_steer_control::velocity_control(pt_control_state_t state, path_point_t target_point)

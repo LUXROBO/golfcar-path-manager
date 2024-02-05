@@ -255,10 +255,15 @@ pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, 
     this->g_vl = state.v * std::cos(v_to_g_slope_diff_angle);
     this->g_vr = state.v * std::sin(v_to_g_slope_diff_angle);
 
-    state.x += this->g_vl * std::cos(state.yaw) * dt - this->g_vr * std::sin(state.yaw) * dt;
-    state.y += this->g_vl * std::sin(state.yaw) * dt + this->g_vr * std::cos(state.yaw) * dt;
+    // state.x += this->g_vl * std::cos(state.yaw) * dt - this->g_vr * std::sin(state.yaw) * dt;
+    // state.y += this->g_vl * std::sin(state.yaw) * dt + this->g_vr * std::cos(state.yaw) * dt;
+    // state.yaw += state.v * dt * std::sin(v_to_g_slope_diff_angle) / this->lr;
+    // state.yaw = path_tracker::pi_to_pi(state.yaw);
 
-    state.yaw += state.v * dt * std::sin(v_to_g_slope_diff_angle) / this->lr;
+    v_to_g_slope_diff_angle = std::atan(this->lr * std::tan(state.steer) / this->wheel_base);
+    state.x += state.v * dt * std::cos(state.yaw + v_to_g_slope_diff_angle);
+    state.y += state.v * dt * std::sin(state.yaw + v_to_g_slope_diff_angle);
+    state.yaw += state.v * dt * std::cos(v_to_g_slope_diff_angle) * std::tan(state.steer) / this->wheel_base;
     state.yaw = path_tracker::pi_to_pi(state.yaw);
 
     return state;

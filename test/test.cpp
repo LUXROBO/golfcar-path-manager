@@ -69,35 +69,29 @@ std::vector<path_point_t> get_path(std::string file_name, int length, int cursor
 int main(int argc, const char * argv[])
 {
     // path_tracker* tracker;
-    curvature_steer_control tracker(PT_M_PI_2/2, 2.5, 2.18);
-    // pid_steer_control tracker(PT_M_PI_2/2, 2.5, 2.18);
+    curvature_steer_control tracker(PT_M_PI_2/2, 2.5, 2.15);
 
-    // path_point_t current1 = {-52186.522601,3998336.599293,-2.067044,0,0};
-    // path_point_t current2 = {-52186.569003,3998336.510714,-2.041866,0,0};
-
-    // path_point_t target1 = {-52186.667500,3998335.453700,-1.818900,0,0};
-    // path_point_t target2 = {-52186.667500,3998335.453700,-1.818900,0,0};
-
-    // current2.x -= current1.x;
-    // current2.y -= current1.y;
-
-    // target1.x -= current1.x;
-    // target1.y -= current1.y;
-
-    // target2.x -= current1.x;
-    // target2.y -= current1.y;
-
-    // current1.x = 0;
-    // current1.y = 0;
-
-    // tracker.test_function(current1, target1);
-    // tracker.test_function(current2, target2);
+    // pt_control_state_t init = {0, 0, PT_M_PI_2 / 2, 0.15, 0};
+    // pt_control_state_t past = init;
+    // double dt = 0.001;
+    // double target_v = 1;
+    // double a = 0.83333;
+    // double moving_distance = 0;
+    // for (int i = 0; i < 10000; i++) {
+    //     init = tracker.update_predict_state(init, dt);
+    //     init.v += a * dt;
+    //     if (init.v > target_v) {
+    //         init.v = target_v;
+    //     }
+    //     moving_distance += std::sqrt(std::pow(init.x - past.x, 2) + std::pow(init.y - past.y, 2));
+    //     past = init;
+    // }
+    // printf("%lf %lf %lf %lf\n", init.x, init.y, init.yaw, moving_distance);
     // return 0;
 
     std::string log_name = "log.csv";
-
     // std::string map_file_path = "../../../path_gps_smi_p_final.csv";path_new_map   path_smi_new_mrp2000_7km   path_smi_new_mrp2000_7km path_debug
-    std::string map_file_path = "D:\\git\\git_luxrobo\\golfcart_vehicle_control_unit_stm32\\application\\User\\lib\\golfcar_lqr_path_manager\\path_cl.csv";
+    std::string map_file_path = "D:\\git\\git_luxrobo\\golfcart_vehicle_control_unit_stm32\\application\\User\\lib\\golfcar_lqr_path_manager\\path_debug.csv";
     // std::string map_file_path = "D:\\git\\git_luxrobo\\golfcart_vehicle_control_unit_stm32\\application\\User\\lib\\golfcar_lqr_path_manager\\path_new_map.csv";
 
     std::ofstream outputFile(log_name);
@@ -125,7 +119,6 @@ int main(int argc, const char * argv[])
     // path_point_t origin = {splined_points_size_cutting[0].x, splined_points_size_cutting[0].y, 0,0,0};
     pt_control_state_t init_state = {splined_points_size_cutting[0].x, splined_points_size_cutting[0].y, splined_points_size_cutting[0].yaw, 0, 0};
     tracker.set_path_points(init_state, splined_points_size_cutting);
-
 
     while (true) {
         if (tracker.get_remain_point_num() < TRACK_POINT_SPLIT_HALF && (end_flag == 0)) {
@@ -160,7 +153,8 @@ int main(int argc, const char * argv[])
                 pt_control_state_t current_state = tracker.get_predict_state();
                 char debug_string[200];
                 int index = tracker.get_front_target_point_index();
-                sprintf(debug_string, "%lf,%lf,%lf,%lf,%lf,%lf,,%lf,%lf,%lf",current_state.x,
+                int real_index = tracker.get_target_point_index();
+                sprintf(debug_string, "%lf,%lf,%lf,%lf,%lf,%lf,,%lf,%lf,%lf,,%lf,%lf,%lf",current_state.x,
                                                                     current_state.y,
                                                                     current_state.yaw,
                                                                     current_state.steer,
@@ -168,7 +162,10 @@ int main(int argc, const char * argv[])
                                                                     current_state.v,
                                                                     splined_points_size_cutting[index].x,
                                                                     splined_points_size_cutting[index].y,
-                                                                    splined_points_size_cutting[index].yaw);
+                                                                    splined_points_size_cutting[index].yaw,
+                                                                    splined_points_size_cutting[real_index].x,
+                                                                    splined_points_size_cutting[real_index].y,
+                                                                    splined_points_size_cutting[real_index].yaw);
                 outputFile << debug_string << "\n";
                 // std::cout << debug_string << std::endl;
                 outputFile.close();
