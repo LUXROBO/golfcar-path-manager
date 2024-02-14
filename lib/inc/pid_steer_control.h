@@ -13,7 +13,7 @@ class pid_steer_control : public path_tracker
 {
 public:
     pid_steer_control();
-    pid_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base);
+    pid_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base, const double center_to_gps_distance);
     ~pid_steer_control();
 
 public:

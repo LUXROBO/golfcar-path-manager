@@ -13,7 +13,7 @@ class lqr_steer_control : public path_tracker
 {
 public:
     lqr_steer_control();
-    lqr_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base);
+    lqr_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base, const double center_to_gps_distance);
     ~lqr_steer_control();
 
 public:

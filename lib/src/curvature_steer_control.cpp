@@ -7,7 +7,7 @@
 static const double DEFAULT_DISTANCE_PID_KP = 1;
 static const double DEFAULT_DISTANCE_PID_KI = 0;
 static const double DEFAULT_DISTANCE_PID_KD = 0;
-static const double DEFAULT_YAW_PID_KP = 1.5;
+static const double DEFAULT_YAW_PID_KP = 1;
 static const double DEFAULT_YAW_PID_KI = 0;
 static const double DEFAULT_YAW_PID_KD = 0;
 
@@ -19,20 +19,16 @@ curvature_steer_control::curvature_steer_control()
     this->yaw_ki = DEFAULT_YAW_PID_KI;
     this->yaw_kd = DEFAULT_YAW_PID_KD;
     this->yaw_pre_e = 0;
-    this->lf = 1.075 - 0.77;
-    this->lr = 1.075 + 0.77;
 }
 
-curvature_steer_control::curvature_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base)
-: path_tracker(max_steer_angle, max_speed, wheel_base)
+curvature_steer_control::curvature_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base, const double center_to_gps_distance = 0)
+: path_tracker(max_steer_angle, max_speed, wheel_base, center_to_gps_distance)
 {
     this->path_yaw_pid = pid_controller(DEFAULT_YAW_PID_KP, DEFAULT_YAW_PID_KI, DEFAULT_YAW_PID_KD);
     this->path_distance_pid = pid_controller(DEFAULT_DISTANCE_PID_KP, DEFAULT_DISTANCE_PID_KI, DEFAULT_DISTANCE_PID_KD);
     this->yaw_kp = DEFAULT_YAW_PID_KP;
     this->yaw_ki = DEFAULT_YAW_PID_KI;
     this->yaw_kd = DEFAULT_YAW_PID_KD;
-    this->lf = 1.075 - 0.77;
-    this->lr = 1.075 + 0.77;
 }
 
 curvature_steer_control::~curvature_steer_control()
@@ -47,7 +43,7 @@ void curvature_steer_control::set_gain(int gain_index, double* gain_value)
 
 void curvature_steer_control::get_gain(int gain_index, double* gain_value)
 {
-
+    *gain_value = 1;
 }
 
 double curvature_steer_control::steering_control(pt_control_state_t state, path_point_t target_point)
@@ -101,7 +97,7 @@ double curvature_steer_control::steering_control(pt_control_state_t state, path_
         double target_yaw1 = path_tracker::pi_to_pi(current_to_circle_yaw + PT_M_PI_2);
         double target_yaw2 = path_tracker::pi_to_pi(current_to_circle_yaw - PT_M_PI_2);
 
-        if (fabsf(path_tracker::pi_to_pi(target_yaw1 - (new_yaw))) > fabsf(path_tracker::pi_to_pi(target_yaw2 - (new_yaw)))) {
+        if (abs(path_tracker::pi_to_pi(target_yaw1 - (new_yaw))) > abs(path_tracker::pi_to_pi(target_yaw2 - (new_yaw)))) {
             target_yaw = target_yaw2;
         } else {
             target_yaw = target_yaw1;
@@ -118,10 +114,10 @@ double curvature_steer_control::steering_control(pt_control_state_t state, path_
 
     double steer_delta2 = this->yaw_error * this->yaw_kp + (this->yaw_error - this->yaw_pre_e) * this->yaw_kd;
     this->yaw_pre_e = this->yaw_error;
-
-    double v_to_g_slope_diff_angle = std::asin(this->yaw_error * this->lr / state.v);
-    steer_delta2 = std::atan(std::tan(v_to_g_slope_diff_angle) * this->lr / this->wheel_base);
-
+//    if (abs(state.v) > 0.001) {
+//        double v_to_g_slope_diff_angle = std::asin(this->yaw_error * this->lr / state.v);
+//        steer_delta2 = std::atan(std::tan(v_to_g_slope_diff_angle) * this->lr / this->wheel_base);
+//    }
     return steer_delta2;
 }
 
@@ -178,7 +174,7 @@ path_point_t curvature_steer_control::test_function(path_point_t state, path_poi
     double target_yaw2 = path_tracker::pi_to_pi(current_to_circle_yaw - PT_M_PI_2);
     double target_yaw = 0;
 
-    if (fabsf(path_tracker::pi_to_pi(target_yaw1 - (new_yaw))) > fabsf(path_tracker::pi_to_pi(target_yaw2 - (new_yaw)))) {
+    if (abs(path_tracker::pi_to_pi(target_yaw1 - (new_yaw))) > abs(path_tracker::pi_to_pi(target_yaw2 - (new_yaw)))) {
         target_yaw = target_yaw2;
     } else {
         target_yaw = target_yaw1;

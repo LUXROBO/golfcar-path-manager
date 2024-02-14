@@ -12,8 +12,8 @@ lqr_steer_control::lqr_steer_control()
     this->R = ModelMatrix::identity(1, 1);
 }
 
-lqr_steer_control::lqr_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base)
-: path_tracker(max_steer_angle, max_speed, wheel_base)
+lqr_steer_control::lqr_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base, const double center_to_gps_distance = 0)
+: path_tracker(max_steer_angle, max_speed, wheel_base, center_to_gps_distance)
 {
     this->Q = ModelMatrix::identity(3, 3);
     this->R = ModelMatrix::identity(1, 1);

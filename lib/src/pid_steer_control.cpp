@@ -31,8 +31,8 @@ pid_steer_control::pid_steer_control()
     this->adapted_pid_yaw_gain = DEFAULT_ADAPTED_PID_YAW_GAIN;
 }
 
-pid_steer_control::pid_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base)
-: path_tracker(max_steer_angle, max_speed, wheel_base)
+pid_steer_control::pid_steer_control(const double max_steer_angle, const double max_speed, const double wheel_base, const double center_to_gps_distance = 0)
+: path_tracker(max_steer_angle, max_speed, wheel_base, center_to_gps_distance)
 {
     this->path_accel_pid = pid_controller(1, 0, 0);
     this->path_distance_pid = pid_controller(DEFAULT_DISTANCE_PID_KP, DEFAULT_DISTANCE_PID_KI, DEFAULT_DISTANCE_PID_KD);

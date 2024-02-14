@@ -58,7 +58,7 @@ class path_tracker
 {
 public:
     path_tracker();
-    path_tracker(const double max_steer_angle, const double max_speed, const double wheel_base);
+    path_tracker(const double max_steer_angle, const double max_speed, const double wheel_base, const double center_to_gps_distance);
     ~path_tracker();
 
 public:
@@ -88,8 +88,9 @@ public:
      * @param [in] max_steer_angle 최대 조향 각[rad]
      * @param [in] max_speed 최대 속도[m/s]
      * @param [in] wheel_base 앞뒤 바퀴 간격[m]
+     * @param [in] center_to_gps_distance 차량 중심과 gps 사이 거리, gps가 차량 앞에 있다면 +, 뒤에 있다면 -[m]
      */
-    void init(const double max_steer_angle, const double max_speed, const double wheel_base);
+    void init(const double max_steer_angle, const double max_speed, const double wheel_base, const double center_to_gps_distance);
 
     /**
      * @brief 경로 설정
