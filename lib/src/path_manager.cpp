@@ -256,10 +256,13 @@ pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, 
         center_slope -= PT_M_PI_2;
     }
 
-    double center_slip_angle = std::atan(this->lr * std::tan(state.steer) / this->wheel_base);
+    double center_slip_angle = path_tracker::pi_to_pi(center_slope - state.yaw);
+    this->g_vl = state.v * std::cos(center_slip_angle);
+    this->g_vr = state.v * std::sin(center_slip_angle);
+
     state.x += state.v * dt * std::cos(state.yaw + center_slip_angle);
     state.y += state.v * dt * std::sin(state.yaw + center_slip_angle);
-    state.yaw += state.v * dt * std::cos(center_slip_angle) * std::tan(state.steer) / this->wheel_base;
+    state.yaw += this->g_vl * dt * std::tan(center_slip_angle) / this->wheel_base;
     state.yaw = path_tracker::pi_to_pi(state.yaw);
 
     return state;
