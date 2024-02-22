@@ -246,6 +246,12 @@ pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, 
     path_point_t front_wheel_point = {state.x + this->lf * std::cos(state.yaw), state.y + this->lf * std::sin(state.yaw), 0, 0, 0};
     path_point_t rear_wheel_point = {state.x - this->lr * std::cos(state.yaw), state.y - this->lr * std::sin(state.yaw), 0, 0, 0};
 
+    if (state.steer == 0) {
+        state.x += state.v * dt * std::cos(state.yaw);
+        state.y += state.v * dt * std::sin(state.yaw);
+        return state;
+    }
+
     path_point_t rotation_origin_point = this->get_point_cross_two_line(rear_wheel_point, std::tan(path_tracker::pi_to_pi(state.yaw + PT_M_PI_2)),
                                                                                front_wheel_point, std::tan(path_tracker::pi_to_pi(state.yaw + state.steer + PT_M_PI_2)));
     double center_slope = path_tracker::pi_to_pi(std::atan2(rotation_origin_point.y - state.y, rotation_origin_point.x - state.x));
@@ -264,6 +270,17 @@ pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, 
     state.y += state.v * dt * std::sin(state.yaw + center_slip_angle);
     state.yaw += this->g_vl * dt * std::tan(center_slip_angle) / this->wheel_base;
     state.yaw = path_tracker::pi_to_pi(state.yaw);
+
+    // 추가 수식, 이것도 동작 가능한데 성능 테스트가 필요
+    // double slip_angle = PT_M_PI_2 - std::atan(this->wheel_base / (this->lr * std::tan(fabsf(state.steer))));
+    // if (state.steer < 0) {
+    //     slip_angle *= -1;
+    // }
+    // state.x += state.v * dt * std::cos(state.yaw + slip_angle);
+    // state.y += state.v * dt * std::sin(state.yaw + slip_angle);
+    // state.yaw += state.v * std::cos(slip_angle) * dt * this->lr * std::tan(state.steer) / (this->wheel_base * this->wheel_base);
+    // // state.yaw += state.v * std::cos(slip_angle) * dt * std::tan(slip_angle) / (this->wheel_base);
+    // state.yaw = path_tracker::pi_to_pi(state.yaw);
 
     return state;
 }
