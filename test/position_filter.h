@@ -14,52 +14,46 @@ class position_filter
 public:
     position_filter();
     ~position_filter();
-    position_filter(ModelMatrix x, ModelMatrix P);
-    ModelMatrix state_equation_jacobi(ModelMatrix x0, ModelMatrix input);
-    ModelMatrix predict_position(ModelMatrix x0, ModelMatrix input);
-    ModelMatrix predict(ModelMatrix input);
-    ModelMatrix estimate_yaw_with_imu(ModelMatrix z);
-    ModelMatrix estimate_xy_with_gps(ModelMatrix z, int quality);
-    ModelMatrix estimate_yaw_with_gps(ModelMatrix z, int quality);
-    ModelMatrix estimate(ModelMatrix z);
-    
-    void set_x(ModelMatrix x)
+    position_filter(ModelMatrix_D x, ModelMatrix_D P);
+    ModelMatrix_D state_equation_jacobi(ModelMatrix_D x0, ModelMatrix_D input);
+    ModelMatrix_D predict_position(ModelMatrix_D x0, ModelMatrix_D input);
+    ModelMatrix_D predict(ModelMatrix_D input);
+    ModelMatrix_D estimate_yaw_with_imu(ModelMatrix_D z);
+    ModelMatrix_D estimate_xy_with_gps(ModelMatrix_D z, int quality);
+    ModelMatrix_D estimate_yaw_with_gps(ModelMatrix_D z, int quality);
+    ModelMatrix_D estimate(ModelMatrix_D z);
+
+    void set_x(ModelMatrix_D x)
     {
         this->x = x;
         this->init_flag = true;
-    }
+    };
 
-    ModelMatrix get_x()
+    ModelMatrix_D get_x()
     {
         return x;
-    }
+    };
 
-    void set_H(ModelMatrix H)
+    void set_H(ModelMatrix_D H)
     {
         this->H = H;
     };
 
-    void set_R(ModelMatrix R)
+    void set_R(ModelMatrix_D R)
     {
         this->R = R;
     };
 
 private:
-    // ModelMatrix A;  /** 상태 전이 함수 */
-    ModelMatrix H;          /** 측정 상태 공간 방정식 */
-    ModelMatrix P;          /** 측정 에러 공분산*/
-    ModelMatrix P_predict;  /** 측정 에러 예측 공분산*/
-    ModelMatrix K;          /** 칼만 게인 */
-    ModelMatrix x;          /** state */
-    ModelMatrix x_predict;  /** 예측 state*/
-    ModelMatrix Q;          /** 예측 노이즈*/
-    ModelMatrix R;          /** 측정 노이즈*/
+    // ModelMatrix_D A;  /** 상태 전이 함수 */
+    ModelMatrix_D H;          /** 측정 상태 공간 방정식 */
+    ModelMatrix_D P;          /** 측정 에러 공분산 */
+    ModelMatrix_D P_predict;  /** 측정 에러 예측 공분산 */
+    ModelMatrix_D K;          /** 칼만 게인 */
+    ModelMatrix_D x;          /** state */
+    ModelMatrix_D x_predict;  /** 예측 state */
+    ModelMatrix_D Q;          /** 예측 노이즈 */
+    ModelMatrix_D R;          /** 측정 노이즈 */
 
     bool init_flag;
-
-    // int (*Ajacob)(int, int);
-    // int (*Hjacob)(int, int);
-    // int (*Ajacob)(int, int);
 };
-
-

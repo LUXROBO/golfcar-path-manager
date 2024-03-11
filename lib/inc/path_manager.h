@@ -103,7 +103,7 @@ public:
      * @brief 경로 추적을 위한 목표 상태 및 예측 위치 계산
      * @param [in] time 함수 호출 시간[s]
      */
-    pt_update_result_t update(double time);
+    pt_update_result_t update(double dt);
 
     /**
      * @brief 목표점으로 이동 가능한지 확인
@@ -125,19 +125,11 @@ public:
 
 public:
     /**
-     * @brief 현재 상태 반환
-     * @return 가장 최근에 갱신된 현재 상태
-     */
-    pt_control_state_t get_last_updated_state() const {
-        return this->last_updated_state;
-    }
-
-    /**
      * @brief 예측 상태 반환
      * @return 예측 상태
      */
-    pt_control_state_t get_predict_state() const {
-        return this->predict_state;
+    pt_control_state_t get_state() const {
+        return this->state;
     }
 
     /**
@@ -145,8 +137,7 @@ public:
      * @param [in] state 현재 상태
      */
     void set_state(pt_control_state_t state) {
-        this->predict_state = state;
-        this->last_updated_state = state;
+        this->state = state;
     }
 
     /**
@@ -166,11 +157,8 @@ public:
      * @param [in] y 변경할 위치 Y 좌표[m]
      */
     void set_position(double x, double y) {
-        this->last_updated_state.x = x;
-        this->predict_state.x = x;
-
-        this->last_updated_state.y = y;
-        this->predict_state.y = y;
+        this->state.x = x;
+        this->state.y = y;
     }
 
     /**
@@ -179,8 +167,7 @@ public:
      * @param [in] yaw 변경할 Yaw[rad]
      */
     void set_yaw(double yaw) {
-        this->last_updated_state.yaw = yaw;
-        this->predict_state.yaw = yaw;
+        this->state.yaw = yaw;
     }
 
     /**
@@ -189,8 +176,7 @@ public:
      * @param [in] steer 갱신할 조향각[rad]
      */
     void set_steer(double steer) {
-        this->last_updated_state.steer = steer;
-        this->predict_state.steer = steer;
+        this->state.steer = steer;
     }
 
     /**
@@ -199,8 +185,7 @@ public:
      * @param [in] velocity 갱신할 주행 속도[m/s]
      */
     void set_velocity(double velocity) {
-        this->last_updated_state.v = velocity;
-        this->predict_state.v = velocity;
+        this->state.v = velocity;
     }
 
     /**
@@ -304,8 +289,7 @@ protected:
 
     pt_control_state_t init_state;              /** 초기 상태 */
     pt_control_state_t goal_state;              /** 끝점 상태 */
-    pt_control_state_t last_updated_state;      /** 현재 상태 */
-    pt_control_state_t predict_state;           /** 예측 상태 */
+    pt_control_state_t state;           /** 예측 상태 */
 
     std::vector<path_point_t> points;           /** 경로 데이터 */
 

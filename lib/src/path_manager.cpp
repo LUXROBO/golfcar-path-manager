@@ -87,7 +87,7 @@ void path_tracker::set_path_points(pt_control_state_t init_state, std::vector<pa
     this->set_state(this->init_state);
 }
 
-pt_update_result_t path_tracker::update(double time)
+pt_update_result_t path_tracker::update(double dt)
 {
     double calculated_steer = 0;
     double calculated_velocity = 0;
@@ -96,26 +96,14 @@ pt_update_result_t path_tracker::update(double time)
     path_point_t front_point;
     size_t remain_point = 0;
 
-    if (time <= 0.0) {
+    if (dt <= 0.0) {
         return PT_UPDATE_RESULT_INVAILED_TIME;
     }
 
-    if (this->updated_time == 0 || this->points.size() == 0) {
-        this->updated_time = time;
-        return PT_UPDATE_RESULT_NOT_READY;
-    }
-
-    this->dt = time - this->updated_time;
-    if (this->dt < 0.0) {
-        return PT_UPDATE_RESULT_INVAILED_TIME;
-    }
-    this->updated_time = time;
-
-    // 예측 상태 갱신
-    this->predict_state = this->update_predict_state(this->predict_state, this->dt);
+    this->dt = dt;
 
     // 목표 경로점 찾기
-    this->target_point_index = this->calculate_target_index(this->predict_state, this->points, this->target_point_index);
+    this->target_point_index = this->calculate_target_index(this->state, this->points, this->target_point_index);
     if (this->target_point_index == -1) {
         // 경로를 찾을 수 없는 경우
         return PT_UPDATE_RESULT_NOT_FOUND_TARGET;
@@ -129,7 +117,7 @@ pt_update_result_t path_tracker::update(double time)
     goal_point_index = this->points.size() - 1;
 
     // 조향각 계산
-    calculated_steer = steering_control(this->predict_state, front_point);
+    calculated_steer = steering_control(this->state, front_point);
     if (calculated_steer > this->max_steer_angle) {
         calculated_steer = this->max_steer_angle;
     } else if (calculated_steer < -this->max_steer_angle) {
@@ -137,10 +125,10 @@ pt_update_result_t path_tracker::update(double time)
     }
 
     // 주행 속도 계산
-    calculated_velocity = velocity_control(this->predict_state, front_point);
+    calculated_velocity = velocity_control(this->state, front_point);
 
     // 조향각에 따른 주행 속도 재계산
-    calculated_velocity = velocity_control_depend_on_steer_error(this->predict_state, calculated_velocity, calculated_steer);
+    calculated_velocity = velocity_control_depend_on_steer_error(this->state, calculated_velocity, calculated_steer);
 
     // 목표 조향각, 주행 속도 설정
     this->target_steer = calculated_steer;
@@ -398,8 +386,8 @@ double path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t s
         predict_velocity  = calculated_velocity;
     }
 
-    this->predict_state.steer = revise_target_steer;
-    this->predict_state.v = predict_velocity;
+    this->state.steer = revise_target_steer;
+    this->state.v = predict_velocity;
 
     return calculated_velocity;
 }

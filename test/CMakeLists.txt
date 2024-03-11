@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0")
 
 file(GLOB SOURCES
     ${PROJECT_SOURCE_DIR}/../lib/src/*cpp
-    ${PROJECT_SOURCE_DIR}/test.cpp
+    ${PROJECT_SOURCE_DIR}/*.cpp
 )
 
 file(GLOB HEADER
@@ -16,7 +16,7 @@ file(GLOB HEADER
 )
 
 include_directories(
-  ${HEADER}
+    ${HEADER}
 )
 
 add_executable(${PROJECT_NAME}
