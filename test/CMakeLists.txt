@@ -12,6 +12,7 @@ file(GLOB SOURCES
 
 file(GLOB HEADER
     ${PROJECT_SOURCE_DIR}/../lib/inc
+    ${PROJECT_SOURCE_DIR}
 )
 
 include_directories(

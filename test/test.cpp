@@ -69,7 +69,7 @@ std::vector<path_point_t> get_path(std::string file_name, int length, int cursor
 int main(int argc, const char * argv[])
 {
     // path_tracker* tracker;
-    curvature_steer_control tracker(PT_M_PI_2/2, 2.5, 2.15);
+    curvature_steer_control tracker(PT_M_PI_2/2, 2.5, 2.15, 0);
 
     // pt_control_state_t init = {0, 0, PT_M_PI_2 / 2, 0.15, 0};
     // pt_control_state_t past = init;
