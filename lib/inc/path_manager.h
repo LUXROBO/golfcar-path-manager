@@ -201,7 +201,7 @@ public:
      * @return 현재 목표점에서 예측을 위한 앞점 인덱스
      */
     int get_front_target_point_index() const {
-        int index = this->target_point_index + this->target_index_offset;
+        unsigned int index = this->target_point_index + this->target_index_offset;
 
         if (index >= this->points.size()) {
             index = this->points.size() - 1;
@@ -299,7 +299,7 @@ protected:
     double target_steer;                        /** 목표 조향 각[rad] */
     double target_velocity;                     /** 목표 속도[m/s] */
 
-    int target_point_index;                     /** 현재 목표 맵 위치 인덱스 */
+    unsigned int target_point_index;                     /** 현재 목표 맵 위치 인덱스 */
     int target_index_offset;                    /** 앞점 추가 인덱스 */
 
     double g_vl;

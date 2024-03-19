@@ -390,7 +390,7 @@ q_format ModelMatrix::determinant(q_format* matrix, int order) {
 
     return det;
 }
-q_format matddA[ModelMatrix::MAX_SIZE];
+static q_format matddA[ModelMatrix::MAX_SIZE];
 ModelMatrix ModelMatrix::matrixInversion(q_format* matrix, int order) {
     // std::vector<q_format> matA = matrix;
     q_format matA[ModelMatrix::MAX_SIZE];

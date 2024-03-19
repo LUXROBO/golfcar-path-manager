@@ -97,7 +97,7 @@ double curvature_steer_control::steering_control(pt_control_state_t state, path_
         double target_yaw1 = path_tracker::pi_to_pi(current_to_circle_yaw + PT_M_PI_2);
         double target_yaw2 = path_tracker::pi_to_pi(current_to_circle_yaw - PT_M_PI_2);
 
-        if (abs(path_tracker::pi_to_pi(target_yaw1 - (new_yaw))) > abs(path_tracker::pi_to_pi(target_yaw2 - (new_yaw)))) {
+        if (fabsf(path_tracker::pi_to_pi(target_yaw1 - (new_yaw))) > fabs(path_tracker::pi_to_pi(target_yaw2 - (new_yaw)))) {
             target_yaw = target_yaw2;
         } else {
             target_yaw = target_yaw1;
@@ -115,7 +115,7 @@ double curvature_steer_control::steering_control(pt_control_state_t state, path_
     double steer_delta2 = this->yaw_error * this->yaw_kp + (this->yaw_error - this->yaw_pre_e) * this->yaw_kd;
     this->yaw_pre_e = this->yaw_error;
     if (fabsf(state.v) > 0.01) {
-        double temp_steer = atan(steer_delta2 * this->wheel_base / state.v);;
+        double temp_steer = atan(steer_delta2 * this->wheel_base / state.v);
         int count = 0;
         double offset = 2 * PT_M_PI / 180;
         while (count <= 10) {

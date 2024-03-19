@@ -104,11 +104,11 @@ double lqr_steer_control::velocity_control(pt_control_state_t state, path_point_
 void lqr_steer_control::set_gain(int gain_index, double* gain_value)
 {
     if (gain_index == PT_GAIN_TYPE_LQR_Q) {
-        for (int i = 0; i < this->Q.row(); i++) {
+        for (unsigned int i = 0; i < this->Q.row(); i++) {
             this->Q.set(i, i, gain_value[i]);
         }
     } else if (gain_index == PT_GAIN_TYPE_LQR_R)  {
-        for (int i = 0; i < this->R.row(); i++) {
+        for (unsigned int i = 0; i < this->R.row(); i++) {
             this->R.set(i, i, gain_value[i]);
         }
     }
@@ -117,11 +117,11 @@ void lqr_steer_control::set_gain(int gain_index, double* gain_value)
 void lqr_steer_control::get_gain(int gain_index, double* gain_value)
 {
     if (gain_index == PT_GAIN_TYPE_LQR_Q) {
-        for (int i = 0; i < this->Q.row(); i++) {
+        for (unsigned int i = 0; i < this->Q.row(); i++) {
             gain_value[i] = this->Q.get(i, i).to_double();
         }
     } else if (gain_index == PT_GAIN_TYPE_LQR_R)  {
-        for (int i = 0; i < this->R.row(); i++) {
+        for (unsigned int i = 0; i < this->R.row(); i++) {
             gain_value[i] = this->R.get(i, i).to_double();
         }
     }

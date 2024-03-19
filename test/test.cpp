@@ -182,7 +182,7 @@ int main(int argc, const char * argv[])
 
     current_state = init_state;
     double filter_init_pos[3] = {init_state.x, init_state.y, init_state.yaw};
-    pos_filter.set_x(ModelMatrix_D(3, 1, filter_init_pos));
+    pos_filter.set_xy(ModelMatrix_D(3, 1, filter_init_pos));
 
     while (true) {
         if (tracker.get_remain_point_num() < TRACK_POINT_SPLIT_HALF && (end_flag == 0)) {
@@ -199,9 +199,9 @@ int main(int argc, const char * argv[])
         double temp_input[3] = {current_state.v, current_state.steer, dt};
         pos_filter.predict(ModelMatrix_D(3, 1, temp_input));
 
-        pt_control_state_t predict_state = {pos_filter.get_x().get(0, 0),
-                                               pos_filter.get_x().get(1, 0),
-                                               pos_filter.get_x().get(2, 0),
+        pt_control_state_t predict_state = {pos_filter.get_xy().get(0, 0),
+                                               pos_filter.get_xy().get(1, 0),
+                                               pos_filter.get_xy().get(2, 0),
                                                current_state.steer,
                                                current_state.v};
         tracker.set_state(predict_state, 0);

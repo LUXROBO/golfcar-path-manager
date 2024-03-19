@@ -180,7 +180,7 @@ bool path_tracker::get_steer_at_moveable_point(pt_control_state_t current, path_
     }
 
     // 최대 조향각보다 크면 오류
-    if (abs(target_steer) > this->max_steer_angle) {
+    if (fabsf(target_steer) > this->max_steer_angle) {
         return false;
     }
 
@@ -210,10 +210,10 @@ path_point_t path_tracker::get_path_circle(path_point_t point1, path_point_t poi
     double xx2 = pow(point2.x, 2);
     double yy2 = pow(point2.y, 2);
 
-    if (abs(slope) > 10000) {
+    if (fabs(slope) > 10000) {
         x = point1.x;
         y = (yy1 - pow(point2.x - point1.x, 2) - yy2) / (2 * (point1.y - point2.y));
-    } else if (abs(slope) < 0.001){
+    } else if (fabs(slope) < 0.001){
         y = point1.y;
         x = (xx1 - pow(point2.y - point1.y, 2) - xx2) / (2 * (point1.x - point2.x));
     } else {
@@ -244,7 +244,7 @@ pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, 
                                                                                front_wheel_point, std::tan(path_tracker::pi_to_pi(state.yaw + state.steer + PT_M_PI_2)));
     double center_slope = path_tracker::pi_to_pi(std::atan2(rotation_origin_point.y - state.y, rotation_origin_point.x - state.x));
 
-    if (abs(path_tracker::pi_to_pi(center_slope + PT_M_PI_2 - state.yaw)) < abs(path_tracker::pi_to_pi(center_slope - PT_M_PI_2 - state.yaw))) {
+    if (fabs(path_tracker::pi_to_pi(center_slope + PT_M_PI_2 - state.yaw)) < fabs(path_tracker::pi_to_pi(center_slope - PT_M_PI_2 - state.yaw))) {
         center_slope += PT_M_PI_2;
     } else {
         center_slope -= PT_M_PI_2;
@@ -366,7 +366,7 @@ double path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t s
         revise_target_steer = -this->max_steer_angle;
     }
 
-    int velocity_control_level = (int)(abs(dsteer) / THRESHOLD_STEER_DIFF_ANGLE);
+    int velocity_control_level = (int)(fabs(dsteer) / THRESHOLD_STEER_DIFF_ANGLE);
     calculated_velocity = target_velocity - (target_velocity - DEFAULT_MIN_SPEED) * ((double)velocity_control_level / MAX_STEER_ERROR_LEVEL);
 
     if (calculated_velocity > this->max_speed) {
@@ -386,8 +386,8 @@ double path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t s
         predict_velocity  = calculated_velocity;
     }
 
-    this->state.steer = revise_target_steer;
-    this->state.v = predict_velocity;
+    // this->state.steer = revise_target_steer;
+    // this->state.v = predict_velocity;
 
     return calculated_velocity;
 }
@@ -422,7 +422,7 @@ double path_tracker::get_line_distance(path_point_t current_point, path_point_t 
     a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
     c = line_point1.y - a * line_point1.x;
 
-    distance = abs(a * current_point.x + b * current_point.y + c) / sqrt(a * a + b * b);
+    distance = fabs(a * current_point.x + b * current_point.y + c) / sqrt(a * a + b * b);
 
     if (current_point.y > (a * current_point.x + c)) {
         if (line_point2.x > line_point1.x) {

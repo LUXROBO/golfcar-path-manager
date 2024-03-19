@@ -16,12 +16,14 @@ public:
     ~position_filter();
     position_filter(ModelMatrix_D x, ModelMatrix_D P);
     ModelMatrix_D state_equation_jacobi(ModelMatrix_D x0, ModelMatrix_D input);
-    ModelMatrix_D predict_position(ModelMatrix_D x0, ModelMatrix_D input);
-    ModelMatrix_D predict(ModelMatrix_D input);
+    ModelMatrix_D predict_xy(ModelMatrix_D input);
     ModelMatrix_D estimate_yaw_with_imu(ModelMatrix_D z);
     ModelMatrix_D estimate_xy_with_gps(ModelMatrix_D z, int quality);
     ModelMatrix_D estimate_yaw_with_gps(ModelMatrix_D z, int quality);
     ModelMatrix_D estimate(ModelMatrix_D z);
+
+    double predict_yaw(double input, double dt);
+    double estimate_yaw(double z);
 
     void set_xy(ModelMatrix_D x)
     {
@@ -34,15 +36,26 @@ public:
         return x;
     };
 
-    void set_H(ModelMatrix_D H)
+    void set_yaw(double yaw)
     {
-        this->H = H;
+        this->yaw = yaw;
+        this->init_flag = true;
     };
 
-    void set_R(ModelMatrix_D R)
+    double get_yaw()
     {
-        this->R = R;
+        return yaw;
     };
+
+    void set_yaw_R(double yaw_R)
+    {
+        this->yaw_R = yaw_R;
+    }
+
+    void set_yaw_Q(double yaw_R)
+    {
+        this->yaw_Q = yaw_R;
+    }
 
 private:
     // ModelMatrix_D A;  /** 상태 전이 함수 */
@@ -54,6 +67,13 @@ private:
     ModelMatrix_D x_predict;  /** 예측 state */
     ModelMatrix_D Q;          /** 예측 노이즈 */
     ModelMatrix_D R;          /** 측정 노이즈 */
+
+    double yaw_H;
+    double yaw_P;
+    double yaw_K;
+    double yaw;
+    double yaw_Q;
+    double yaw_R;
 
     bool init_flag;
 };
