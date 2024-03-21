@@ -181,6 +181,7 @@ public:
     ModelMatrix_D operator-(const ModelMatrix_D &rhs);
     ModelMatrix_D operator*(const double &rhs);
     ModelMatrix_D operator*(const ModelMatrix_D &rhs);
+    ModelMatrix_D operator/(const double &rhs);
 
     friend ModelMatrix_D operator+(const double &lhs, const ModelMatrix_D &rhs);
     friend ModelMatrix_D operator-(const double &lhs, const ModelMatrix_D &rhs);

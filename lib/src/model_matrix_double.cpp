@@ -310,6 +310,16 @@ ModelMatrix_D ModelMatrix_D::operator*(const ModelMatrix_D &rhs) {
     }
 }
 
+ModelMatrix_D ModelMatrix_D::operator/(const double &rhs) {
+    double temp[ModelMatrix_D::MAX_SIZE] = {0, };
+    for (unsigned int r = 0; r < row_; r++) {
+        for (unsigned int c = 0; c < column_; c++) {
+            temp[r * column_ + c] = element_[r * column_ + c] / rhs;
+        }
+    }
+    return ModelMatrix_D(row_, column_, temp);
+}
+
 ModelMatrix_D operator+(const double &lhs, const ModelMatrix_D &rhs) {
     ModelMatrix_D left = ModelMatrix_D::one(rhs.row(), rhs.column()) * lhs;
     return left + rhs;

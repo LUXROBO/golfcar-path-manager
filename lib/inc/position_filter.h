@@ -3,6 +3,7 @@
 #include <path_manager.h>
 #include <qformat.h>
 #include <model_matrix_double.h>
+#include <vector>
 
 // std
 #include <stddef.h>
@@ -56,17 +57,30 @@ public:
     {
         this->yaw_Q = yaw_R;
     }
+    
+    ModelMatrix_D get_R()
+    {
+        return this->R;
+    }
 
 private:
     // ModelMatrix_D A;  /** 상태 전이 함수 */
     ModelMatrix_D H;          /** 측정 상태 공간 방정식 */
     ModelMatrix_D P;          /** 측정 에러 공분산 */
     ModelMatrix_D P_predict;  /** 측정 에러 예측 공분산 */
+    ModelMatrix_D P_estimate;  /** 측정 에러 측정 공분산 */
     ModelMatrix_D K;          /** 칼만 게인 */
     ModelMatrix_D x;          /** state */
     ModelMatrix_D x_predict;  /** 예측 state */
+    ModelMatrix_D x_estimate;  /** 측정 state */
     ModelMatrix_D Q;          /** 예측 노이즈 */
     ModelMatrix_D R;          /** 측정 노이즈 */
+
+    std::vector<ModelMatrix_D> v_estimate_buf;
+    uint32_t v_estimate_buf_max_size;
+
+    std::vector<ModelMatrix_D> x_residual_buf;
+    uint32_t x_residual_buf_max_size;
 
     double yaw_H;
     double yaw_P;

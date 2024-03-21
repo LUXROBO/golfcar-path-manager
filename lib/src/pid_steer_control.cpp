@@ -5,10 +5,10 @@
 #include <cmath>
 
 
-static const double DEFAULT_DISTANCE_PID_KP = 0.4;
-static const double DEFAULT_DISTANCE_PID_KI = 0.05;
-static const double DEFAULT_DISTANCE_PID_KD = 0.7;
-static const double DEFAULT_STEER_PID_KP = 1.2;
+static const double DEFAULT_DISTANCE_PID_KP = 0.6;
+static const double DEFAULT_DISTANCE_PID_KI = 0.0;
+static const double DEFAULT_DISTANCE_PID_KD = 0.8;
+static const double DEFAULT_STEER_PID_KP = 1.0;
 static const double DEFAULT_STEER_PID_KI = 0.0;
 static const double DEFAULT_STEER_PID_KD = 0.9;
 

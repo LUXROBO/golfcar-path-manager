@@ -26,6 +26,11 @@ static ModelMatrix_D R_yaw_mask(2, 2, R_yaw_mask_data);
 const double W = 2.18;
 
 /*
+kalman filter innovation -> 측정 값과 실제 값 차이
+kalman filter residual ->   예측 값과 측정 값 차이
+*/
+
+/*
 GPS Quality indicator:
 0: Fix not valid
 1: GPS fix
@@ -37,12 +42,18 @@ GPS Quality indicator:
 */
 static double R_gps_quality1_data[4] = {1,0,
                                         0,1};   /** gps fix*/
-static double R_gps_quality2_data[4] = {0.8,0.5,
-                                        0.5,1.4};   /** gps differintial fix*/
-static double R_gps_quality4_data[4] = {0.00002   ,0.000002,
-                                          0.000002  ,0.00005};   /** rtk fix*/
-static double R_gps_quality5_data[4] = {0.00168   , -0.00231,
-                                          -0.00231  ,0.00332};   /** rtk float*/
+// static double R_gps_quality2_data[4] = {0.8,0.5,
+//                                         0.5,1.4};   /** gps differintial fix*/
+static double R_gps_quality2_data[4] = {0.06231, 0.0788,
+                                        0.0788, 0.298146};   /** gps differintial fix*/
+// static double R_gps_quality4_data[4] = {0.00002   ,0.000002,
+//                                           0.000002  ,0.00005};   /** rtk fix*/
+static double R_gps_quality4_data[4] = {0.000000233   ,-0.000000014,
+                                          -0.000000017  ,-0.00000026};   /** rtk fix*/
+// static double R_gps_quality5_data[4] = {0.00168   , -0.00231,
+//                                           -0.00231  ,0.00332};   /** rtk float*/
+static double R_gps_quality5_data[4] = {0.00021676   , -0.00000211,
+                                          -0.00000211  ,0.001087};   /** rtk float*/
 
 static ModelMatrix_D R_gps_xy[6] = {
     ModelMatrix_D(2, 2),
@@ -69,15 +80,19 @@ position_filter::position_filter()
 {
     this->x = ModelMatrix_D::zero(2, 1);
     this->x_predict = this->x;
+    this->x_estimate = this->x;
     this->P = ModelMatrix_D::identity(2, 2);
     this->P_predict = this->P;
+    this->P_estimate = this->P;
     this->Q = ModelMatrix_D::zero(2, 2);
-    this->Q.set(0, 0, 0.01);
-    this->Q.set(1, 1, 0.01);
+    this->Q.set(0, 0, 0.001);
+    this->Q.set(1, 1, 0.001);
     this->R = ModelMatrix_D::identity(2, 2);
     this->H = ModelMatrix_D::identity(this->x.row(), this->x.row());
     this->K = ModelMatrix_D::identity(this->x.row(), this->x.row());
     this->init_flag = false;
+    this->v_estimate_buf_max_size = 16;
+    this->x_residual_buf_max_size = 16;
 
     this->yaw_H = 1;
     this->yaw_P = 0;
@@ -96,8 +111,10 @@ position_filter::position_filter(ModelMatrix_D x, ModelMatrix_D P)
 {
     this->x = x;
     this->x_predict = x;
+    this->x_estimate = x;
     this->P = P;
     this->P_predict = P;
+    this->P_estimate = P;
     this->Q = ModelMatrix_D::identity(this->x.row(), this->x.row());
     this->R = ModelMatrix_D::identity(this->x.row(), this->x.row());
 
@@ -159,88 +176,72 @@ ModelMatrix_D position_filter::state_equation_jacobi(ModelMatrix_D x0, ModelMatr
     return jacobian;
 }
 
-// ModelMatrix_D position_filter::predict_xy(ModelMatrix_D x0, ModelMatrix_D input)
-// {
-//     /*
-//         x = [x,             input = [v,
-//             y,                      steer(slip_angle)]
-//             yaw]
-
-//         x = x + v * dt * cos(yaw + steer)
-//         y = y + v * dt * sin(yaw + steer)
-//         yaw = yaw + v * dt * cos(steer) * tan(steer) / W(wheel base);
-//     */
-//     ModelMatrix_D x1 = ModelMatrix_D::zero(3, 1);
-//     // yaw + steer
-//     double yaw_steer = (x0.get(2, 0) + input.get(1, 0));
-//     double steer = input.get(1, 0);
-//     double dt = input.get(2, 0);
-//     double v = input.get(0, 0);
-
-//     x1.set(0, 0, x0.get(0, 0) + v * dt * std::cos(x0.get(2, 0)));
-//     x1.set(1, 0, x0.get(1, 0) + v * dt * std::sin(x0.get(2, 0)));
-
-//     return x1;
-// }
-
-
 ModelMatrix_D position_filter::predict_xy(ModelMatrix_D input)
 {
     if (this->init_flag) {
-        ModelMatrix_D A = this->state_equation_jacobi(this->x, input);
+        ModelMatrix_D A = this->state_equation_jacobi(this->x_predict, input);
         double v = input.get(0, 0);
         double steer = input.get(1, 0);
         double yaw = input.get(2, 0);
         double yaw_steer = (yaw + steer);
         double dt = input.get(3, 0);
 
-        this->x.set(0, 0, this->x.get(0, 0) + v * dt * std::cos(yaw_steer));
-        this->x.set(1, 0, this->x.get(1, 0) + v * dt * std::sin(yaw_steer));
-        this->P = A * this->P * A.transpose() + this->Q;
+        this->x_predict.set(0, 0, this->x_predict.get(0, 0) + v * dt * std::cos(yaw_steer));
+        this->x_predict.set(1, 0, this->x_predict.get(1, 0) + v * dt * std::sin(yaw_steer));
+        this->P_predict = A * this->P_predict * A.transpose() + this->Q;
     }
-    return this->x;
+    return this->x_predict;
 }
 
 ModelMatrix_D position_filter::estimate_yaw_with_imu(ModelMatrix_D z)
 {
-    // this->H = H_yaw;
     this->R = R_imu;    // imu error 공분산
     return this->estimate(z);
 }
 
 ModelMatrix_D position_filter::estimate_xy_with_gps(ModelMatrix_D z, int quality)
 {
-    // this->H = H_xy;
-    // std::cout << "estimate xy" << std::endl;
-    this->R = R_gps_xy[quality];
-    // this->R = ModelMatrix_D::identity(this->x.row(), this->x.row());
-
     return this->estimate(z);
 }
 
 ModelMatrix_D position_filter::estimate(ModelMatrix_D z)
 {
     if (this->init_flag) {
-        this->K = this->P * H.transpose() * (((this->H * this->P * this->H.transpose()) + this->R).inverse());
-        this->x = this->x + this->K * (z - this->H * this->x);
-        this->P = this->P - this->K * this->H * this->P;
+        ModelMatrix_D C_hat = ModelMatrix_D::zero(2, 2);
+        ModelMatrix_D C_x_hat = ModelMatrix_D::zero(2, 2);
+        this->K = this->P_predict * H.transpose() * (((this->H * this->P_predict * this->H.transpose()) + this->R).inverse());
 
-        // std::cout << "P" << std::endl;
-        // for (int i=0; i<2; i++) {
-        //     for (int j=0; j<2; j++) {
-        //         std::cout << this->P.get(i, j) << "\t";
-        //     }
-        //     std::cout << "\n";
+        // this->x_predict = this->x_predict + this->K * (z - this->H * this->x_predict);
+        x_estimate = this->x_predict + this->K * (z - this->H * this->x_predict);
+        // this->P_predict = this->P_predict - this->K * this->H * this->P_predict;
+        P_estimate = this->P_predict - this->K * this->H * this->P_predict;
+
+        ModelMatrix_D v_estimate = z - x_estimate;
+        if (this->v_estimate_buf.size() >= this->v_estimate_buf_max_size) {
+            this->v_estimate_buf.erase(this->v_estimate_buf.begin());
+        }
+        this->v_estimate_buf.push_back(v_estimate);
+        for (int i = 0; i < this->v_estimate_buf.size(); i++) {
+            C_hat = C_hat + this->v_estimate_buf[i] * this->v_estimate_buf[i].transpose();
+        }
+        this->R = C_hat / this->v_estimate_buf.size() + P_estimate;
+
+        // ModelMatrix_D x_residual = x_estimate - this->x;
+        // if (this->x_residual_buf.size() >= this->x_residual_buf_max_size) {
+        //     this->x_residual_buf.erase(this->x_residual_buf.begin());
         // }
-        // std::cout << "\n";
-        // std::cout << "K" << std::endl;
-        // for (int i=0; i<2; i++) {
-        //     for (int j=0; j<2; j++) {
-        //         std::cout << this->K.get(i, j) << "\t";
-        //     }
-        //     std::cout << "\n";
+        // this->x_residual_buf.push_back(x_residual);
+        // for (int i = 0; i < this->x_residual_buf.size(); i++) {
+        //     C_x_hat = C_x_hat + this->x_residual_buf[i] * this->x_residual_buf[i].transpose();
         // }
-        // std::cout << "\n";
+        // this->Q = C_x_hat / this->x_residual_buf.size() + this->P_estimate - this->P;
+
+        this->x = this->x_estimate;
+        this->x_predict = this->x_estimate;
+
+        this->P = this->P_estimate;
+        this->P_predict = this->P_estimate;
+
     }
     return this->x;
 }
