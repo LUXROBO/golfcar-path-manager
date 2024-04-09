@@ -9,85 +9,81 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/**
+ * @brief position filter 초기화
+ * @return true 초기화에 성공한 경우
+ * @return false 초기화에 실패한 경우
+ */
+bool position_filter_init();
 
-class position_filter
-{
-public:
-    position_filter();
-    ~position_filter();
-    position_filter(ModelMatrix_D x, ModelMatrix_D P);
-    ModelMatrix_D state_equation_jacobi(ModelMatrix_D x0, ModelMatrix_D input);
-    ModelMatrix_D predict_xy(ModelMatrix_D input);
-    ModelMatrix_D estimate_yaw_with_imu(ModelMatrix_D z);
-    ModelMatrix_D estimate_xy_with_gps(ModelMatrix_D z, int quality);
-    ModelMatrix_D estimate_yaw_with_gps(ModelMatrix_D z, int quality);
-    ModelMatrix_D estimate(ModelMatrix_D z);
+/**
+ * @brief 차량의 주행 파라미터로 x,y 위치를 예측
+ * @param [in] v 차량의 현재 속도
+ * @param [in] steer 차량의 현재 조향 각도
+ * @param [in] yaw 차량의 현재 yaw
+ * @param [in] dt 마지막 업데이트 후(predict, estimate 포함) 시간[s]
+ * @return pt_control_state_t 예측된 x,y 위치를 path manager에서 관리하는 형태로 리턴
+ */
+pt_control_state_t position_filter_predict_xy(double v, double steer, double yaw, double dt);
 
-    double predict_yaw(double input, double dt);
-    double estimate_yaw(double z);
+/**
+ * @brief GPS의 위치 값으로 실 차량의 위치를 추종
+ * @param [in] gps_pos GPS로 수신한 차량의 위치, 구조체의 x, y만 채워도 동작
+ * @param [in] quality GPS의 RTK quality
+ * @return pt_control_state_t 추종된 차량의 위치
+ */
+pt_control_state_t position_filter_estimate_xy_with_gps(pt_control_state_t gps_pos, int quality);
 
-    void set_xy(ModelMatrix_D x)
-    {
-        this->x = x;
-        this->init_flag = true;
-    };
+/**
+ * @brief IMU 센서 값으로 차량의 yaw를 예측
+ * @param [in] angular_velocity IMU의 z축 각속도[rad/s]
+ * @param [in] dt 마지막 업데이트 후(predict, estimate 포함) 시간[s]
+ * @return pt_control_state_t 예측된 차량의 yaw
+ */
+pt_control_state_t position_filter_predict_yaw(double angular_velocity, double dt);
 
-    ModelMatrix_D get_xy()
-    {
-        return x;
-    };
+/**
+ * @brief GPS의 위치 변화를 통해 계산된 yaw 값으로 실 차량의 yaw를 추종
+ * @param [in] z GPS의 위치 변화를 통해 계산된 yaw
+ * @return pt_control_state_t 추종된 차량의 yaw
+ */
+double position_filter_estimate_yaw(double z);
 
-    void set_yaw(double yaw)
-    {
-        this->yaw = yaw;
-        this->init_flag = true;
-    };
+/**
+ * @brief 필터의 위치 값을 갱신
+ * @param [in] position 갱신한 위치 값
+ */
+void position_filter_set_position(pt_control_state_t position);
 
-    double get_yaw()
-    {
-        return yaw;
-    };
+/**
+ * @brief 필터의 예측 위치를 요청
+ * @return pt_control_state_t 필터에서 예측된 위치
+ */
+pt_control_state_t position_filter_get_position();
 
-    void set_yaw_R(double yaw_R)
-    {
-        this->yaw_R = yaw_R;
-    }
+/**
+ * @brief 차량의 x, y 위치를 설정
+ * @param [in] x 차량의 위치
+ */
+void position_filter_set_xy(pt_control_state_t x);
 
-    void set_yaw_Q(double yaw_R)
-    {
-        this->yaw_Q = yaw_R;
-    }
-    
-    ModelMatrix_D get_R()
-    {
-        return this->R;
-    }
+/**
+ * @brief 차량의 예측된 x, y 위치를 요청
+ * @return pt_control_state_t 차량의 위치
+ */
+pt_control_state_t position_filter_get_xy();
 
-private:
-    // ModelMatrix_D A;  /** 상태 전이 함수 */
-    ModelMatrix_D H;          /** 측정 상태 공간 방정식 */
-    ModelMatrix_D P;          /** 측정 에러 공분산 */
-    ModelMatrix_D P_predict;  /** 측정 에러 예측 공분산 */
-    ModelMatrix_D P_estimate;  /** 측정 에러 측정 공분산 */
-    ModelMatrix_D K;          /** 칼만 게인 */
-    ModelMatrix_D x;          /** state */
-    ModelMatrix_D x_predict;  /** 예측 state */
-    ModelMatrix_D x_estimate;  /** 측정 state */
-    ModelMatrix_D Q;          /** 예측 노이즈 */
-    ModelMatrix_D R;          /** 측정 노이즈 */
+/**
+ * @brief 차의 yaw를 설정
+ * @param [in] yaw 차량의 yaw
+ */
+void position_filter_set_yaw(double yaw);
 
-    std::vector<ModelMatrix_D> v_estimate_buf;
-    uint32_t v_estimate_buf_max_size;
+/**
+ * @brief 차량의 예측된 yaw를 요청
+ * @return double 차량의 yaw
+ */
+double position_filter_get_yaw();
 
-    std::vector<ModelMatrix_D> x_residual_buf;
-    uint32_t x_residual_buf_max_size;
 
-    double yaw_H;
-    double yaw_P;
-    double yaw_K;
-    double yaw;
-    double yaw_Q;
-    double yaw_R;
-
-    bool init_flag;
-};
+void position_filter_set_yaw_R(double yaw_R);

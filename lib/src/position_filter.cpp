@@ -2,27 +2,40 @@
 #include "model_matrix_double.h"
 #include <cmath>
 
-static double H_yaw_data[4] = {0,0,0,1};
-static ModelMatrix_D H_yaw(2, 2, H_yaw_data);
+typedef struct position_filter_context_
+{
+    // ModelMatrix_D A;  /** 상태 전이 함수 */
+    ModelMatrix_D H;          /** 측정 상태 공간 방정식 */
+    ModelMatrix_D P;          /** 측정 에러 공분산 */
+    ModelMatrix_D predict_P;  /** 측정 에러 예측 공분산 */
+    ModelMatrix_D estimate_P;  /** 측정 에러 측정 공분산 */
+    ModelMatrix_D K;          /** 칼만 게인 */
+    ModelMatrix_D x;          /** state */
+    ModelMatrix_D predict_x;  /** 예측 state */
+    ModelMatrix_D estimate_x;  /** 측정 state */
+    ModelMatrix_D Q;          /** 예측 노이즈 */
+    ModelMatrix_D R;          /** 측정 노이즈 */
 
-static double H_xy_data[4] = {1,0,0,0};
-static ModelMatrix_D H_xy(2, 2, H_xy_data);
+    pt_control_state_t predict_state;
 
-static double H_pas_data[4] = {1,0,0,0};
-static ModelMatrix_D H_pos(2, 2, H_pas_data);
+    std::vector<ModelMatrix_D> v_estimate_buf;
+    uint32_t v_estimate_buf_max_size;
 
-static double R_imu_data[4] = {0,0,0,0};
-static ModelMatrix_D R_imu(2, 2, R_imu_data);
+    std::vector<ModelMatrix_D> x_residual_buf;
+    uint32_t x_residual_buf_max_size;
 
-static double R_xy_mask_data[4] = {1, 0,
-                                     0, 1};
-static ModelMatrix_D R_xy_mask(2, 2, R_xy_mask_data);
+    double yaw_H;
+    double yaw_P;
+    double yaw_K;
+    double yaw;
+    double yaw_Q;
+    double yaw_R;
 
-static double R_yaw_mask_data[4] = {0, 0,
-                                      0, 0,};
-static ModelMatrix_D R_yaw_mask(2, 2, R_yaw_mask_data);
+    bool init_flag;
+} position_filter_context_t;
 
-// const double dt = 0.01;
+position_filter_context_t position_estimate_filter;
+
 const double W = 2.18;
 
 /*
@@ -42,18 +55,12 @@ GPS Quality indicator:
 */
 static double R_gps_quality1_data[4] = {1,0,
                                         0,1};   /** gps fix*/
-// static double R_gps_quality2_data[4] = {0.8,0.5,
-//                                         0.5,1.4};   /** gps differintial fix*/
 static double R_gps_quality2_data[4] = {0.06231, 0.0788,
                                         0.0788, 0.298146};   /** gps differintial fix*/
-// static double R_gps_quality4_data[4] = {0.00002   ,0.000002,
-//                                           0.000002  ,0.00005};   /** rtk fix*/
 static double R_gps_quality4_data[4] = {0.000000233   ,-0.000000014,
                                           -0.000000017  ,-0.00000026};   /** rtk fix*/
-// static double R_gps_quality5_data[4] = {0.00168   , -0.00231,
-//                                           -0.00231  ,0.00332};   /** rtk float*/
 static double R_gps_quality5_data[4] = {0.00021676   , -0.00000211,
-                                          -0.00000211  ,0.001087};   /** rtk float*/
+                                          - 0.00000211  ,0.001087};   /** rtk float*/
 
 static ModelMatrix_D R_gps_xy[6] = {
     ModelMatrix_D(2, 2),
@@ -64,72 +71,85 @@ static ModelMatrix_D R_gps_xy[6] = {
     ModelMatrix_D(2, 2, R_gps_quality5_data),
 };
 
-/*
-position = [x, y, yaw]
+/**
+ * @brief
+ *
+ * @param x0
+ * @param input
+ * @return ModelMatrix_D
+ */
+static ModelMatrix_D state_equation_jacobi(ModelMatrix_D x0, ModelMatrix_D input);
 
-지금 필요한 것
- - 각 갱신 조건에 맞는 H matrix
- - P matrix의 초기값
- - Q matrix 값 설정
- - R_gps matrix 값 설정
-  - 아마 gps quality에 따라 설정 필요
- - R_imu matrix 값 설정
- - dt 입력 고려
-*/
-position_filter::position_filter()
+/**
+ * @brief
+ *
+ * @param z
+ * @return pt_control_state_t
+ */
+static pt_control_state_t estimate(pt_control_state_t z);
+
+bool position_filter_init()
 {
-    this->x = ModelMatrix_D::zero(2, 1);
-    this->x_predict = this->x;
-    this->x_estimate = this->x;
-    this->P = ModelMatrix_D::identity(2, 2);
-    this->P_predict = this->P;
-    this->P_estimate = this->P;
-    this->Q = ModelMatrix_D::zero(2, 2);
-    this->Q.set(0, 0, 0.001);
-    this->Q.set(1, 1, 0.001);
-    this->R = ModelMatrix_D::identity(2, 2);
-    this->H = ModelMatrix_D::identity(this->x.row(), this->x.row());
-    this->K = ModelMatrix_D::identity(this->x.row(), this->x.row());
-    this->init_flag = false;
-    this->v_estimate_buf_max_size = 16;
-    this->x_residual_buf_max_size = 16;
-
-    this->yaw_H = 1;
-    this->yaw_P = 0;
-    this->yaw_K = 0;
-    this->yaw = 0;
-    this->yaw_Q = 0.0001;
-    this->yaw_R = 0.01;
+    // @todo
+    return true;
 }
 
-position_filter::~position_filter()
+bool position_filter_is_init()
 {
-
+    return position_estimate_filter.init_flag;
 }
 
-position_filter::position_filter(ModelMatrix_D x, ModelMatrix_D P)
+void position_filter_set_position(pt_control_state_t position)
 {
-    this->x = x;
-    this->x_predict = x;
-    this->x_estimate = x;
-    this->P = P;
-    this->P_predict = P;
-    this->P_estimate = P;
-    this->Q = ModelMatrix_D::identity(this->x.row(), this->x.row());
-    this->R = ModelMatrix_D::identity(this->x.row(), this->x.row());
-
-    this->H = ModelMatrix_D::identity(this->x.row(), this->x.row());
-    this->K = ModelMatrix_D::identity(this->x.row(), this->x.row());
-
-    this->init_flag = false;
+    position_estimate_filter.predict_state = position;
+    position_estimate_filter.init_flag = true;
 }
 
-ModelMatrix_D position_filter::state_equation_jacobi(ModelMatrix_D x0, ModelMatrix_D input)
+pt_control_state_t position_filter_get_position()
+{
+    return position_estimate_filter.predict_state;
+}
+
+void position_filter_set_xy(pt_control_state_t position)
+{
+    position_estimate_filter.predict_state.x = position.x;
+    position_estimate_filter.predict_state.y = position.y;
+    position_estimate_filter.init_flag = true;
+}
+
+pt_control_state_t position_filter_get_xy()
+{
+    return position_estimate_filter.predict_state;
+}
+
+void position_filter_set_yaw(double yaw)
+{
+    position_estimate_filter.yaw = yaw;
+    position_estimate_filter.init_flag = true;
+}
+
+double position_filter_get_yaw()
+{
+    return position_estimate_filter.yaw;
+}
+
+void position_filter_set_yaw_R(double yaw_R)
+{
+    position_estimate_filter.yaw_R = yaw_R;
+}
+
+void position_filter_set_yaw_Q(double yaw_Q)
+{
+    position_estimate_filter.yaw_Q = yaw_Q;
+}
+
+
+ModelMatrix_D state_equation_jacobi(ModelMatrix_D x0, ModelMatrix_D input)
 {
     /*
     x = [x,             input = [v,
          y,                      steer(slip_angle)]
-         yaw]
+         yaw]                    yaw
 
     x = x + v * dt * cos(yaw + steer)
     y = y + v * dt * sin(yaw + steer)
@@ -176,87 +196,79 @@ ModelMatrix_D position_filter::state_equation_jacobi(ModelMatrix_D x0, ModelMatr
     return jacobian;
 }
 
-ModelMatrix_D position_filter::predict_xy(ModelMatrix_D input)
+pt_control_state_t position_filter_predict_xy(double v, double steer, double yaw, double dt)
 {
-    if (this->init_flag) {
-        ModelMatrix_D A = this->state_equation_jacobi(this->x_predict, input);
-        double v = input.get(0, 0);
-        double steer = input.get(1, 0);
-        double yaw = input.get(2, 0);
-        double yaw_steer = (yaw + steer);
-        double dt = input.get(3, 0);
+    if (position_estimate_filter.init_flag) {
+        double yaw_steer = yaw + steer;
+        double temp_input[4] = {v, steer, yaw, dt};
+        ModelMatrix_D input = ModelMatrix_D(4, 1, temp_input);
+        ModelMatrix_D A = state_equation_jacobi(position_estimate_filter.predict_x, input);
 
-        this->x_predict.set(0, 0, this->x_predict.get(0, 0) + v * dt * std::cos(yaw_steer));
-        this->x_predict.set(1, 0, this->x_predict.get(1, 0) + v * dt * std::sin(yaw_steer));
-        this->P_predict = A * this->P_predict * A.transpose() + this->Q;
+        position_estimate_filter.predict_x.set(0, 0, position_estimate_filter.predict_x.get(0, 0) + v * dt * std::cos(yaw_steer));
+        position_estimate_filter.predict_x.set(1, 0, position_estimate_filter.predict_x.get(1, 0) + v * dt * std::sin(yaw_steer));
+        position_estimate_filter.predict_P = A * position_estimate_filter.predict_P * A.transpose() + position_estimate_filter.Q;
     }
-    return this->x_predict;
+    position_estimate_filter.predict_state.x = position_estimate_filter.predict_x.get(0, 0);
+    position_estimate_filter.predict_state.y = position_estimate_filter.predict_x.get(1, 0);
+
+    return position_estimate_filter.predict_state;
 }
 
-ModelMatrix_D position_filter::estimate_yaw_with_imu(ModelMatrix_D z)
+pt_control_state_t position_filter_estimate_xy_with_gps(pt_control_state_t gps_pos, int quality)
 {
-    this->R = R_imu;    // imu error 공분산
-    return this->estimate(z);
+    return estimate(gps_pos);
 }
 
-ModelMatrix_D position_filter::estimate_xy_with_gps(ModelMatrix_D z, int quality)
+pt_control_state_t estimate(pt_control_state_t estimate_value)
 {
-    return this->estimate(z);
-}
-
-ModelMatrix_D position_filter::estimate(ModelMatrix_D z)
-{
-    if (this->init_flag) {
+    if (position_estimate_filter.init_flag) {
+        double temp_estimate_value[2] = {estimate_value.x, estimate_value.y};
+        ModelMatrix_D z = ModelMatrix_D(2, 1, temp_estimate_value);
         ModelMatrix_D C_hat = ModelMatrix_D::zero(2, 2);
         ModelMatrix_D C_x_hat = ModelMatrix_D::zero(2, 2);
-        this->K = this->P_predict * H.transpose() * (((this->H * this->P_predict * this->H.transpose()) + this->R).inverse());
+        position_estimate_filter.K = position_estimate_filter.predict_P * position_estimate_filter.H.transpose() * (((position_estimate_filter.H * position_estimate_filter.predict_P * position_estimate_filter.H.transpose()) + position_estimate_filter.R).inverse());
 
-        // this->x_predict = this->x_predict + this->K * (z - this->H * this->x_predict);
-        x_estimate = this->x_predict + this->K * (z - this->H * this->x_predict);
-        // this->P_predict = this->P_predict - this->K * this->H * this->P_predict;
-        P_estimate = this->P_predict - this->K * this->H * this->P_predict;
+        // position_estimate_filter.predict_x = position_estimate_filter.predict_x + position_estimate_filter.K * (z - position_estimate_filter.H * position_estimate_filter.predict_x);
+        position_estimate_filter.estimate_x = position_estimate_filter.predict_x + position_estimate_filter.K * (z - position_estimate_filter.H * position_estimate_filter.predict_x);
+        // position_estimate_filter.predict_P = position_estimate_filter.predict_P - position_estimate_filter.K * position_estimate_filter.H * position_estimate_filter.predict_P;
+        position_estimate_filter.estimate_P = position_estimate_filter.predict_P - position_estimate_filter.K * position_estimate_filter.H * position_estimate_filter.predict_P;
 
-        ModelMatrix_D v_estimate = z - x_estimate;
-        if (this->v_estimate_buf.size() >= this->v_estimate_buf_max_size) {
-            this->v_estimate_buf.erase(this->v_estimate_buf.begin());
+        ModelMatrix_D v_estimate = z - position_estimate_filter.estimate_x;
+        if (position_estimate_filter.v_estimate_buf.size() >= position_estimate_filter.v_estimate_buf_max_size) {
+            position_estimate_filter.v_estimate_buf.erase(position_estimate_filter.v_estimate_buf.begin());
         }
-        this->v_estimate_buf.push_back(v_estimate);
-        for (int i = 0; i < this->v_estimate_buf.size(); i++) {
-            C_hat = C_hat + this->v_estimate_buf[i] * this->v_estimate_buf[i].transpose();
+        position_estimate_filter.v_estimate_buf.push_back(v_estimate);
+        for (int i = 0; i < position_estimate_filter.v_estimate_buf.size(); i++) {
+            C_hat = C_hat + position_estimate_filter.v_estimate_buf[i] * position_estimate_filter.v_estimate_buf[i].transpose();
         }
-        this->R = C_hat / this->v_estimate_buf.size() + P_estimate;
+        position_estimate_filter.R = C_hat / position_estimate_filter.v_estimate_buf.size() + position_estimate_filter.estimate_P;
 
-        // ModelMatrix_D x_residual = x_estimate - this->x;
-        // if (this->x_residual_buf.size() >= this->x_residual_buf_max_size) {
-        //     this->x_residual_buf.erase(this->x_residual_buf.begin());
-        // }
-        // this->x_residual_buf.push_back(x_residual);
-        // for (int i = 0; i < this->x_residual_buf.size(); i++) {
-        //     C_x_hat = C_x_hat + this->x_residual_buf[i] * this->x_residual_buf[i].transpose();
-        // }
-        // this->Q = C_x_hat / this->x_residual_buf.size() + this->P_estimate - this->P;
+        position_estimate_filter.x = position_estimate_filter.estimate_x;
+        position_estimate_filter.predict_x = position_estimate_filter.estimate_x;
 
-        this->x = this->x_estimate;
-        this->x_predict = this->x_estimate;
+        position_estimate_filter.P = position_estimate_filter.estimate_P;
+        position_estimate_filter.predict_P = position_estimate_filter.estimate_P;
 
-        this->P = this->P_estimate;
-        this->P_predict = this->P_estimate;
+        position_estimate_filter.predict_state.x = position_estimate_filter.x.get(0, 0);
+        position_estimate_filter.predict_state.y = position_estimate_filter.x.get(1, 0);
 
     }
-    return this->x;
+    return position_estimate_filter.predict_state;
 }
 
-double position_filter::predict_yaw(double input, double dt)
+pt_control_state_t position_filter_predict_yaw(double angular_velocity, double dt)
 {
-    this->yaw = path_tracker::pi_to_pi(this->yaw + input * dt);
-    this->yaw_P = this->yaw_P + this->yaw_Q;
+    position_estimate_filter.predict_state.yaw = path_tracker::pi_to_pi(position_estimate_filter.predict_state.yaw + angular_velocity * dt);
+    position_estimate_filter.yaw_P = position_estimate_filter.yaw_P + position_estimate_filter.yaw_Q;
+
+    return position_estimate_filter.predict_state;
 }
 
-double position_filter::estimate_yaw(double z)
+double position_filter_estimate_yaw(double z)
 {
-    this->yaw_K = this->yaw_P / (this->yaw_P + this->yaw_R);
-    this->yaw = this->yaw + this->yaw_K * (z - this->yaw);
-    this->yaw_P = this->yaw_P - this->yaw_K * this->yaw_P;
+    position_estimate_filter.yaw_K = position_estimate_filter.yaw_P / (position_estimate_filter.yaw_P + position_estimate_filter.yaw_R);
+    position_estimate_filter.predict_state.yaw = position_estimate_filter.predict_state.yaw + position_estimate_filter.yaw_K * (z - position_estimate_filter.predict_state.yaw);
+    position_estimate_filter.yaw_P = position_estimate_filter.yaw_P - position_estimate_filter.yaw_K * position_estimate_filter.yaw_P;
 
-    return this->yaw;
+    return position_estimate_filter.predict_state.yaw;
 }
