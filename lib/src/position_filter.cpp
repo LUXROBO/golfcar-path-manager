@@ -24,6 +24,9 @@ typedef struct position_filter_context_
     std::vector<ModelMatrix_D> x_residual_buf;
     uint32_t x_residual_buf_max_size;
 
+    std::vector<double> yaw_v_estimate_buf;
+    uint32_t yaw_v_estimate_buf_max_size;
+
     double yaw_H;
     double yaw_P;
     double yaw_K;
@@ -91,6 +94,9 @@ static pt_control_state_t estimate(pt_control_state_t z);
 bool position_filter_init()
 {
     // @todo
+    position_estimate_filter.v_estimate_buf_max_size = 16;
+    position_estimate_filter.yaw_v_estimate_buf_max_size = 16;
+    position_estimate_filter.yaw_P = 1;
     return true;
 }
 
@@ -228,9 +234,7 @@ pt_control_state_t estimate(pt_control_state_t estimate_value)
         ModelMatrix_D C_x_hat = ModelMatrix_D::zero(2, 2);
         position_estimate_filter.K = position_estimate_filter.predict_P * position_estimate_filter.H.transpose() * (((position_estimate_filter.H * position_estimate_filter.predict_P * position_estimate_filter.H.transpose()) + position_estimate_filter.R).inverse());
 
-        // position_estimate_filter.predict_x = position_estimate_filter.predict_x + position_estimate_filter.K * (z - position_estimate_filter.H * position_estimate_filter.predict_x);
         position_estimate_filter.estimate_x = position_estimate_filter.predict_x + position_estimate_filter.K * (z - position_estimate_filter.H * position_estimate_filter.predict_x);
-        // position_estimate_filter.predict_P = position_estimate_filter.predict_P - position_estimate_filter.K * position_estimate_filter.H * position_estimate_filter.predict_P;
         position_estimate_filter.estimate_P = position_estimate_filter.predict_P - position_estimate_filter.K * position_estimate_filter.H * position_estimate_filter.predict_P;
 
         ModelMatrix_D v_estimate = z - position_estimate_filter.estimate_x;
@@ -266,9 +270,23 @@ pt_control_state_t position_filter_predict_yaw(double angular_velocity, double d
 
 double position_filter_estimate_yaw(double z)
 {
+    double C_hat = 0;
     position_estimate_filter.yaw_K = position_estimate_filter.yaw_P / (position_estimate_filter.yaw_P + position_estimate_filter.yaw_R);
     position_estimate_filter.predict_state.yaw = position_estimate_filter.predict_state.yaw + position_estimate_filter.yaw_K * (z - position_estimate_filter.predict_state.yaw);
     position_estimate_filter.yaw_P = position_estimate_filter.yaw_P - position_estimate_filter.yaw_K * position_estimate_filter.yaw_P;
+    
+    if (position_estimate_filter.yaw_P == 0) {
+      position_estimate_filter.yaw_P = 0.0001;
+    }
+    double v_estimate = z - position_estimate_filter.predict_state.yaw;
+    if (position_estimate_filter.yaw_v_estimate_buf.size() >= position_estimate_filter.yaw_v_estimate_buf_max_size) {
+        position_estimate_filter.yaw_v_estimate_buf.erase(position_estimate_filter.yaw_v_estimate_buf.begin());
+    }
+    position_estimate_filter.yaw_v_estimate_buf.push_back(v_estimate);
+    for (int i = 0; i < position_estimate_filter.yaw_v_estimate_buf.size(); i++) {
+        C_hat = C_hat + position_estimate_filter.yaw_v_estimate_buf[i] * position_estimate_filter.yaw_v_estimate_buf[i];
+    }
+    position_estimate_filter.yaw_R = C_hat / position_estimate_filter.yaw_v_estimate_buf.size() + position_estimate_filter.yaw_P;
 
     return position_estimate_filter.predict_state.yaw;
 }
