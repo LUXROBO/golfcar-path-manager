@@ -87,3 +87,5 @@ double position_filter_get_yaw();
 
 
 void position_filter_set_yaw_R(double yaw_R);
+
+bool position_filter_is_init_xy();

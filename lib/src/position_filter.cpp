@@ -139,6 +139,11 @@ double position_filter_get_yaw()
     return position_estimate_filter.yaw;
 }
 
+bool position_filter_is_init_xy()
+{
+    return position_estimate_filter.init_flag;
+}
+
 void position_filter_set_yaw_R(double yaw_R)
 {
     position_estimate_filter.yaw_R = yaw_R;
@@ -274,9 +279,9 @@ double position_filter_estimate_yaw(double z)
     position_estimate_filter.yaw_K = position_estimate_filter.yaw_P / (position_estimate_filter.yaw_P + position_estimate_filter.yaw_R);
     position_estimate_filter.predict_state.yaw = position_estimate_filter.predict_state.yaw + position_estimate_filter.yaw_K * (z - position_estimate_filter.predict_state.yaw);
     position_estimate_filter.yaw_P = position_estimate_filter.yaw_P - position_estimate_filter.yaw_K * position_estimate_filter.yaw_P;
-    
+
     if (position_estimate_filter.yaw_P == 0) {
-      position_estimate_filter.yaw_P = 0.0001;
+        position_estimate_filter.yaw_P = 0.0001;
     }
     double v_estimate = z - position_estimate_filter.predict_state.yaw;
     if (position_estimate_filter.yaw_v_estimate_buf.size() >= position_estimate_filter.yaw_v_estimate_buf_max_size) {
