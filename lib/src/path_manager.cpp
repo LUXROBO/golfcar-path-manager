@@ -7,18 +7,18 @@
 #include <algorithm>
 
 
-static const double DEFAULT_WHEEL_BASE = 2.15;                                  /**< 기본 차량 앞뒤 바퀴 간격[m] */
+static const float DEFAULT_WHEEL_BASE = 2.15;                                  /**< 기본 차량 앞뒤 바퀴 간격[m] */
 
-static const double DEFAULT_MIN_SPEED = 1.0;                                    /**< 기본 최소 주행 속도[m/s] */
-static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;                             /**< 기본 최대 주행 속도[m/s] */
+static const float DEFAULT_MIN_SPEED = 1.0;                                    /**< 기본 최소 주행 속도[m/s] */
+static const float DEFAULT_MAX_SPEED = 10.0 / 3.6;                             /**< 기본 최대 주행 속도[m/s] */
 
-static const double DEFAULT_MAX_STEER_ANGLE = 25.0 * PT_M_PI / 180.0;           /**< 기본 최대 조향 각도[rad] */
-static const double DEFAULT_MAX_STEER_VELOCITY = 20.0 * PT_M_PI / 180.0;        /**< 기본 최대 조향 각속도[rad/s] */
-static const double DEFAULT_MAX_VEHICLE_ACCEL = 0.8333333;                      /**< 기본 최대 주행 가속도[m/s^2] */
+static const float DEFAULT_MAX_STEER_ANGLE = 25.0 * PT_M_PI / 180.0;           /**< 기본 최대 조향 각도[rad] */
+static const float DEFAULT_MAX_STEER_VELOCITY = 20.0 * PT_M_PI / 180.0;        /**< 기본 최대 조향 각속도[rad/s] */
+static const float DEFAULT_MAX_VEHICLE_ACCEL = 0.8333333;                      /**< 기본 최대 주행 가속도[m/s^2] */
 
-static const double DEFAULT_MAX_MOVEABLE_RANGE = 30.0 * PT_M_PI / 180.0;        /**< 이동 가능한 방향 범위[rad] */
+static const float DEFAULT_MAX_MOVEABLE_RANGE = 30.0 * PT_M_PI / 180.0;        /**< 이동 가능한 방향 범위[rad] */
 
-static const double THRESHOLD_STEER_DIFF_ANGLE = 3 * PT_M_PI / 180.0;           /**< 조향각에 따른 속도 조절을 위한 조향각 레졸루션 단위[rad] */
+static const float THRESHOLD_STEER_DIFF_ANGLE = 3 * PT_M_PI / 180.0;           /**< 조향각에 따른 속도 조절을 위한 조향각 레졸루션 단위[rad] */
 static const int MAX_STEER_ERROR_LEVEL = 10;                                    /**< steer error 세분화 */
 
 path_tracker::path_tracker()
@@ -30,7 +30,7 @@ path_tracker::path_tracker()
     this->lr = DEFAULT_WHEEL_BASE / 2;
 }
 
-path_tracker::path_tracker(const double max_steer_angle, const double max_speed, const double wheel_base, const double center_to_gps_distance = 0)
+path_tracker::path_tracker(const float max_steer_angle, const float max_speed, const float wheel_base, const float center_to_gps_distance = 0)
 {
     this->init(max_steer_angle, max_speed, wheel_base, center_to_gps_distance);
     this->updated_time = 0;
@@ -44,7 +44,7 @@ path_tracker::~path_tracker()
 
 }
 
-void path_tracker::init(const double max_steer_angle, const double max_speed, const double wheel_base, const double center_to_gps_distance = 0)
+void path_tracker::init(const float max_steer_angle, const float max_speed, const float wheel_base, const float center_to_gps_distance = 0)
 {
     this->max_steer_angle = max_steer_angle;
     this->max_speed = max_speed;
@@ -87,10 +87,10 @@ void path_tracker::set_path_points(pt_control_state_t init_state, std::vector<pa
     this->set_state(this->init_state);
 }
 
-pt_update_result_t path_tracker::update(double dt)
+pt_update_result_t path_tracker::update(float dt)
 {
-    double calculated_steer = 0;
-    double calculated_velocity = 0;
+    float calculated_steer = 0;
+    float calculated_velocity = 0;
     int front_point_index = 0;
     int goal_point_index = 0;
     path_point_t front_point;
@@ -144,18 +144,18 @@ pt_update_result_t path_tracker::update(double dt)
     return PT_UPDATE_RESULT_RUNNING;
 }
 
-bool path_tracker::is_moveable_point(pt_control_state_t current, path_point_t target, double range)
+bool path_tracker::is_moveable_point(pt_control_state_t current, path_point_t target, float range)
 {
     bool res = false;
-    double target_angle = atan2(target.y - current.y, target.x - current.x);
-    double cw_angle = path_tracker::pi_to_pi(current.yaw + current.steer - range);
-    double ccw_angle = path_tracker::pi_to_pi(current.yaw + current.steer + range);
+    float target_angle = atan2(target.y - current.y, target.x - current.x);
+    float cw_angle = path_tracker::pi_to_pi(current.yaw + current.steer - range);
+    float ccw_angle = path_tracker::pi_to_pi(current.yaw + current.steer + range);
 
     // 계산 편의를 위해 1사분면만 사용
-    double scale = 4.0;
-    double target_angle_sin = sin(target_angle / scale);
-    double cw_angle_sin = sin(cw_angle / scale);
-    double ccw_angle_sin = sin(ccw_angle / scale);
+    float scale = 4.0;
+    float target_angle_sin = sin(target_angle / scale);
+    float cw_angle_sin = sin(cw_angle / scale);
+    float ccw_angle_sin = sin(ccw_angle / scale);
 
     if (cw_angle_sin < ccw_angle_sin) {
         if (target_angle_sin < ccw_angle_sin && target_angle_sin > cw_angle_sin) {
@@ -169,10 +169,10 @@ bool path_tracker::is_moveable_point(pt_control_state_t current, path_point_t ta
     return res;
 }
 
-bool path_tracker::get_steer_at_moveable_point(pt_control_state_t current, path_point_t target, double* steer)
+bool path_tracker::get_steer_at_moveable_point(pt_control_state_t current, path_point_t target, float* steer)
 {
-    double target_yaw = path_tracker::pi_to_pi(atan2(target.y - current.y, target.x - current.x));
-    double target_steer = path_tracker::pi_to_pi(target_yaw - current.yaw);
+    float target_yaw = path_tracker::pi_to_pi(atan2(target.y - current.y, target.x - current.x));
+    float target_steer = path_tracker::pi_to_pi(target_yaw - current.yaw);
 
     // 이동 가능한 목표점인지 확인
     if (!this->is_moveable_point(current, target, DEFAULT_MAX_MOVEABLE_RANGE)) {
@@ -189,18 +189,18 @@ bool path_tracker::get_steer_at_moveable_point(pt_control_state_t current, path_
     return true;
 }
 
-path_point_t path_tracker::get_point_cross_two_line(path_point_t point1, double slope1, path_point_t point2, double slope2)
+path_point_t path_tracker::get_point_cross_two_line(path_point_t point1, float slope1, path_point_t point2, float slope2)
 {
-    double b1 = point1.y - slope1 * point1.x;
-    double b2 = point2.y - slope2 * point2.x;
+    float b1 = point1.y - slope1 * point1.x;
+    float b2 = point2.y - slope2 * point2.x;
 
-    double x3 = (b2 - b1) / (slope1 - slope2);
-    double y3 = slope1 * x3 + b1;
+    float x3 = (b2 - b1) / (slope1 - slope2);
+    float y3 = slope1 * x3 + b1;
 
     return path_point_t{x3, y3, 0, 0, 0};
 }
 
-path_point_t path_tracker::get_path_circle(path_point_t point1, path_point_t point2, double slope)
+path_point_t path_tracker::get_path_circle(path_point_t point1, path_point_t point2, float slope)
 {
     // double orthogonal_yaw = path_tracker::pi_to_pi(yaw + PT_M_PI_2);
     double x = 0;
@@ -210,26 +210,26 @@ path_point_t path_tracker::get_path_circle(path_point_t point1, path_point_t poi
     double xx2 = pow(point2.x, 2);
     double yy2 = pow(point2.y, 2);
 
-    if (fabs(slope) > 10000) {
+    if (fabsf(slope) > 10000) {
         x = point1.x;
         y = (yy1 - pow(point2.x - point1.x, 2) - yy2) / (2 * (point1.y - point2.y));
-    } else if (fabs(slope) < 0.001){
+    } else if (fabsf(slope) < 0.001){
         y = point1.y;
         x = (xx1 - pow(point2.y - point1.y, 2) - xx2) / (2 * (point1.x - point2.x));
     } else {
-        double a = slope;
-        double b = point1.y - a * point1.x;
-        double c = point1.y - b;
-        double d = point2.y - b;
+        float a = slope;
+        float b = point1.y - a * point1.x;
+        float c = point1.y - b;
+        float d = point2.y - b;
         x = (xx1 - 2 * b * point1.y + yy1 - xx2 + 2 * b * point2.y - yy2) / (2 * (point1.x + a * point1.y - point2.x - a * point2.y));
         y = a * x + b;
     }
-    double distance = sqrt(pow(x - point1.x, 2) + pow(y - point1.y, 2));
+    float distance = sqrt(pow(x - point1.x, 2) + pow(y - point1.y, 2));
 
     return path_point_t{x, y, 0, 1 / distance, 0};
 }
 
-pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, double dt)
+pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, float dt)
 {
     path_point_t front_wheel_point = {state.x + this->lf * std::cos(state.yaw), state.y + this->lf * std::sin(state.yaw), 0, 0, 0};
     path_point_t rear_wheel_point = {state.x - this->lr * std::cos(state.yaw), state.y - this->lr * std::sin(state.yaw), 0, 0, 0};
@@ -242,15 +242,15 @@ pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, 
 
     path_point_t rotation_origin_point = this->get_point_cross_two_line(rear_wheel_point, std::tan(path_tracker::pi_to_pi(state.yaw + PT_M_PI_2)),
                                                                                front_wheel_point, std::tan(path_tracker::pi_to_pi(state.yaw + state.steer + PT_M_PI_2)));
-    double center_slope = path_tracker::pi_to_pi(std::atan2(rotation_origin_point.y - state.y, rotation_origin_point.x - state.x));
+    float center_slope = path_tracker::pi_to_pi(std::atan2(rotation_origin_point.y - state.y, rotation_origin_point.x - state.x));
 
-    if (fabs(path_tracker::pi_to_pi(center_slope + PT_M_PI_2 - state.yaw)) < fabs(path_tracker::pi_to_pi(center_slope - PT_M_PI_2 - state.yaw))) {
+    if (fabsf(path_tracker::pi_to_pi(center_slope + PT_M_PI_2 - state.yaw)) < fabsf(path_tracker::pi_to_pi(center_slope - PT_M_PI_2 - state.yaw))) {
         center_slope += PT_M_PI_2;
     } else {
         center_slope -= PT_M_PI_2;
     }
 
-    double center_slip_angle = path_tracker::pi_to_pi(center_slope - state.yaw);
+    float center_slip_angle = path_tracker::pi_to_pi(center_slope - state.yaw);
     this->g_vl = state.v * std::cos(center_slip_angle);
     this->g_vr = state.v * std::sin(center_slip_angle);
 
@@ -260,7 +260,7 @@ pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, 
     state.yaw = path_tracker::pi_to_pi(state.yaw);
 
     // 추가 수식, 이것도 동작 가능한데 성능 테스트가 필요
-    // double slip_angle = PT_M_PI_2 - std::atan(this->wheel_base / (this->lr * std::tan(fabsf(state.steer))));
+    // double slip_angle = PT_M_PI_2 - std::atan(this->wheel_base / (this->lr * std::tan(fabsff(state.steer))));
     // if (state.steer < 0) {
     //     slip_angle *= -1;
     // }
@@ -278,7 +278,7 @@ int path_tracker::calculate_target_index(pt_control_state_t current_state, std::
     static const int SEARCH_NUM = 5;
     int max_index = start_index + SEARCH_NUM;
     int target_point_index = -1;
-    double min_distance = 10000.0;
+    float min_distance = 10000.0;
     path_point_t current_point = {
         .x = current_state.x,
         .y = current_state.y,
@@ -294,9 +294,9 @@ int path_tracker::calculate_target_index(pt_control_state_t current_state, std::
     // 현재 조향각 기준으로 좌/우 30도 내에 가장 가까운 점을 목표로 설정
     for (uint32_t i = start_index; i < max_index; i++) {
         path_point_t target_point = points[i];
-        double dx = target_point.x - current_state.x;
-        double dy = target_point.y - current_state.y;
-        double distance = dx * dx + dy * dy;
+        float dx = target_point.x - current_state.x;
+        float dy = target_point.y - current_state.y;
+        float distance = dx * dx + dy * dy;
 
         if (distance < min_distance) {
             if (this->is_moveable_point(current_state, target_point, DEFAULT_MAX_MOVEABLE_RANGE)) {
@@ -346,12 +346,12 @@ int path_tracker::calculate_target_index(pt_control_state_t current_state, std::
     return target_point_index;
 }
 
-double path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t state, double target_velocity, double target_steer)
+float path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t state, float target_velocity, float target_steer)
 {
-    double max_steer_change_amount = DEFAULT_MAX_STEER_VELOCITY * this->dt;
-    double dsteer = target_steer - state.steer;
-    double revise_target_steer = state.steer;
-    double calculated_velocity = 0;
+    float max_steer_change_amount = DEFAULT_MAX_STEER_VELOCITY * this->dt;
+    float dsteer = target_steer - state.steer;
+    float revise_target_steer = state.steer;
+    float calculated_velocity = 0;
     if (dsteer > max_steer_change_amount) {
         revise_target_steer += max_steer_change_amount;
     } else if (dsteer < -max_steer_change_amount) {
@@ -366,8 +366,8 @@ double path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t s
         revise_target_steer = -this->max_steer_angle;
     }
 
-    int velocity_control_level = (int)(fabs(dsteer) / THRESHOLD_STEER_DIFF_ANGLE);
-    calculated_velocity = target_velocity - (target_velocity - DEFAULT_MIN_SPEED) * ((double)velocity_control_level / MAX_STEER_ERROR_LEVEL);
+    int velocity_control_level = (int)(fabsf(dsteer) / THRESHOLD_STEER_DIFF_ANGLE);
+    calculated_velocity = target_velocity - (target_velocity - DEFAULT_MIN_SPEED) * ((float)velocity_control_level / MAX_STEER_ERROR_LEVEL);
 
     if (calculated_velocity > this->max_speed) {
         calculated_velocity = this->max_speed;
@@ -375,9 +375,9 @@ double path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t s
         calculated_velocity = DEFAULT_MIN_SPEED;
     }
 
-    double max_velocity_change_amount = DEFAULT_MAX_VEHICLE_ACCEL * this->dt;
-    double d_velocity = calculated_velocity - state.v;
-    double predict_velocity = state.v;
+    float max_velocity_change_amount = DEFAULT_MAX_VEHICLE_ACCEL * this->dt;
+    float d_velocity = calculated_velocity - state.v;
+    float predict_velocity = state.v;
     if (d_velocity > max_velocity_change_amount) {
         predict_velocity += max_velocity_change_amount;
     } else if (d_velocity < -max_velocity_change_amount) {
@@ -392,21 +392,21 @@ double path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t s
     return calculated_velocity;
 }
 
-double path_tracker::get_point_distance(path_point_t current_point, path_point_t point)
+float path_tracker::get_point_distance(path_point_t current_point, path_point_t point)
 {
     double x = point.x - current_point.x;
     double y = point.y - current_point.y;
-    double distance = sqrt(x * x + y * y);
+    float distance = sqrt(x * x + y * y);
 
     return distance;
 }
 
-double path_tracker::get_line_distance(path_point_t current_point, path_point_t line_point1, path_point_t line_point2)
+float path_tracker::get_line_distance(path_point_t current_point, path_point_t line_point1, path_point_t line_point2)
 {
-    double distance = 0.0;
-    double a = 0.0;
-    double b = -1.0;
-    double c = 0.0;
+    float distance = 0.0;
+    float a = 0.0;
+    float b = -1.0;
+    float c = 0.0;
 
     if (line_point1.x == line_point2.x) {
         distance = (current_point.x - line_point1.x);
@@ -422,7 +422,7 @@ double path_tracker::get_line_distance(path_point_t current_point, path_point_t 
     a = (line_point1.y - line_point2.y) / (line_point1.x - line_point2.x);
     c = line_point1.y - a * line_point1.x;
 
-    distance = fabs(a * current_point.x + b * current_point.y + c) / sqrt(a * a + b * b);
+    distance = fabsf(a * current_point.x + b * current_point.y + c) / sqrt(a * a + b * b);
 
     if (current_point.y > (a * current_point.x + c)) {
         if (line_point2.x > line_point1.x) {
@@ -442,7 +442,7 @@ void path_tracker::smooth_yaw(std::vector<path_point_t> &points)
 {
     for (uint32_t i = 0; i < points.size() - 1; i++)
     {
-        double diff_yaw = points[i + 1].yaw - points[i].yaw;
+        float diff_yaw = points[i + 1].yaw - points[i].yaw;
 
         while (diff_yaw >= PT_M_PI_2) {
             points[i + 1].yaw -= PT_M_PI * 2.0;
@@ -456,7 +456,7 @@ void path_tracker::smooth_yaw(std::vector<path_point_t> &points)
     }
 }
 
-double path_tracker::pi_to_pi(double angle)
+float path_tracker::pi_to_pi(float angle)
 {
     while (angle > PT_M_PI) {
         angle = angle - 2.0 * PT_M_PI;

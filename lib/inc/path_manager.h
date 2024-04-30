@@ -30,9 +30,9 @@ typedef struct path_point
 {
     double x;
     double y;
-    double yaw;
-    double k;
-    double speed;
+    float yaw;
+    float k;
+    float speed;
 } path_point_t;
 
 /**
@@ -43,9 +43,9 @@ typedef struct path_tracker_control_state
 {
     double x;
     double y;
-    double yaw;
-    double steer;
-    double v;
+    float yaw;
+    float steer;
+    float v;
 } pt_control_state_t;
 
 #define PT_GAIN_TYPE_PID_DISTANCE   0
@@ -58,12 +58,12 @@ class path_tracker
 {
 public:
     path_tracker();
-    path_tracker(const double max_steer_angle, const double max_speed, const double wheel_base, const double center_to_gps_distance);
+    path_tracker(const float max_steer_angle, const float max_speed, const float wheel_base, const float center_to_gps_distance);
     ~path_tracker();
 
 public:
-    virtual void get_gain(pt_gain_type_t gain_index, double* gain_value) = 0;
-    virtual void set_gain(pt_gain_type_t gain_index, double* gain_value) = 0;
+    virtual void get_gain(pt_gain_type_t gain_index, float* gain_value) = 0;
+    virtual void set_gain(pt_gain_type_t gain_index, float* gain_value) = 0;
 
 protected:
     /**
@@ -72,7 +72,7 @@ protected:
      * @param [in] target 목표점
      * @return 목표 조향각[rad]
      */
-    virtual double steering_control(pt_control_state_t state, path_point_t target) = 0;
+    virtual float steering_control(pt_control_state_t state, path_point_t target) = 0;
 
     /**
      * @brief 목표점까지 이동할 수 있는 주행 속도 계산
@@ -80,7 +80,7 @@ protected:
      * @param [in] target 목표점
      * @return 목표 주행 속도[m/s]
      */
-    virtual double velocity_control(pt_control_state_t state, path_point_t target) = 0;
+    virtual float velocity_control(pt_control_state_t state, path_point_t target) = 0;
 
 public:
     /**
@@ -90,7 +90,7 @@ public:
      * @param [in] wheel_base 앞뒤 바퀴 간격[m]
      * @param [in] center_to_gps_distance 차량 중심과 gps 사이 거리, gps가 차량 앞에 있다면 +, 뒤에 있다면 -[m]
      */
-    void init(const double max_steer_angle, const double max_speed, const double wheel_base, const double center_to_gps_distance);
+    void init(const float max_steer_angle, const float max_speed, const float wheel_base, const float center_to_gps_distance);
 
     /**
      * @brief 경로 설정
@@ -103,7 +103,7 @@ public:
      * @brief 경로 추적을 위한 목표 상태 및 예측 위치 계산
      * @param [in] time 함수 호출 시간[s]
      */
-    pt_update_result_t update(double dt);
+    pt_update_result_t update(float dt);
 
     /**
      * @brief 목표점으로 이동 가능한지 확인
@@ -112,7 +112,7 @@ public:
      * @param [in] range 좌우 최대 범위[rad]
      * @return 이동 가능 여부
      */
-    bool is_moveable_point(pt_control_state_t current, path_point_t target, double range);
+    bool is_moveable_point(pt_control_state_t current, path_point_t target, float range);
 
     /**
      * @brief 현재 상태에서 목표점으로 이동하기 위한 조향각 반환
@@ -121,7 +121,7 @@ public:
      * @param [out] steer 계산된 조향각[rad]
      * @return 이동 가능 여부
      */
-    bool get_steer_at_moveable_point(pt_control_state_t current, path_point_t target, double* steer);
+    bool get_steer_at_moveable_point(pt_control_state_t current, path_point_t target, float* steer);
 
 public:
     /**
@@ -145,7 +145,7 @@ public:
      * @param [in] state 현재 상태
      * @param [in] time 함수 호출 시간[s]
      */
-    void set_state(pt_control_state_t state, double time) {
+    void set_state(pt_control_state_t state, float time) {
         this->updated_time = time;
         this->set_state(state);
     }
@@ -166,7 +166,7 @@ public:
      * @details Yaw 갱신 주기가 경로 추적 갱신 주기보다 빠를 경우 사용
      * @param [in] yaw 변경할 Yaw[rad]
      */
-    void set_yaw(double yaw) {
+    void set_yaw(float yaw) {
         this->state.yaw = yaw;
     }
 
@@ -175,7 +175,7 @@ public:
      * @details 조향각 갱신 주기가 경로 추적 갱신 주기보다 빠를 경우 사용
      * @param [in] steer 갱신할 조향각[rad]
      */
-    void set_steer(double steer) {
+    void set_steer(float steer) {
         this->state.steer = steer;
     }
 
@@ -184,7 +184,7 @@ public:
      * @details 주행 속도 갱신 주기가 경로 추적 갱신 주기보다 빠를 경우 사용
      * @param [in] velocity 갱신할 주행 속도[m/s]
      */
-    void set_velocity(double velocity) {
+    void set_velocity(float velocity) {
         this->state.v = velocity;
     }
 
@@ -222,7 +222,7 @@ public:
      * @brief 현재 경로의 거리 오차 반환
      * @return 거리 오차[m]
      */
-    double get_distance_error() {
+    float get_distance_error() {
         return this->distance_error;
     }
 
@@ -230,7 +230,7 @@ public:
      * @brief 현재 경로의 방향 오차 반환
      * @return 방향 오차[rad]
      */
-    double get_yaw_error() {
+    float get_yaw_error() {
         return this->yaw_error;
     }
 
@@ -238,7 +238,7 @@ public:
      * @brief 목표 조향각 반환
      * @return 목표 조향각[rad]
      */
-    double get_target_steer() {
+    float get_target_steer() {
         return this->target_steer;
     }
 
@@ -246,10 +246,10 @@ public:
      * @brief 목표 주행 속도 반환
      * @return 목표 주행 속도[m/s]
      */
-    double get_target_velocity() {
+    float get_target_velocity() {
         return this->target_velocity;
     }
-    pt_control_state_t update_predict_state2(pt_control_state_t state, double dt);
+    pt_control_state_t update_predict_state2(pt_control_state_t state, float dt);
 
 private:
     /**
@@ -257,9 +257,9 @@ private:
      * @param [in] state 현재 상태
      * @param [in] dt 스텝 시간[s]
      */
-    pt_control_state_t update_predict_state(pt_control_state_t state, double dt);
+    pt_control_state_t update_predict_state(pt_control_state_t state, float dt);
 
-    path_point_t get_point_cross_two_line(path_point_t point1, double slope1, path_point_t point2, double slope2);
+    path_point_t get_point_cross_two_line(path_point_t point1, float slope1, path_point_t point2, float slope2);
 
     /**
      * @brief 목표점 인덱스를 계산
@@ -277,15 +277,15 @@ private:
      * @param [in] target_steer 목표 조향각[rad]
      * @return 조정된 속도[m/s]
      */
-    double velocity_control_depend_on_steer_error(pt_control_state_t state, double target_velocity, double target_steer);
+    float velocity_control_depend_on_steer_error(pt_control_state_t state, float target_velocity, float target_steer);
 
 protected:
-    double max_steer_angle;              /** 최대 조향 각도[rad] */
-    double max_speed;                    /** 최대 주행 속도[m/s] */
-    double wheel_base;                   /** 차량 앞뒤 바퀴 간격[m] */
+    float max_steer_angle;              /** 최대 조향 각도[rad] */
+    float max_speed;                    /** 최대 주행 속도[m/s] */
+    float wheel_base;                   /** 차량 앞뒤 바퀴 간격[m] */
 
-    double dt;                                  /** 업데이트 스텝 시간[s] */
-    double updated_time;                        /** 업데이트된 시간[s] */
+    float dt;                                  /** 업데이트 스텝 시간[s] */
+    float updated_time;                        /** 업데이트된 시간[s] */
 
     pt_control_state_t init_state;              /** 초기 상태 */
     pt_control_state_t goal_state;              /** 끝점 상태 */
@@ -293,20 +293,20 @@ protected:
 
     std::vector<path_point_t> points;           /** 경로 데이터 */
 
-    double distance_error;                      /** 경로와의 거리 오차[m] */
-    double yaw_error;                           /** 경로와의 방향 오차[rad] */
+    float distance_error;                      /** 경로와의 거리 오차[m] */
+    float yaw_error;                           /** 경로와의 방향 오차[rad] */
 
-    double target_steer;                        /** 목표 조향 각[rad] */
-    double target_velocity;                     /** 목표 속도[m/s] */
+    float target_steer;                        /** 목표 조향 각[rad] */
+    float target_velocity;                     /** 목표 속도[m/s] */
 
     unsigned int target_point_index;                     /** 현재 목표 맵 위치 인덱스 */
     int target_index_offset;                    /** 앞점 추가 인덱스 */
 
-    double g_vl;
-    double g_vr;
+    float g_vl;
+    float g_vr;
 
-    double lf;
-    double lr;
+    float lf;
+    float lr;
 
 public:
     /**
@@ -315,7 +315,7 @@ public:
      * @param [in] point 경로점
      * @return 경로점과의 거리[m]
      */
-    static double get_point_distance(path_point_t current_point, path_point_t point);
+    static float get_point_distance(path_point_t current_point, path_point_t point);
 
     /**
      * @brief 현재 위치와 경로 사이 거리 계산
@@ -324,7 +324,7 @@ public:
      * @param [in] line_point2 경로 앞점 위치
      * @return 경로와의 거리[m] (-: 왼쪽에 위치 함, +: 오른쪽에 위치 함)
      */
-    static double get_line_distance(path_point_t current_point, path_point_t line_point1, path_point_t line_point2);
+    static float get_line_distance(path_point_t current_point, path_point_t line_point1, path_point_t line_point2);
 
     /**
      * @brief 경로점들의 yaw 값 범위를 -π ~ π로 변경
@@ -338,7 +338,7 @@ public:
      * @param [in] angle 가공할 각도 값[rad]
      * @return 가공된 각도 값[rad]
      */
-    static double pi_to_pi(double angle);
+    static float pi_to_pi(float angle);
 
     /**
      * @brief point1을 지나는 yaw각도를 가진 직선위에 있는 점 중 point2와의 거리가 point1와의 거리와 일치하는 점을 탐색
@@ -348,6 +348,6 @@ public:
      * @return point1, point2와 거리가 동일한 점(곡률 적용)
      * @TODO 직선일 경우 구분해야함
      */
-    static path_point_t get_path_circle(path_point_t point1, path_point_t point2, double slope);
+    static path_point_t get_path_circle(path_point_t point1, path_point_t point2, float slope);
 
 };
