@@ -260,7 +260,7 @@ ModelMatrix state_equation_jacobi(ModelMatrix x0, ModelMatrix input)
 
 pt_control_state_t position_filter_predict_state(float v, float steer, float dt)
 {
-    if (position_estimate_filter.init_flag) {
+    if (position_filter_is_init()) {
         float temp_input[3] = {v, steer, dt};
         ModelMatrix input = ModelMatrix(3, 1, temp_input);
         ModelMatrix A = state_equation_jacobi(position_estimate_filter.predict_x, input);
@@ -351,7 +351,7 @@ pt_control_state_t position_filter_estimate_state(position_filter_z_format_t z_v
 
 pt_control_state_t estimate(ModelMatrix z)
 {
-    if (position_estimate_filter.init_flag) {
+    if (position_filter_is_init()) {
         ModelMatrix C_hat = ModelMatrix::zero(state_member, state_member);
         ModelMatrix C_x_hat = ModelMatrix::zero(state_member, state_member);
         ModelMatrix S = ModelMatrix::zero(state_member, state_member);

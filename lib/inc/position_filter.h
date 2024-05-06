@@ -9,9 +9,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define POSITION_FILTER_INIT_YAW 0
-#define POSITION_FILTER_INIT_XY 1
-#define POSITION_FILTER_INIT_BOTH 2
+#define POSITION_FILTER_INIT_YAW 1
+#define POSITION_FILTER_INIT_XY 2
+#define POSITION_FILTER_INIT_BOTH 3
 
 #define POSITION_FILTER_QUALITY_ALL                     0 /**< 모든 데이터 사용*/
 #define POSITION_FILTER_QUALITY_EXCEPT_YAW              1 /**< GPS로 계산한 YAW만 사용하지 않음*/
