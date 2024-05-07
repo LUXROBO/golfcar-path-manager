@@ -31,6 +31,7 @@ typedef struct position_filter_context_
     uint32_t yaw_v_estimate_buf_max_size;
 
     uint8_t init_flag;
+    uint32_t last_update_time;
 } position_filter_context_t;
 
 position_filter_context_t position_estimate_filter;
@@ -193,6 +194,11 @@ void position_filter_set_xy(float x, float y)
     position_estimate_filter.init_flag |= POSITION_FILTER_INIT_XY;
 }
 
+void position_filter_set_last_update_time(float update_time)
+{
+    position_estimate_filter.last_update_time = update_time;
+}
+
 void position_filter_set_yaw(float yaw)
 {
     position_estimate_filter.predict_state.yaw = yaw;
@@ -258,10 +264,13 @@ ModelMatrix state_equation_jacobi(ModelMatrix x0, ModelMatrix input)
     return jacobian;
 }
 
-pt_control_state_t position_filter_predict_state(float v, float steer, float dt)
+pt_control_state_t position_filter_predict_state(float v, float steer, float updated_time)
 {
     if (position_filter_is_init()) {
+        float dt = updated_time - position_estimate_filter.last_update_time;
         float temp_input[3] = {v, steer, dt};
+        position_estimate_filter.last_update_time = updated_time;
+
         ModelMatrix input = ModelMatrix(3, 1, temp_input);
         ModelMatrix A = state_equation_jacobi(position_estimate_filter.predict_x, input);
         ModelMatrix temp_x = ModelMatrix::zero(6, 1);

@@ -55,6 +55,12 @@ void position_filter_set_position(pt_control_state_t position);
 void position_filter_set_xy(float x, float y);
 
 /**
+ * @brief 필터의 마지막 업데이트 시간을 수정
+ * @param [in] update_time 필터가 마지막으로 업데이트 된 시간
+ */
+void position_filter_set_last_update_time(float update_time);
+
+/**
  * @brief 필터의 예측 yaw 값을 초기화
  * @param [in] yaw 차량의 현재 yaw 각도
  */
@@ -76,10 +82,10 @@ ModelMatrix position_filter_get_predict_x();
  * @brief 차량의 주행 파라미터로 차량의 상태를 예측
  * @param [in] v 차량의 현재 속도
  * @param [in] steer 차량의 현재 조향 각도
- * @param [in] dt 마지막 업데이트 후(predict, estimate 포함) 시간[s]
+ * @param [in] updated_time 현재 업데이트 된 시간 시간[s]
  * @return pt_control_state_t 예측된 x,y 위치를 path manager에서 관리하는 형태로 리턴
  */
-pt_control_state_t position_filter_predict_state(float v, float steer, float dt);
+pt_control_state_t position_filter_predict_state(float v, float steer, float updated_time);
 
 /**
  * @brief GPS의 위치 값으로 실 차량의 위치를 추종
