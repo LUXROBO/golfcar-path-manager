@@ -1,4 +1,4 @@
-#include "position_filter.h"
+﻿#include "position_filter.h"
 #include "model_matrix.h"
 #include <cmath>
 #include <iostream>
@@ -72,7 +72,7 @@ float R_array_quality2[9] = {0, 0, 0,
                              0, 0, 0,
                              0, 0, 0};
 
-float R_array_quality3[1] = {0};
+float R_array_quality3[1] = {0.1};
 // float R_array_quality0[25] = {0.01, 0.01, 0.01, 0.01, 0.01,
 //                                0.01, 0.01, 0.01, 0.01, 0.01,
 //                                0.01, 0.01, 0.01, 0.01, 0.01,
