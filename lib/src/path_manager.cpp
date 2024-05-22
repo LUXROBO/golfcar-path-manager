@@ -386,7 +386,7 @@ float path_tracker::velocity_control_depend_on_steer_error(pt_control_state_t st
         predict_velocity  = calculated_velocity;
     }
 
-    // this->state.steer = revise_target_steer;
+    this->revise_target_steer = revise_target_steer;
     // this->state.v = predict_velocity;
 
     return calculated_velocity;

@@ -204,6 +204,14 @@ public:
     }
     pt_control_state_t update_predict_state2(pt_control_state_t state, float dt);
 
+    /**
+     * @brief 목표 주행 속도 반환
+     * @return 목표 주행 속도[m/s]
+     */
+    float get_revise_target_steer() {
+        return this->revise_target_steer;
+    }
+
 private:
     /**
      * @brief 예측 상태 계산
@@ -251,6 +259,7 @@ protected:
 
     float target_steer;                        /** 목표 조향 각[rad] */
     float target_velocity;                     /** 목표 속도[m/s] */
+    float revise_target_steer;                        /** 시뮬레이션용 목표 조향 각[rad] */
 
     unsigned int target_point_index;                     /** 현재 목표 맵 위치 인덱스 */
     int target_index_offset;                    /** 앞점 추가 인덱스 */
