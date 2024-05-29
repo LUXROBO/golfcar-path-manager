@@ -31,7 +31,7 @@ typedef struct position_filter_context_
     uint32_t yaw_v_estimate_buf_max_size;
 
     uint8_t init_flag;
-    uint32_t last_update_time;
+    float last_update_time;
 } position_filter_context_t;
 
 position_filter_context_t position_estimate_filter;
@@ -174,6 +174,11 @@ bool position_filter_is_init()
 void position_filter_set_position(pt_control_state_t position)
 {
     position_estimate_filter.predict_state = position;
+    position_estimate_filter.predict_x.set(0, 0, position.v);
+    position_estimate_filter.predict_x.set(1, 0, position.steer);
+    position_estimate_filter.predict_x.set(3, 0, position.yaw);
+    position_estimate_filter.predict_x.set(4, 0, position.x);
+    position_estimate_filter.predict_x.set(5, 0, position.y);
     position_estimate_filter.init_flag |= POSITION_FILTER_INIT_BOTH;
 }
 
@@ -286,6 +291,8 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float upd
         position_estimate_filter.predict_x = temp_x;
         position_estimate_filter.predict_P = A * position_estimate_filter.predict_P * A.transpose() + position_estimate_filter.Q;
 
+        position_estimate_filter.predict_state.v = v;
+        position_estimate_filter.predict_state.steer = steer;
         position_estimate_filter.predict_state.x = position_estimate_filter.predict_x.get(4, 0);
         position_estimate_filter.predict_state.y = position_estimate_filter.predict_x.get(5, 0);
         position_estimate_filter.predict_state.yaw = position_estimate_filter.predict_x.get(3, 0);
