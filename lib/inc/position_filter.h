@@ -27,6 +27,13 @@ typedef struct position_filter_z_format_
     double gps_y;
 } position_filter_z_format_t;
 
+typedef enum position_filter_init_state_
+{
+    position_filter_init_yaw = 1,
+    position_filter_init_xy,
+    position_filter_init_both
+} position_filter_init_state_t;
+
 /**
  * @brief position filter 초기화
  * @return true 초기화에 성공한 경우
@@ -40,6 +47,13 @@ bool position_filter_init();
  * @return false 필터 상태가 초기화 되지 않은 경우
  */
 bool position_filter_is_init();
+
+/**
+ * @brief 필터 상태 초기화 여부 확인
+ * @return true 필터 상태가 초기화 된 경우
+ * @return false 필터 상태가 초기화 되지 않은 경우
+ */
+position_filter_init_state_t position_filter_get_init_state();
 
 /**
  * @brief 필터의 예측 값을 초기화

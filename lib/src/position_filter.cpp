@@ -30,7 +30,7 @@ typedef struct position_filter_context_
     std::vector<float> yaw_v_estimate_buf;
     uint32_t yaw_v_estimate_buf_max_size;
 
-    uint8_t init_flag;
+    position_filter_init_state_t init_flag;
     float last_update_time;
 } position_filter_context_t;
 
@@ -165,10 +165,15 @@ bool position_filter_init()
 
 bool position_filter_is_init()
 {
-    if (position_estimate_filter.init_flag == POSITION_FILTER_INIT_BOTH) {
+    if (position_estimate_filter.init_flag == position_filter_init_both) {
         return true;
     }
     return false;
+}
+
+position_filter_init_state_t position_filter_get_init_state()
+{
+    return position_estimate_filter.init_flag;
 }
 
 void position_filter_set_position(pt_control_state_t position)
@@ -179,7 +184,7 @@ void position_filter_set_position(pt_control_state_t position)
     position_estimate_filter.predict_x.set(3, 0, position.yaw);
     position_estimate_filter.predict_x.set(4, 0, position.x);
     position_estimate_filter.predict_x.set(5, 0, position.y);
-    position_estimate_filter.init_flag |= POSITION_FILTER_INIT_BOTH;
+    position_estimate_filter.init_flag = position_filter_init_both;
 }
 
 // pt_control_state_t position_filter_get_position()
@@ -196,7 +201,12 @@ void position_filter_set_xy(float x, float y)
     position_estimate_filter.x.set(4, 0, x);
     position_estimate_filter.x.set(5, 0, y);
 
-    position_estimate_filter.init_flag |= POSITION_FILTER_INIT_XY;
+    if ((position_estimate_filter.init_flag == position_filter_init_yaw) ||
+        (position_estimate_filter.init_flag == position_filter_init_both)) {
+        position_estimate_filter.init_flag = position_filter_init_both;
+    } else {
+        position_estimate_filter.init_flag = position_filter_init_xy;
+    }
 }
 
 void position_filter_set_last_update_time(float update_time)
@@ -209,7 +219,13 @@ void position_filter_set_yaw(float yaw)
     position_estimate_filter.predict_state.yaw = yaw;
     position_estimate_filter.predict_x.set(3, 0, yaw);
     position_estimate_filter.x.set(3, 0, yaw);
-    position_estimate_filter.init_flag |= POSITION_FILTER_INIT_YAW;
+
+    if ((position_estimate_filter.init_flag == position_filter_init_xy) ||
+        (position_estimate_filter.init_flag == position_filter_init_both)) {
+        position_estimate_filter.init_flag = position_filter_init_both;
+    } else {
+        position_estimate_filter.init_flag = position_filter_init_yaw;
+    }
 }
 
 pt_control_state_t position_filter_get_state()
