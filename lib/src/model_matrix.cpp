@@ -71,9 +71,9 @@ double* ModelMatrix::element() const {
 }
 
 double ModelMatrix::get(const unsigned int row, const unsigned int column) const {
-    if (row > row_) {
+    if (row >= row_) {
         return 0;
-    } else if (column > column_) {
+    } else if (column >= column_) {
         return 0;
     } else {
         return element_[row * column_ + column];
@@ -81,9 +81,9 @@ double ModelMatrix::get(const unsigned int row, const unsigned int column) const
 }
 
 void ModelMatrix::set(const unsigned int row, const unsigned int column, const double value) {
-    if (row > row_) {
+    if (row >= row_) {
         return;
-    } else if (column > column_) {
+    } else if (column >= column_) {
         return;
     } else {
         element_[row * column_ + column] = value;
