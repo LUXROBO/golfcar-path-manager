@@ -1,6 +1,7 @@
 #include "model_matrix.h"
 #include "string.h"
 #include <cmath>
+#include "stdint.h"
 
 
 // ModelMatrix

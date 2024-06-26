@@ -39,11 +39,21 @@ position_filter_context_t position_estimate_filter;
 const float W = 2.18;
 const float state_member = 6;
 
+
+// z format = [gps v, yaw rate, gps slip+yaw, gps x, gps y]
+// x format = [v, slip angle, angular v, yaw, x, y]
+/*
+gps v = v
+yaw rate = angular v
+gps slip + yaw = slip angle + yaw
+gps x = x
+gps y = y
+*/
 float H_array_quality0[30] = {1, 0, 0, 0, 0, 0,
                              0, 0, 1, 0, 0, 0,
                              0, 1, 0, 1, 0, 0,
                              0, 0, 0, 0, 1, 0,
-                             0, 0, 0, 0, 0, 1};
+                             0, 0, 0, 0, 0, 1}; /** */
 
 float H_array_quality1[24] = {1, 0, 0, 0, 0, 0,
                               0, 0, 1, 0, 0, 0,
@@ -145,19 +155,30 @@ bool position_filter_init()
 
     position_estimate_filter.S_inv = ModelMatrix::zero(state_member, state_member);
 
-    float Q_array[36] = {0, 0, 0, 0, 0, 0,
-                         0.0, 0.00146, 0.00018, 0.00035, -0.00001, 0.00001,
-                         0.0, 0.00018, 0.00046, -0.00034, 0.00001, 0.00001,
-                         0.0, 0.00035, -0.00034, 0.00122, -0.00001, 0.00001,
-                         0.0, -0.00001,  0.00001, 0.00001, 0.00001, 0.00001,
-                         0.0, 0.00001, 0.00001, 0.00001, 0.00001, 0.00017};
+    // float Q_array[36] = {0, 0, 0, 0, 0, 0,
+    //                      0.0, 0.00146, 0.00018, 0.00035, -0.00001, 0.00001,
+    //                      0.0, 0.00018, 0.00046, -0.00034, 0.00001, 0.00001,
+    //                      0.0, 0.00035, -0.00034, 0.00122, -0.00001, 0.00001,
+    //                      0.0, -0.00001,  0.00001, 0.00001, 0.00001, 0.00001,
+    //                      0.0, 0.00001, 0.00001, 0.00001, 0.00001, 0.00017};
+    float Q_array[36] = {0.00001, 0      , 0      , 0      , 0      , 0,
+                         0      , 0.00001, 0      , 0      , 0      , 0,
+                         0      , 0      , 0.00001, 0      , 0      , 0,
+                         0      , 0      , 0      , 0.00001, 0      , 0,
+                         0      , 0      , 0      , 0      , 0.00001, 0,
+                         0      , 0      , 0      , 0      , 0      , 0.00001,};
     position_estimate_filter.Q = ModelMatrix(6, 6, Q_array);
 
-    float R_array[25] = {1, 0.01, 0.01, 0.01, 0.01,
-                          0.01, 1, 0.01, 0.01, 0.01,
-                          0.01, 0.01, 1, 0.01, 0.01,
-                          0.01, 0.01, 0.01, 1, 0.01,
-                          0.01, 0.01, 0.01, 0.01, 1};
+    // float R_array[25] = {1, 0.01, 0.01, 0.01, 0.01,
+    //                       0.01, 1, 0.01, 0.01, 0.01,
+    //                       0.01, 0.01, 1, 0.01, 0.01,
+    //                       0.01, 0.01, 0.01, 1, 0.01,
+    //                       0.01, 0.01, 0.01, 0.01, 1};
+    float R_array[25] = {0.01, 0, 0, 0, 0,
+                         0, 0.01, 0, 0, 0,
+                         0, 0, 0.01, 0, 0,
+                         0, 0, 0, 0.01, 0,
+                         0, 0, 0, 0, 0.01};
     position_estimate_filter.R = ModelMatrix(6, 6, R_array);
 
     return true;
@@ -180,7 +201,6 @@ void position_filter_set_position(pt_control_state_t position)
 {
     position_estimate_filter.predict_state = position;
     position_estimate_filter.predict_x.set(0, 0, position.v);
-    position_estimate_filter.predict_x.set(1, 0, position.steer);
     position_estimate_filter.predict_x.set(3, 0, position.yaw);
     position_estimate_filter.predict_x.set(4, 0, position.x);
     position_estimate_filter.predict_x.set(5, 0, position.y);
@@ -299,8 +319,9 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float upd
 
         temp_x.set(0, 0, v);
         temp_x.set(1, 0, std::atan(std::tan(steer) / 2));
-        temp_x.set(2, 0, p_x.get(0, 0) * std::cos(p_x.get(0, 1)) * std::tan(steer) / W);
-        temp_x.set(3, 0, path_tracker::pi_to_pi(p_x.get(3, 0) + dt * p_x.get(2, 0)));
+        temp_x.set(2, 0, p_x.get(0, 0) * std::cos(p_x.get(1, 0)) * std::tan(steer) / W);
+        temp_x.set(3, 0, path_tracker::pi_to_pi(p_x.get(3, 0)));
+        // temp_x.set(3, 0, path_tracker::pi_to_pi(p_x.get(3, 0) + dt * p_x.get(2, 0)));
         temp_x.set(4, 0, p_x.get(4, 0) + dt * p_x.get(0, 0) * std::cos(p_x.get(3, 0) + p_x.get(1, 0)));
         temp_x.set(5, 0, p_x.get(5, 0) + dt * p_x.get(0, 0) * std::sin(p_x.get(3, 0) + p_x.get(1, 0)));
 
