@@ -16,6 +16,7 @@ typedef struct yaw_filter_context_
     ModelMatrix S_inv;
     float last_update_time;
     float V;
+    int init;
 } yaw_filter_context_t;
 
 yaw_filter_context_t yaw_estimate_filter;
@@ -49,6 +50,7 @@ bool yaw_filter_init()
 void yaw_filter_set_yaw(float yaw)
 {
     yaw_estimate_filter.x.set(0, 0, yaw);
+    yaw_estimate_filter.init = 1;
 }
 
 float yaw_filter_get_yaw()
@@ -59,6 +61,11 @@ float yaw_filter_get_yaw()
 float yaw_filter_get_V()
 {
     return yaw_estimate_filter.V;
+}
+
+void yaw_filter_set_R(float R_value)
+{
+    yaw_estimate_filter.R.set(0, 0, R_value);
 }
 
 void yaw_filter_set_last_update_time(float update_time)
@@ -72,6 +79,10 @@ float yaw_filter_predict(float angular_velocity, float updated_time)
 
     float A_array[4] = {1, dt,
                         0, 0};
+
+    if (yaw_estimate_filter.init != 1) {
+        return yaw_estimate_filter.x.get(0, 0);
+    }
 
     yaw_estimate_filter.last_update_time = updated_time;
     ModelMatrix A = ModelMatrix(state_member, state_member, A_array);
