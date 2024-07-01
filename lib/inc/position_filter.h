@@ -66,7 +66,7 @@ void position_filter_set_position(pt_control_state_t position);
  * @param [in] x 차량의 현재 x축 위치
  * @param [in] y 차량의 현재 y축 위치
  */
-void position_filter_set_xy(float x, float y);
+void position_filter_set_xy(double x, double y);
 
 /**
  * @brief 필터의 마지막 업데이트 시간을 수정

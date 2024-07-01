@@ -212,7 +212,7 @@ void position_filter_set_position(pt_control_state_t position)
 //     return position_estimate_filter.predict_state;
 // }
 
-void position_filter_set_xy(float x, float y)
+void position_filter_set_xy(double x, double y)
 {
     position_estimate_filter.predict_state.x = x;
     position_estimate_filter.predict_state.y = y;
