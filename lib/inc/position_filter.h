@@ -116,4 +116,4 @@ pt_control_state_t position_filter_estimate_state(position_filter_z_format_t z_v
  * @param [in] sigma 유효성 기준치
  * @return pt_control_state_t 추종된 차량의 위치
  */
-bool position_filter_valid_gate(ModelMatrix innovation, ModelMatrix H, float sigma);
+bool position_filter_valid_gate(ModelMatrix innovation, ModelMatrix H, ModelMatrix R, float sigma);

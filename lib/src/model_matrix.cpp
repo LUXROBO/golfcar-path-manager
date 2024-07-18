@@ -81,6 +81,26 @@ double ModelMatrix::get(const unsigned int row, const unsigned int column) const
     }
 }
 
+ModelMatrix ModelMatrix::cut(const unsigned int start_row, const unsigned int start_column,
+                             const unsigned int end_row, const unsigned int end_column) const {
+    ModelMatrix result;
+    if ((start_row >= row_) || (end_row >= row_)) {
+        return result;
+    } else if ((start_column >= column_) || (end_column >= column_)) {
+        return result;
+    } else {
+        uint32_t new_row_num = end_row - start_row + 1;
+        uint32_t new_column_num = end_column - start_column + 1;
+        result = ModelMatrix(new_row_num, new_column_num);
+        for (int i = 0; i < new_row_num; i++) {
+            for (int j = 0; j < new_column_num; j++) {
+                result.set(i, j, this->element_[(i + start_row) * this->column_ + (j + start_column)]);
+            }
+        }
+    }
+    return result;
+}
+
 void ModelMatrix::set(const unsigned int row, const unsigned int column, const double value) {
     if (row >= row_) {
         return;

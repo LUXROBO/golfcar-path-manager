@@ -102,6 +102,15 @@ public:
     void set(const unsigned int row, const unsigned int column, const double value);
 
     /**
+     * @brief get matrix element
+     * @param[in] row matrix row.
+     * @param[in] column matrix column.
+     * @returns matrix element.
+     */
+    ModelMatrix cut(const unsigned int start_row, const unsigned int start_column,
+                    const unsigned int end_row, const unsigned int end_column) const;
+
+    /**
      * @brief calculate zero matrix
      * @param[in] row matrix row.
      * @param[in] column matrix column.
