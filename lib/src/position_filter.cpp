@@ -376,7 +376,7 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float upd
     return position_estimate_filter.predict_state;
 }
 
-pt_control_state_t position_filter_estimate_state(position_filter_z_format_t z_value, int quality)
+bool position_filter_estimate_state(position_filter_z_format_t z_value, int quality)
 {
     // z format = [gps v, yaw rate, gps slip+yaw, gps x, gps y]
     float sigma = 0; // 값의 유효성 기준, 크면 클 수록 통과하기 좋음
@@ -419,9 +419,12 @@ pt_control_state_t position_filter_estimate_state(position_filter_z_format_t z_v
     }
 
     if (position_filter_valid_gate(innovation, position_estimate_filter.H, temp_R, sigma)) {
-        return estimate(resize_z);
+        // chi square 기준치 통과
+        estimate(resize_z);
+        return true;
     } else {
-        return position_estimate_filter.predict_state;
+        // chi square 기준치 미달
+        return false;
     }
 }
 

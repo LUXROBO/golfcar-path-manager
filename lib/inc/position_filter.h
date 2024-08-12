@@ -105,9 +105,9 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float upd
  * @brief GPS의 위치 값으로 실 차량의 위치를 추종
  * @param [in] z_value 측정 센터 값 @ref position_filter_z_format_t
  * @param [in] quality position filter의 quality @ref POSITION_FILTER_QUALITY
- * @return pt_control_state_t 추종된 차량의 위치
+ * @return bool 유효한 추정을 진행했는지에 대한 여부
  */
-pt_control_state_t position_filter_estimate_state(position_filter_z_format_t z_value, int quality);
+bool position_filter_estimate_state(position_filter_z_format_t z_value, int quality);
 
 /**
  * @brief 필터의 측정 값의 유효성을 검사
