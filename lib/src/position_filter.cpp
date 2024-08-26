@@ -157,11 +157,11 @@ bool position_filter_init()
     //                      0.0, 0.00035, -0.00034, 0.00122, -0.00001, 0.00001,
     //                      0.0, -0.00001,  0.00001, 0.00001, 0.00001, 0.00001,
     //                      0.0, 0.00001, 0.00001, 0.00001, 0.00001, 0.00017};
-    float Q_array[36] = {0.001, 0      , 0      , 0      , 0      , 0,
-                         0      , 0.001, 0      , 0      , 0      , 0,
-                         0      , 0      , 0.001, 0      , 0      , 0,
-                         0      , 0      , 0      , 0.001, 0      , 0,
-                         0      , 0      , 0      , 0      , 0.001, 0,
+    float Q_array[36] = {0.001  , 0      , 0      , 0      , 0      , 0,
+                         0      , 0.001  , 0      , 0      , 0      , 0,
+                         0      , 0      , 0.001  , 0      , 0      , 0,
+                         0      , 0      , 0      , 0.001  , 0      , 0,
+                         0      , 0      , 0      , 0      , 0.001  , 0,
                          0      , 0      , 0      , 0      , 0      , 0.001,};
     position_estimate_filter.Q = ModelMatrix(6, 6, Q_array);
 
@@ -272,9 +272,9 @@ ModelMatrix state_equation_jacobi(ModelMatrix x0, ModelMatrix input)
 {
 
     /*
-    x = [v,                 input = [v,
-         slip,                       steer,
-         yaw rate,                   dt]
+    x = [v,                     input = [v,
+         slip,                           steer,
+         yaw rate,                       dt]
          yaw,
          x,
          y]
