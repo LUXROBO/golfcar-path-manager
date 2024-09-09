@@ -268,6 +268,11 @@ ModelMatrix position_filter_get_predict_x()
     return position_estimate_filter.predict_x;
 }
 
+void position_filter_set_predict_x(ModelMatrix new_x)
+{
+    position_estimate_filter.predict_x = new_x;
+}
+
 ModelMatrix state_equation_jacobi(ModelMatrix x0, ModelMatrix input)
 {
 

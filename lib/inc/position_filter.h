@@ -91,6 +91,7 @@ pt_control_state_t position_filter_get_state();
  * @return pt_control_state_t 필터의 예측된 차량의 상태 값
  */
 ModelMatrix position_filter_get_predict_x();
+void position_filter_set_predict_x(ModelMatrix new_x);
 
 /**
  * @brief 차량의 주행 파라미터로 차량의 상태를 예측
