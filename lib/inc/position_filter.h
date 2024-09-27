@@ -70,7 +70,7 @@ void position_filter_set_xy(double x, double y);
 
 /**
  * @brief 필터의 마지막 업데이트 시간을 수정
- * @param [in] update_time 필터가 마지막으로 업데이트 된 시간
+ * @param [in] update_time 필터가 마지막으로 업데이트 된 시간 [s]
  */
 void position_filter_set_last_update_time(float update_time);
 

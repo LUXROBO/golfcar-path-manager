@@ -317,12 +317,12 @@ ModelMatrix state_equation_jacobi(ModelMatrix x0, ModelMatrix input)
     jacobian.set(4, 0, dt * std::cos(yaw + slip));
     jacobian.set(4, 1, -pre_v * dt * std::sin(yaw + slip));
     jacobian.set(4, 3, -pre_v * dt * std::sin(yaw + slip));
-    jacobian.set(4, 4, 1);
+    jacobian.set(4, 4, 0);
 
     jacobian.set(5, 0, dt * std::sin(yaw + slip));
     jacobian.set(5, 1, pre_v * dt * std::cos(yaw + slip));
     jacobian.set(5, 3, pre_v * dt * std::cos(yaw + slip));
-    jacobian.set(5, 5, 1);
+    jacobian.set(5, 5, 0);
 
     return jacobian;
 }
@@ -364,8 +364,8 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float upd
 #elif defined(FILTER_FUSION) || !defined(FILTER_DEBUG)
         temp_x.set(3, 0, path_tracker::pi_to_pi(p_x.get(3, 0) + dt * p_x.get(2, 0)));
 #endif
-        temp_x.set(4, 0, p_x.get(4, 0) + dt * p_x.get(0, 0) * std::cos(p_x.get(3, 0) + p_x.get(1, 0)));
-        temp_x.set(5, 0, p_x.get(5, 0) + dt * p_x.get(0, 0) * std::sin(p_x.get(3, 0) + p_x.get(1, 0)));
+        temp_x.set(4, 0, dt * p_x.get(0, 0) * std::cos(PT_M_PI_2 + p_x.get(1, 0)));
+        temp_x.set(5, 0, dt * p_x.get(0, 0) * std::sin(PT_M_PI_2 + p_x.get(1, 0)));
 
         position_estimate_filter.predict_x = temp_x;
 
@@ -374,8 +374,15 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float upd
 
         position_estimate_filter.predict_state.v = v;
         position_estimate_filter.predict_state.steer = steer;
-        position_estimate_filter.predict_state.x = position_estimate_filter.predict_x.get(4, 0);
-        position_estimate_filter.predict_state.y = position_estimate_filter.predict_x.get(5, 0);
+
+        float temp1 = std::atan2(position_estimate_filter.predict_x.get(5, 0), position_estimate_filter.predict_x.get(4, 0));
+        float temp2 = fabsf(std::tan(position_estimate_filter.predict_x.get(4, 0) / position_estimate_filter.predict_x.get(5, 0)));
+
+        float delta_x_w = std::cos(position_estimate_filter.predict_state.yaw - temp1) * temp2;
+        float delta_y_w = std::sin(position_estimate_filter.predict_state.yaw - temp1) * temp2;
+
+        position_estimate_filter.predict_state.x += delta_x_w;
+        position_estimate_filter.predict_state.y += delta_y_w;
         position_estimate_filter.predict_state.yaw = position_estimate_filter.predict_x.get(3, 0);
     }
     return position_estimate_filter.predict_state;

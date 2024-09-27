@@ -51,6 +51,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, path_p
     path_point_t current_state_to_point = {state.x, state.y, state.yaw, 0, 0};
     // float new_yaw = path_tracker::pi_to_pi(state.yaw + state.steer);
     float new_yaw = path_tracker::pi_to_pi(state.yaw);
+
     path_point_t circle1 = path_tracker::get_path_circle(current_state_to_point, target_point, tan(path_tracker::pi_to_pi(new_yaw + PT_M_PI_2)));
     path_point_t circle2 = path_tracker::get_path_circle(target_point, current_state_to_point, tan(path_tracker::pi_to_pi(target_point.yaw + PT_M_PI_2)));
 

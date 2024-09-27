@@ -259,17 +259,6 @@ pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, 
     state.yaw += this->g_vl * dt * std::tan(center_slip_angle) / this->wheel_base;
     state.yaw = path_tracker::pi_to_pi(state.yaw);
 
-    // 추가 수식, 이것도 동작 가능한데 성능 테스트가 필요
-    // double slip_angle = PT_M_PI_2 - std::atan(this->wheel_base / (this->lr * std::tan(fabsff(state.steer))));
-    // if (state.steer < 0) {
-    //     slip_angle *= -1;
-    // }
-    // state.x += state.v * dt * std::cos(state.yaw + slip_angle);
-    // state.y += state.v * dt * std::sin(state.yaw + slip_angle);
-    // state.yaw += state.v * std::cos(slip_angle) * dt * this->lr * std::tan(state.steer) / (this->wheel_base * this->wheel_base);
-    // // state.yaw += state.v * std::cos(slip_angle) * dt * std::tan(slip_angle) / (this->wheel_base);
-    // state.yaw = path_tracker::pi_to_pi(state.yaw);
-
     return state;
 }
 
