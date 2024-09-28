@@ -49,50 +49,50 @@ gps slip + yaw = slip angle + yaw
 gps x = x
 gps y = y
 */
-float H_array_quality0[30] = {1, 0, 0, 0, 0, 0,
+static float H_array_quality0[30] = {1, 0, 0, 0, 0, 0,
                              0, 0, 1, 0, 0, 0,
                              0, 1, 0, 1, 0, 0,
                              0, 0, 0, 0, 1, 0,
                              0, 0, 0, 0, 0, 1}; /** */
 
-float H_array_quality1[24] = {1, 0, 0, 0, 0, 0,
+static float H_array_quality1[24] = {1, 0, 0, 0, 0, 0,
                               0, 0, 1, 0, 0, 0,
                               0, 0, 0, 0, 1, 0,
                               0, 0, 0, 0, 0, 1};
 
-float H_array_quality2[18] = {0, 0, 1, 0, 0, 0,
+static float H_array_quality2[18] = {0, 0, 1, 0, 0, 0,
                              0, 0, 0, 0, 1, 0,
                              0, 0, 0, 0, 0, 1};
 
-float H_array_quality3[6] = {0, 0, 1, 0, 0, 0};
+static float H_array_quality3[6] = {0, 0, 1, 0, 0, 0};
 
 
 // Z 모두
 // 현재 대각 값 외에는 설정하지 않음
-float R_array_quality0[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
+static float R_array_quality0[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
                               0.0, 0.0001, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
                               0.0, 0.0,    0.001, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
                               0.0, 0.0,    0.0,   0.001, 0.0,    // gps x
                               0.0, 0.0,    0.0,   0.0,   0.001}; // gps y
 
-// float R_array_quality0[25] = {0.0204, 0.0, 0.0012, 0.0, 0.0,
+// static float R_array_quality0[25] = {0.0204, 0.0, 0.0012, 0.0, 0.0,
 //                               0.0   , 0.0, 0.    , 0.0, 0.0,
 //                               0.0012, 0.0, 0.0094, 0.0, 0.0,
 //                               0.0   , 0.0, 0.0   , 0.0, 0.0,
 //                               0.0   , 0.0, 0.0   , 0.0, 0.0};
 
 // Z중 YAW 제외
-float R_array_quality1[16] = {0.0204, 0, 0, 0,
+static float R_array_quality1[16] = {0.0204, 0, 0, 0,
                                0, 0, 0, 0,
                                0, 0, 0, 0,
                                0, 0, 0, 0};
 
 // Z중 V, YAW 제외
-float R_array_quality2[9] = {0, 0, 0,
+static float R_array_quality2[9] = {0, 0, 0,
                              0, 0, 0,
                              0, 0, 0};
 
-float R_array_quality3[1] = {0.01};
+static float R_array_quality3[1] = {0.01};
 
 // float R_array_quality3[1] = {0.01};
 
