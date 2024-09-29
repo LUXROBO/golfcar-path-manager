@@ -365,8 +365,8 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float upd
         position_estimate_filter.predict_x = temp_x;
 
         // 오차 공분산 계산
-        //position_estimate_filter.predict_P = A * position_estimate_filter.predict_P * A.transpose() + position_estimate_filter.Q;
-        position_estimate_filter.predict_P = position_estimate_filter.predict_P + position_estimate_filter.Q;
+        position_estimate_filter.predict_P = A * position_estimate_filter.predict_P * A.transpose() + position_estimate_filter.Q;
+        // position_estimate_filter.predict_P = position_estimate_filter.predict_P + position_estimate_filter.Q;
 
         double theta1 = std::atan2(position_estimate_filter.predict_x.get(3, 0), position_estimate_filter.predict_x.get(4, 0));
         double theta2 = position_estimate_filter.predict_state.yaw - theta1;
@@ -427,6 +427,7 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
 
         resize_z = ModelMatrix::zero(1, 1);
         resize_z.set(0, 0, z_value.yaw_rate);
+
         sigma = 3;
     }
     // 측정 값과 예측 값 차이
