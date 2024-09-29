@@ -38,7 +38,7 @@ typedef struct position_filter_context_
 position_filter_context_t position_estimate_filter;
 
 const float W = 2.18;
-const float state_member = 6;
+const float state_member = 5;
 
 
 // z format = [gps v, yaw rate, gps slip+yaw, gps x, gps y]
@@ -50,11 +50,11 @@ gps slip + yaw = slip angle + yaw
 gps x = x
 gps y = y
 */
-static float H_array_quality0[30] = {1, 0, 0, 0, 0, 0,
-                             0, 0, 1, 0, 0, 0,
-                             0, 0, 0, 1, 0, 0,
-                             0, 0, 0, 0, 1, 0,
-                             0, 0, 0, 0, 0, 1}; /** */
+static float H_array_quality0[25] = {1, 0, 0, 0, 0,
+                                     0, 1, 0, 0, 0,
+                                     0, 0, 1, 0, 0,
+                                     0, 0, 0, 1, 0,
+                                     0, 0, 0, 0, 1}; /** */
 
 static float H_array_quality1[24] = {1, 0, 0, 0, 0, 0,
                               0, 0, 1, 0, 0, 0,
@@ -70,7 +70,7 @@ static float H_array_quality3[6] = {0, 0, 1, 0, 0, 0};
 
 // Z 모두
 // 현재 대각 값 외에는 설정하지 않음
-static float R_array_quality0[25] = {99, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
+static float R_array_quality0[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
                                      0.0, 0.0001, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
                                      0.0, 0.0,    0.0001, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
                                      0.0, 0.0,    0.0,   0.0001, 0.0,    // gps x
@@ -152,13 +152,12 @@ bool position_filter_init()
     //                      0.0, 0.00035, -0.00034, 0.00122, -0.00001, 0.00001,
     //                      0.0, -0.00001,  0.00001, 0.00001, 0.00001, 0.00001,
     //                      0.0, 0.00001, 0.00001, 0.00001, 0.00001, 0.00017};
-    float Q_array[36] = {0.000001, 0       , 0       , 0        , 0     , 0,
-                         0       , 0.000001, 0       , 0        , 0     , 0,
-                         0       , 0       , 0.000178, 0.0      , 0.0   , 0.0,
-                         0       , 0       , 0       , 0.00145  , 0.0   , 0.0,
-                         0       , 0       , 0       , 0.0      , 0.00042, 0.0,
-                         0       , 0       , 0       , 0.0      , 0.0   , 0.00085};
-    position_estimate_filter.Q = ModelMatrix(6, 6, Q_array);
+    float Q_array[25] = {0.000001, 0       , 0        , 0     , 0,
+                         0       , 0.000178, 0.0      , 0.0   , 0.0,
+                         0       , 0       , 0.00145  , 0.0   , 0.0,
+                         0       , 0       , 0.0      , 0.00042, 0.0,
+                         0       , 0       , 0.0      , 0.0   , 0.00085};
+    position_estimate_filter.Q = ModelMatrix(state_member, state_member, Q_array);
 
     position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0);
 
@@ -207,7 +206,7 @@ void position_filter_set_position(pt_control_state_t position)
     position_estimate_filter.predict_state = position;
     position_estimate_filter.estimate_state = position;
     position_estimate_filter.predict_x.set(0, 0, position.v);
-    position_estimate_filter.predict_x.set(3, 0, position.yaw);
+    position_estimate_filter.predict_x.set(2, 0, position.yaw);
     // position_estimate_filter.predict_x.set(4, 0, position.x);
     // position_estimate_filter.predict_x.set(5, 0, position.y);
     position_estimate_filter.init_flag = position_filter_init_both;
@@ -247,8 +246,8 @@ void position_filter_set_yaw(float yaw)
     position_estimate_filter.predict_state.yaw = yaw;
     position_estimate_filter.estimate_state.yaw = yaw;
 
-    position_estimate_filter.predict_x.set(3, 0, yaw);
-    position_estimate_filter.x.set(3, 0, yaw);
+    position_estimate_filter.predict_x.set(2, 0, yaw);
+    position_estimate_filter.x.set(2, 0, yaw);
 
     if ((position_estimate_filter.init_flag == position_filter_init_xy) ||
         (position_estimate_filter.init_flag == position_filter_init_both)) {
@@ -297,32 +296,32 @@ ModelMatrix state_equation_jacobi(ModelMatrix x0, ModelMatrix input)
     ModelMatrix jacobian = ModelMatrix::zero(state_member, state_member);
     float v = input.get(0, 0);
     float steer = input.get(1, 0);
-    float dt = input.get(2, 0);
+    float slip = input.get(2, 0);
+    float dt = input.get(3, 0);
 
     float pre_v = p_x.get(0, 0);
-    float slip = p_x.get(1, 0);
+    // float slip = p_x.get(1, 0);
     float yaw = p_x.get(3, 0);
 
+    // v
     jacobian.set(0, 0, 0.0);
 
-    float tan_sqr = std::tan(slip) * std::tan(slip);
-    jacobian.set(1, 1, (2 + 2 * tan_sqr) / (2 + tan_sqr));
+    // w
+    jacobian.set(1, 0, std::cos(slip) * std::tan(steer) / W);
 
-    jacobian.set(2, 0, std::cos(slip) * std::tan(steer) / W);
-    jacobian.set(2, 1, -pre_v * std::sin(slip) * std::tan(steer) / W);
+    // yaw
+    jacobian.set(2, 1, dt);
+    jacobian.set(2, 2, 1);
 
-    jacobian.set(3, 2, dt);
-    jacobian.set(3, 3, 1);
+    // x
+    jacobian.set(3, 0, dt * std::cos(yaw + slip));
+    jacobian.set(3, 2, -pre_v * dt * std::sin(yaw + slip));
+    jacobian.set(3, 3, 0);
 
-    jacobian.set(4, 0, dt * std::cos(yaw + slip));
-    jacobian.set(4, 1, -pre_v * dt * std::sin(yaw + slip));
-    jacobian.set(4, 3, -pre_v * dt * std::sin(yaw + slip));
+    // y
+    jacobian.set(4, 0, dt * std::sin(yaw + slip));
+    jacobian.set(4, 2, pre_v * dt * std::cos(yaw + slip));
     jacobian.set(4, 4, 0);
-
-    jacobian.set(5, 0, dt * std::sin(yaw + slip));
-    jacobian.set(5, 1, pre_v * dt * std::cos(yaw + slip));
-    jacobian.set(5, 3, pre_v * dt * std::cos(yaw + slip));
-    jacobian.set(5, 5, 0);
 
     return jacobian;
 }
@@ -331,12 +330,13 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float upd
 {
     if (position_filter_is_init()) {
         float dt = updated_time - position_estimate_filter.last_update_time;
-        float temp_input[3] = {v, steer, dt};
+        float slip_angle = std::atan(std::tan(steer) / 2);
+        float temp_input[4] = {v, steer, slip_angle, dt};
         position_estimate_filter.last_update_time = updated_time;
 
-        ModelMatrix input = ModelMatrix(3, 1, temp_input);
+        ModelMatrix input = ModelMatrix(4, 1, temp_input);
         ModelMatrix A = state_equation_jacobi(position_estimate_filter.predict_x, input);
-        ModelMatrix temp_x = ModelMatrix::zero(6, 1);
+        ModelMatrix temp_x = ModelMatrix::zero(5, 1);
         ModelMatrix p_x = position_estimate_filter.predict_x;
 
         /*
@@ -357,35 +357,30 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float upd
 
         // kinematic 식 계산
         temp_x.set(0, 0, v);
-        temp_x.set(1, 0, std::atan(std::tan(steer) / 2));
-        temp_x.set(2, 0, p_x.get(0, 0) * std::cos(p_x.get(1, 0)) * std::tan(steer) / W);
-        temp_x.set(3, 0, path_tracker::pi_to_pi(p_x.get(3, 0) + dt * p_x.get(2, 0)));
-        temp_x.set(4, 0, dt * p_x.get(0, 0) * std::cos(PT_M_PI_2 + p_x.get(1, 0)));
-        temp_x.set(5, 0, dt * p_x.get(0, 0) * std::sin(PT_M_PI_2 + p_x.get(1, 0)));
+        temp_x.set(1, 0, p_x.get(0, 0) * std::cos(slip_angle) * std::tan(steer) / W);
+        temp_x.set(2, 0, path_tracker::pi_to_pi(p_x.get(2, 0) + dt * p_x.get(1, 0)));
+        temp_x.set(3, 0, dt * p_x.get(0, 0) * std::cos(PT_M_PI_2 + slip_angle));
+        temp_x.set(4, 0, dt * p_x.get(0, 0) * std::sin(PT_M_PI_2 + slip_angle));
 
         position_estimate_filter.predict_x = temp_x;
 
         // 오차 공분산 계산
-        position_estimate_filter.predict_P = A * position_estimate_filter.predict_P * A.transpose() + position_estimate_filter.Q;
+        //position_estimate_filter.predict_P = A * position_estimate_filter.predict_P * A.transpose() + position_estimate_filter.Q;
+        position_estimate_filter.predict_P = position_estimate_filter.predict_P + position_estimate_filter.Q;
 
-        // 전 yaw 기준으로 yaw 변화량
-        float temp1 = std::atan2(position_estimate_filter.predict_x.get(5, 0), position_estimate_filter.predict_x.get(4, 0));
-        //
-        float temp2 = 0;
-        if (position_estimate_filter.predict_x.get(5, 0) == 0) {
-            temp2 = position_estimate_filter.predict_x.get(4, 0);
-        } else {
-            temp2 = fabsf(std::tan(position_estimate_filter.predict_x.get(4, 0) / position_estimate_filter.predict_x.get(5, 0)));
-        }
+        double theta1 = std::atan2(position_estimate_filter.predict_x.get(3, 0), position_estimate_filter.predict_x.get(4, 0));
+        double theta2 = position_estimate_filter.predict_state.yaw - theta1;
+        double L1 = std::sqrt(powf(position_estimate_filter.predict_x.get(3, 0), 2) +
+                           powf(position_estimate_filter.predict_x.get(4, 0), 2));
 
-        float delta_x_w = std::cos(position_estimate_filter.predict_state.yaw - temp1) * temp2;
-        float delta_y_w = std::sin(position_estimate_filter.predict_state.yaw - temp1) * temp2;
+        double delta_x_w = std::cos(theta2) * L1;
+        double delta_y_w = std::sin(theta2) * L1;
 
         position_estimate_filter.predict_state.v = v;
         position_estimate_filter.predict_state.steer = steer;
         position_estimate_filter.predict_state.x += delta_x_w;
         position_estimate_filter.predict_state.y += delta_y_w;
-        position_estimate_filter.predict_state.yaw = position_estimate_filter.predict_x.get(3, 0);
+        position_estimate_filter.predict_state.yaw = position_estimate_filter.predict_x.get(2, 0);
     }
     return position_estimate_filter.predict_state;
 }
@@ -405,17 +400,26 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
     position_estimate_filter.z.set(4, 0, z_value.gps_y);
     if (quality == POSITION_FILTER_QUALITY_ALL) {
         // no problem
-        position_estimate_filter.H = ModelMatrix(5, 6, H_array_quality0);
+        position_estimate_filter.H = ModelMatrix(5, 5, H_array_quality0);
         position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0);
         temp_R = position_estimate_filter.R;
 
         resize_z = ModelMatrix::zero(5, 1);
         resize_z = position_estimate_filter.z;
         sigma = 10;
+
+        if (fabsf(z_value.gps_yaw - position_estimate_filter.predict_x.get(2, 0)) > PT_M_PI) {
+            if (position_estimate_filter.predict_x.get(2, 0) > 0) {
+                z_value.gps_yaw += PT_M_PI * 2;
+            } else {
+                z_value.gps_yaw -= PT_M_PI * 2;
+            }
+            resize_z.set(2, 0, z_value.gps_yaw);
+        }
     } else {
         // imu setting
-        float H_array[6] = {0, 0, 1, 0, 0, 0};
-        position_estimate_filter.H = ModelMatrix(1, 6, H_array_quality3);
+        float H_array[5] = {0, 1, 0, 0, 0};
+        position_estimate_filter.H = ModelMatrix(1, 5, H_array_quality3);
         position_estimate_filter.R = ModelMatrix(1, 1, R_array_quality3);
 
         temp_R = ModelMatrix(1,1);
@@ -430,7 +434,7 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
 
     // yaw를 사용할 때는 innovation에서 pi to pi로 오차가 커지는 상황을 방지해야함
     if (quality == POSITION_FILTER_QUALITY_ALL) {
-        innovation.set(2, 0, path_tracker::pi_to_pi(innovation.get(2, 0)));
+        innovation.set(1, 0, path_tracker::pi_to_pi(innovation.get(1, 0)));
     }
 
     if (position_filter_valid_gate(innovation, position_estimate_filter.H, position_estimate_filter.R, sigma)) {
@@ -467,16 +471,27 @@ pt_control_state_t estimate(ModelMatrix z)
         // }
 
         // position_estimate_filter.R = C_hat / position_estimate_filter.v_estimate_buf.size() + position_estimate_filter.estimate_P;
-        position_estimate_filter.estimate_x.set(3, 0, path_tracker::pi_to_pi(position_estimate_filter.estimate_x.get(3, 0)));
-        position_estimate_filter.estimate_x.set(1, 0, position_estimate_filter.predict_x.get(1, 0));
+        position_estimate_filter.estimate_x.set(2, 0, path_tracker::pi_to_pi(position_estimate_filter.estimate_x.get(2, 0)));
+
+
+
+        // 전 yaw 기준으로 yaw 변화량
+        double theta1 = std::atan2(position_estimate_filter.estimate_x.get(3, 0), position_estimate_filter.estimate_x.get(4, 0));
+        double theta2 = position_estimate_filter.estimate_state.yaw - theta1;
+        double L1 = std::sqrt(powf(position_estimate_filter.estimate_x.get(3, 0), 2) +
+                           powf(position_estimate_filter.estimate_x.get(4, 0), 2));
+        double delta_x_w = std::cos(theta2) * L1;
+        double delta_y_w = std::sin(theta2) * L1;
+
+
         position_estimate_filter.x = position_estimate_filter.estimate_x;
         position_estimate_filter.predict_x = position_estimate_filter.estimate_x;
         position_estimate_filter.P = position_estimate_filter.estimate_P;
         position_estimate_filter.predict_P = position_estimate_filter.estimate_P;
 
-        position_estimate_filter.estimate_state.yaw = position_estimate_filter.predict_x.get(3, 0);
-        position_estimate_filter.estimate_state.x += position_estimate_filter.predict_x.get(4, 0);
-        position_estimate_filter.estimate_state.y += position_estimate_filter.predict_x.get(5, 0);
+        position_estimate_filter.estimate_state.yaw = position_estimate_filter.predict_x.get(2, 0);
+        position_estimate_filter.estimate_state.x += delta_x_w;
+        position_estimate_filter.estimate_state.y += delta_y_w;
 
         position_estimate_filter.predict_state = position_estimate_filter.estimate_state;
     }
