@@ -29,6 +29,7 @@ typedef struct velocity_filter_context_
     uint32_t yaw_v_estimate_buf_max_size;
 
     float last_update_time;
+    int init_flag;
 } velocity_filter_context_t;
 
 velocity_filter_context_t velocity_estimate_filter;
@@ -109,7 +110,7 @@ bool velocity_filter_init()
     velocity_estimate_filter.estimate_x = 0;
 
     velocity_estimate_filter.R = 0.07;
-    velocity_estimate_filter.Q = 0.0032;
+    velocity_estimate_filter.Q = 0.005;
     velocity_estimate_filter.K = 0;
     velocity_estimate_filter.H = 1;
 
@@ -130,6 +131,7 @@ float velocity_filter_get_velocity()
 
 void velocity_filter_set_velocity(float velocity)
 {
+    velocity_estimate_filter.init_flag = 1;
     velocity_estimate_filter.predict_x = velocity;
     velocity_estimate_filter.predict_P = 0;
     velocity_estimate_filter.P = 0;
@@ -137,16 +139,18 @@ void velocity_filter_set_velocity(float velocity)
 
 float velocity_filter_predict_state(float accel_x, float updated_time)
 {
-    float dt = updated_time - velocity_estimate_filter.last_update_time;
-    velocity_estimate_filter.last_update_time = updated_time;
+    if (velocity_estimate_filter.init_flag == 1){
+        float dt = updated_time - velocity_estimate_filter.last_update_time;
+        velocity_estimate_filter.last_update_time = updated_time;
 
-    float A = 1;
-    float predict_velocity = velocity_estimate_filter.predict_x + accel_x * dt;
+        float A = 1;
+        float predict_velocity = velocity_estimate_filter.predict_x + accel_x * dt;
 
-    velocity_estimate_filter.predict_x = predict_velocity;
+        velocity_estimate_filter.predict_x = predict_velocity;
 
-    // 오차 공분산 계산
-    velocity_estimate_filter.predict_P = velocity_estimate_filter.predict_P + velocity_estimate_filter.Q;
+        // 오차 공분산 계산
+        velocity_estimate_filter.predict_P = velocity_estimate_filter.predict_P + velocity_estimate_filter.Q;
+    }
 
     return velocity_estimate_filter.predict_x;
 }
@@ -157,6 +161,10 @@ bool velocity_filter_estimate_state(float gps_velocity)
     float sigma = 1; // 값의 유효성 기준, 크면 클 수록 통과하기 좋음
     float innovation = 0;
     bool result = false;
+
+    if (velocity_estimate_filter.init_flag != 1) {
+        return false;
+    }
 
     // 측정 값과 예측 값 차이
     innovation = gps_velocity - velocity_estimate_filter.predict_x;
