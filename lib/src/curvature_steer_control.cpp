@@ -57,60 +57,17 @@ float curvature_steer_control::steering_control(pt_control_state_t state, path_p
     float new_yaw = path_tracker::pi_to_pi(state.yaw);
 
     path_point_t circle1 = path_tracker::get_path_circle(current_state_to_point, target_point, tan(path_tracker::pi_to_pi(new_yaw + PT_M_PI_2)));
-    path_point_t circle2 = path_tracker::get_path_circle(target_point, current_state_to_point, tan(path_tracker::pi_to_pi(target_point.yaw + PT_M_PI_2)));
 
-    float r1 = 1 / circle1.k;
-    float r2 = 1 / circle2.k;
+    float output = circle1.k * this->yaw_kp;
+    float circle_x_for_direction = circle1.x - state.x;
+    float circle_y_for_direction = circle1.y - state.y;
 
-    path_point_t small_circle = circle1;
-    float small_circle_r = r1;
-    path_point_t big_circle = circle2;
-    float big_circle_r = r2;
-
-    if (r1 > r2) {
-        small_circle = circle2;
-        small_circle_r = r2;
-        big_circle = circle1;
-        big_circle_r = r1;
+    float rotation_y = std::sin(-state.yaw) * circle_x_for_direction + std::cos(-state.yaw) * circle_y_for_direction;
+    if (rotation_y < 0) {
+        output *= -1;
     }
 
-    float circle_to_circle = sqrt(pow(small_circle.x - big_circle.x, 2) + pow(small_circle.y - big_circle.y, 2));
-
-    float rr2 = 0;
-    float new_point_to_r1_angle = 0;
-
-    // 두 원이 따로 있는경우
-    if (circle_to_circle > big_circle_r) {
-        rr2 = small_circle_r - circle_to_circle + big_circle_r;
-        new_point_to_r1_angle = path_tracker::pi_to_pi(atan2((big_circle.y - small_circle.y), (big_circle.x - small_circle.x)));
-    } else { // 큰 원 안에 작은 원이 있는 경우
-        rr2 = small_circle_r + circle_to_circle - big_circle_r;
-        new_point_to_r1_angle = path_tracker::pi_to_pi(atan2((small_circle.y - big_circle.y), (small_circle.x - big_circle.x)));
-    }
-
-    float new_point_to_r1 = small_circle_r - rr2 / 2;
-    path_point_t new_circle_point = {small_circle.x + new_point_to_r1 * cos(new_point_to_r1_angle),
-                                     small_circle.y + new_point_to_r1 * sin(new_point_to_r1_angle), 0, 0, 0};
-
-    path_point_t circle3 = path_tracker::get_path_circle(new_circle_point, target_point, tan(new_point_to_r1_angle));
-    float target_yaw = 0;
-    if (circle3.k < 0.0001) {
-        this->yaw_error = 0;
-    } else {
-        float current_to_circle_yaw = atan2(state.y - circle3.y, state.x - circle3.x);
-        float current_to_circle_center_distance = 1 / circle3.k;
-        float target_yaw1 = path_tracker::pi_to_pi(current_to_circle_yaw + PT_M_PI_2);
-        float target_yaw2 = path_tracker::pi_to_pi(current_to_circle_yaw - PT_M_PI_2);
-
-        if (fabsf(path_tracker::pi_to_pi(target_yaw1 - (new_yaw))) > fabsf(path_tracker::pi_to_pi(target_yaw2 - (new_yaw)))) {
-            target_yaw = target_yaw2;
-        } else {
-            target_yaw = target_yaw1;
-        }
-        this->yaw_error = this->pi_to_pi(target_yaw - (new_yaw));
-    }
-
-    return circle3.k * this->yaw_kp;
+    return output;
 }
 
 float curvature_steer_control::velocity_control(pt_control_state_t state, path_point_t target_point)
