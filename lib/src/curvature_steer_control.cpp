@@ -151,3 +151,17 @@ float curvature_steer_control::velocity_control(pt_control_state_t state, path_p
 {
     return target_point.speed;
 }
+
+void curvature_steer_control::set_gain(int gain_index, float* gain_value)
+{
+    this->yaw_kp = gain_value[0];
+    this->yaw_ki = gain_value[1];
+    this->yaw_kd = gain_value[2];
+}
+
+void curvature_steer_control::get_gain(int gain_index, float* gain_value)
+{
+    gain_value[0] = this->yaw_kp;
+    gain_value[1] = this->yaw_ki;
+    gain_value[2] = this->yaw_kd;
+}
