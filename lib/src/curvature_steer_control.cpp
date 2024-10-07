@@ -110,45 +110,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, path_p
         this->yaw_error = this->pi_to_pi(target_yaw - (new_yaw));
     }
 
-    float past_circle_to_current = sqrt(pow((this->past_path_circle.x - state.x), 2) + pow((this->past_path_circle.y - state.y), 2));
-
-    this->path_distance_pid.set_target(0);
-    float steer_delta = atan2(this->path_distance_pid.calculate(past_circle_to_current), state.v);
-
-    this->past_path_circle = circle3;
-
-    float steer_delta2 = this->yaw_error * this->yaw_kp + (this->yaw_error - this->yaw_pre_e) * this->yaw_kd;
-    this->yaw_pre_e = this->yaw_error;
-
-    if (fabsf(state.v) > 0.01) {
-        float temp_steer = atan(steer_delta2 * this->wheel_base / state.v);
-        int count = 0;
-        float offset = 2 * PT_M_PI / 180;
-        while (count <= 10) {
-            pt_control_state_t current_state = state;
-            current_state.steer = temp_steer;
-
-            for (int i = 0; i < 10; i++) {
-                float v_to_g_slope_diff_angle = std::atan(this->lr * std::tan(current_state.steer) / this->wheel_base);
-                current_state.yaw += current_state.v * 0.1 * std::cos(v_to_g_slope_diff_angle) * std::tan(v_to_g_slope_diff_angle) / this->wheel_base;
-                current_state.yaw = path_tracker::pi_to_pi(current_state.yaw);
-            }
-            float temp_yaw_error = path_tracker::pi_to_pi(target_yaw - current_state.yaw);
-            if (fabsf(temp_yaw_error) < 0.01) {
-                break;
-            } else {
-                if (temp_yaw_error > 0) {
-                    temp_steer += offset * (10 - count) / 10;
-                } else {
-                    temp_steer -= offset * (10 - count) / 10;
-                }
-            }
-            count += 1;
-        }
-        steer_delta2 = temp_steer;
-    }
-
-    return steer_delta2;
+    return circle3.k * this->yaw_kp;
 }
 
 float curvature_steer_control::velocity_control(pt_control_state_t state, path_point_t target_point)
