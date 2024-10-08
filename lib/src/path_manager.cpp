@@ -25,7 +25,7 @@ path_tracker::path_tracker()
 {
     this->init(DEFAULT_MAX_STEER_ANGLE, DEFAULT_MAX_SPEED, DEFAULT_WHEEL_BASE, 0);
     this->updated_time = 0;
-    this->target_index_offset = 2;
+    this->target_index_offset = 3;
     this->lf = DEFAULT_WHEEL_BASE / 2;
     this->lr = DEFAULT_WHEEL_BASE / 2;
 }
@@ -34,7 +34,7 @@ path_tracker::path_tracker(const float max_steer_angle, const float max_speed, c
 {
     this->init(max_steer_angle, max_speed, wheel_base, center_to_gps_distance);
     this->updated_time = 0;
-    this->target_index_offset = 2;
+    this->target_index_offset = 3;
     this->lf = wheel_base / 2 - center_to_gps_distance;
     this->lr = wheel_base / 2 + center_to_gps_distance;
 }
@@ -92,8 +92,10 @@ pt_update_result_t path_tracker::update(float dt)
     float calculated_steer = 0;
     float calculated_velocity = 0;
     int front_point_index = 0;
+    int front_front_point_index = 0;
     int goal_point_index = 0;
     path_point_t front_point;
+    path_point_t front_points[2];
     size_t remain_point = 0;
 
     if (dt <= 0.0) {
@@ -111,13 +113,16 @@ pt_update_result_t path_tracker::update(float dt)
 
     // 앞점 계산
     front_point_index = this->get_front_target_point_index();
+    front_front_point_index = this->get_front_target_point_index(front_point_index);
     front_point = this->points[front_point_index];
+    front_points[0] = this->points[front_point_index];
+    front_points[1] = this->points[front_front_point_index];
 
     // 도착 경로점 계산
     goal_point_index = this->points.size() - 1;
 
     // 조향각 계산
-    calculated_steer = steering_control(this->state, front_point);
+    calculated_steer = steering_control(this->state, front_points);
     if (calculated_steer > this->max_steer_angle) {
         calculated_steer = this->max_steer_angle;
     } else if (calculated_steer < -this->max_steer_angle) {
@@ -131,7 +136,7 @@ pt_update_result_t path_tracker::update(float dt)
     calculated_velocity = velocity_control_depend_on_steer_error(this->state, calculated_velocity, calculated_steer);
 
     // 목표 조향각, 주행 속도 설정
-    this->target_steer = calculated_steer;
+    this->target_steer = calculated_steer * 0.2 + this->target_steer * 0.8;
     this->target_velocity = calculated_velocity;
 
     // 목표지점 도착 확인

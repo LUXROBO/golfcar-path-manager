@@ -59,7 +59,7 @@ ModelMatrix  lqr_steer_control::dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q
     return K;
 }
 
-float lqr_steer_control::steering_control(pt_control_state_t state, path_point_t target_point)
+float lqr_steer_control::steering_control(pt_control_state_t state, path_point_t target_point[])
 {
     /* state matrix
     x = [position_x
@@ -74,9 +74,9 @@ float lqr_steer_control::steering_control(pt_control_state_t state, path_point_t
     */
     ModelMatrix A = ModelMatrix::zero(3, 3);
     A.set(0, 0, 1.0);
-    A.set(0, 2, -sin(state.yaw) * target_point.speed * this->dt);
+    A.set(0, 2, -sin(state.yaw) * target_point[0].speed * this->dt);
     A.set(1, 1, 1.0);
-    A.set(1, 2, cos(state.yaw) * target_point.speed * this->dt);
+    A.set(1, 2, cos(state.yaw) * target_point[0].speed * this->dt);
     A.set(2, 2, 1);
 
     ModelMatrix B = ModelMatrix::zero(3, 1);
@@ -84,9 +84,9 @@ float lqr_steer_control::steering_control(pt_control_state_t state, path_point_t
     ModelMatrix K = dlqr(A, B, this->Q, this->R);
     ModelMatrix x = ModelMatrix::zero(3, 1);
 
-    x.set(0, 0, target_point.x - state.x);
-    x.set(1, 0, target_point.y - state.y);
-    x.set(2, 0, pi_to_pi(target_point.yaw - state.yaw));
+    x.set(0, 0, target_point[0].x - state.x);
+    x.set(1, 0, target_point[0].y - state.y);
+    x.set(2, 0, pi_to_pi(target_point[0].yaw - state.yaw));
 
     float target_angular_velocity = (K * x).get(0, 0);
     float steer = atan(target_angular_velocity * this->wheel_base / state.v);

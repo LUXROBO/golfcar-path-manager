@@ -25,7 +25,7 @@ protected:
      * @param [in] target 목표점
      * @return 목표 조향각[rad]
      */
-    virtual float steering_control(pt_control_state_t state, path_point_t target) = 0;
+    virtual float steering_control(pt_control_state_t state, path_point_t target[]) = 0;
 
     /**
      * @brief 목표점까지 이동할 수 있는 주행 속도 계산
@@ -155,6 +155,20 @@ public:
      */
     int get_front_target_point_index() const {
         unsigned int index = this->target_point_index + this->target_index_offset;
+
+        if (index >= this->points.size()) {
+            index = this->points.size() - 1;
+        }
+
+        return index;
+    }
+
+    /**
+     * @brief 현재 목표점에서 예측을 위한 앞점 인덱스 반환
+     * @return 현재 목표점에서 예측을 위한 앞점 인덱스
+     */
+    int get_front_target_point_index(int index2) const {
+        unsigned int index = index2 + this->target_index_offset;
 
         if (index >= this->points.size()) {
             index = this->points.size() - 1;
