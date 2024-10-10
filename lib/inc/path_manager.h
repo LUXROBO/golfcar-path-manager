@@ -25,7 +25,7 @@ protected:
      * @param [in] target 목표점
      * @return 목표 조향각[rad]
      */
-    virtual float steering_control(pt_control_state_t state, path_point_t target[]) = 0;
+    virtual float steering_control(pt_control_state_t state, std::vector<path_point_t> target) = 0;
 
     /**
      * @brief 목표점까지 이동할 수 있는 주행 속도 계산
@@ -277,6 +277,7 @@ protected:
 
     unsigned int target_point_index;                     /** 현재 목표 맵 위치 인덱스 */
     int target_index_offset;                    /** 앞점 추가 인덱스 */
+    int max_look_ahead_num;
 
     float g_vl;
     float g_vr;

@@ -50,24 +50,25 @@ void curvature_steer_control::get_gain(int gain_index, float* gain_value)
     gain_value[2] = this->yaw_kd;
 }
 
-float curvature_steer_control::steering_control(pt_control_state_t state, path_point_t target_point[])
+float curvature_steer_control::steering_control(pt_control_state_t state, std::vector<path_point_t> target_point)
 {
     path_point_t current_state_to_point = {state.x, state.y, state.yaw, 0, 0};
+    std::vector<path_point_t> circle_paths;
     // float new_yaw = path_tracker::pi_to_pi(state.yaw + state.steer);
     float new_yaw = path_tracker::pi_to_pi(state.yaw);
+    float w = 0.1;
+    float output;
 
-    path_point_t circle1 = path_tracker::get_path_circle(current_state_to_point, target_point[0], tan(path_tracker::pi_to_pi(new_yaw + PT_M_PI_2)));
-    path_point_t circle2 = path_tracker::get_path_circle(current_state_to_point, target_point[1], tan(path_tracker::pi_to_pi(new_yaw + PT_M_PI_2)));
-    // path_point_t circle2 = path_tracker::get_path_circle(target_point, current_state_to_point, tan(path_tracker::pi_to_pi(target_point.yaw + PT_M_PI_2)));
-
-    float output = (circle1.k + circle2.k) / 2;// * this->yaw_kp;
-
-    if (circle1.k < 0.02) {
-        return 0;
+    for (int i = 0; i < target_point.size(); i++) {
+        path_point_t circle_path = path_tracker::get_path_circle(current_state_to_point, target_point[i], tan(path_tracker::pi_to_pi(new_yaw + PT_M_PI_2)));
+        circle_paths.push_back(circle_path);
+        output += circle_path.k;// * (i * w + 1);
     }
 
-    float circle_x_for_direction = circle1.x - state.x;
-    float circle_y_for_direction = circle1.y - state.y;
+    output /= target_point.size();
+
+    float circle_x_for_direction = circle_paths[0].x - state.x;
+    float circle_y_for_direction = circle_paths[0].y - state.y;
 
     float rotation_y = std::sin(-state.yaw) * circle_x_for_direction + std::cos(-state.yaw) * circle_y_for_direction;
     if (rotation_y < 0) {

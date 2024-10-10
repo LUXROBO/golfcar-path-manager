@@ -21,7 +21,7 @@ public:
     virtual void get_gain(int gain_index, float* gain_value);
 
 private:
-    virtual float steering_control(pt_control_state_t state, path_point_t target_point[]);
+    virtual float steering_control(pt_control_state_t state, std::vector<path_point_t> target_point);
     virtual float velocity_control(pt_control_state_t state, path_point_t target_point);
 
 private:

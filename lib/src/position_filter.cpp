@@ -56,38 +56,38 @@ static float H_array_quality0[25] = {1, 0, 0, 0, 0,
                                      0, 0, 0, 1, 0,
                                      0, 0, 0, 0, 1}; /** */
 
-static float H_array_quality1[24] = {1, 0, 0, 0, 0, 0,
-                              0, 0, 1, 0, 0, 0,
-                              0, 0, 0, 0, 1, 0,
-                              0, 0, 0, 0, 0, 1};
+static float H_array_quality1[20] = {1, 0, 0, 0, 0,
+                                     0, 1, 0, 0, 0,
+                                     0, 0, 0, 1, 0,
+                                     0, 0, 0, 0, 1};
 
 static float H_array_quality2[18] = {0, 0, 1, 0, 0, 0,
                              0, 0, 0, 0, 1, 0,
                              0, 0, 0, 0, 0, 1};
 
-static float H_array_quality3[6] = {0, 0, 1, 0, 0, 0};
+static float H_array_quality3[6] = {0, 1, 0, 0, 0};
 
 
 // Z 모두
 // 현재 대각 값 외에는 설정하지 않음
 static float R_array_quality0[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
                                      0.0, 0.0001, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
-                                     0.0, 0.0,    0.0001, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
+                                     0.0, 0.0,    0.001, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
                                      0.0, 0.0,    0.0,   0.0001, 0.0,    // gps x
                                      0.0, 0.0,    0.0,   0.0,   0.0001}; // gps y
 
 // Z중 YAW 제외
-static float R_array_quality1[16] = {0.0204, 0, 0, 0,
-                               0, 0, 0, 0,
-                               0, 0, 0, 0,
-                               0, 0, 0, 0};
+static float R_array_quality1[16] = {0.1, 0, 0, 0,
+                               0, 0.0001, 0, 0,
+                               0, 0, 0.0001, 0,
+                               0, 0, 0, 0.0001};
 
 // Z중 V, YAW 제외
 static float R_array_quality2[9] = {0, 0, 0,
                              0, 0, 0,
                              0, 0, 0};
 
-static float R_array_quality3[1] = {0.000001};
+static float R_array_quality3[1] = {0.00001};
 
 // float R_array_quality3[1] = {0.01};
 
@@ -154,7 +154,7 @@ bool position_filter_init()
     //                      0.0, 0.00001, 0.00001, 0.00001, 0.00001, 0.00017};
     float Q_array[25] = {0.000001, 0       , 0        , 0     , 0,
                          0       , 0.000178, 0.0      , 0.0   , 0.0,
-                         0       , 0       , 0.00145  , 0.0   , 0.0,
+                         0       , 0       , 0.0001  , 0.0   , 0.0,
                          0       , 0       , 0.0      , 0.00042, 0.0,
                          0       , 0       , 0.0      , 0.0   , 0.00085};
     position_estimate_filter.Q = ModelMatrix(state_member, state_member, Q_array);
@@ -416,6 +416,17 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
             }
             resize_z.set(2, 0, z_value.gps_yaw);
         }
+    } else if (quality == POSITION_FILTER_QUALITY_EXCEPT_YAW) {
+        position_estimate_filter.H = ModelMatrix(4, 5, H_array_quality1);
+        position_estimate_filter.R = ModelMatrix(4, 4, R_array_quality1);
+        temp_R = position_estimate_filter.R;
+
+        resize_z = ModelMatrix::zero(4, 1);
+        resize_z.set(0, 0, z_value.gps_v);
+        resize_z.set(1, 0, z_value.yaw_rate);
+        resize_z.set(2, 0, z_value.gps_x);
+        resize_z.set(3, 0, z_value.gps_y);
+        sigma = 10;
     } else {
         // imu setting
         float H_array[5] = {0, 1, 0, 0, 0};

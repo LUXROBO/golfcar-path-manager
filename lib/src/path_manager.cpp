@@ -21,11 +21,13 @@ static const float DEFAULT_MAX_MOVEABLE_RANGE = 30.0 * PT_M_PI / 180.0;        /
 static const float THRESHOLD_STEER_DIFF_ANGLE = 3 * PT_M_PI / 180.0;           /**< 조향각에 따른 속도 조절을 위한 조향각 레졸루션 단위[rad] */
 static const int MAX_STEER_ERROR_LEVEL = 10;                                    /**< steer error 세분화 */
 
+static const int MAX_LOOK_AHEAD_NUM = 2;
+
 path_tracker::path_tracker()
 {
     this->init(DEFAULT_MAX_STEER_ANGLE, DEFAULT_MAX_SPEED, DEFAULT_WHEEL_BASE, 0);
     this->updated_time = 0;
-    this->target_index_offset = 3;
+    this->target_index_offset = 4;
     this->lf = DEFAULT_WHEEL_BASE / 2;
     this->lr = DEFAULT_WHEEL_BASE / 2;
 }
@@ -34,7 +36,7 @@ path_tracker::path_tracker(const float max_steer_angle, const float max_speed, c
 {
     this->init(max_steer_angle, max_speed, wheel_base, center_to_gps_distance);
     this->updated_time = 0;
-    this->target_index_offset = 3;
+    this->target_index_offset = 4;
     this->lf = wheel_base / 2 - center_to_gps_distance;
     this->lr = wheel_base / 2 + center_to_gps_distance;
 }
@@ -91,6 +93,8 @@ pt_update_result_t path_tracker::update(float dt)
 {
     float calculated_steer = 0;
     float calculated_velocity = 0;
+    std::vector<int> look_ahead_index;
+    std::vector<path_point_t> look_ahead_point;
     int front_point_index = 0;
     int front_front_point_index = 0;
     int goal_point_index = 0;
@@ -112,17 +116,20 @@ pt_update_result_t path_tracker::update(float dt)
     }
 
     // 앞점 계산
-    front_point_index = this->get_front_target_point_index();
-    front_front_point_index = this->get_front_target_point_index(front_point_index);
-    front_point = this->points[front_point_index];
-    front_points[0] = this->points[front_point_index];
-    front_points[1] = this->points[front_front_point_index];
+    int start_index = this->get_front_target_point_index();
+    look_ahead_index.push_back(start_index);
+    look_ahead_point.push_back(points[start_index]);
+    for (int i = 0; i < MAX_LOOK_AHEAD_NUM - 1; i++) {
+        look_ahead_index.push_back(this->get_front_target_point_index(start_index));
+        look_ahead_point.push_back(points[look_ahead_index[i]]);
+        start_index = look_ahead_index[i];
+    }
 
     // 도착 경로점 계산
     goal_point_index = this->points.size() - 1;
 
     // 조향각 계산
-    calculated_steer = steering_control(this->state, front_points);
+    calculated_steer = steering_control(this->state, look_ahead_point);
     if (calculated_steer > this->max_steer_angle) {
         calculated_steer = this->max_steer_angle;
     } else if (calculated_steer < -this->max_steer_angle) {
@@ -136,7 +143,7 @@ pt_update_result_t path_tracker::update(float dt)
     calculated_velocity = velocity_control_depend_on_steer_error(this->state, calculated_velocity, calculated_steer);
 
     // 목표 조향각, 주행 속도 설정
-    this->target_steer = calculated_steer * 0.2 + this->target_steer * 0.8;
+    this->target_steer = calculated_steer * 0.5 + this->target_steer * 0.5;
     this->target_velocity = calculated_velocity;
 
     // 목표지점 도착 확인
