@@ -116,6 +116,8 @@ bool velocity_filter_init()
 
     velocity_estimate_filter.S_inv = 0;
 
+    velocity_estimate_filter.init_flag = 0;
+
     return true;
 }
 
@@ -171,7 +173,6 @@ bool velocity_filter_estimate_state(float gps_velocity)
 
     if (velocity_filter_valid_gate(innovation, velocity_estimate_filter.H, velocity_estimate_filter.R, sigma)) {
         // chi square 기준치 통과
-
         result = true;
     } else {
         // chi square 기준치 미달
