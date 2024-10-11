@@ -7,9 +7,9 @@
 static const float DEFAULT_DISTANCE_PID_KP = 1.5;
 static const float DEFAULT_DISTANCE_PID_KI = 0;
 static const float DEFAULT_DISTANCE_PID_KD = 0;
-static const float DEFAULT_YAW_PID_KP = 0.4;
+static const float DEFAULT_YAW_PID_KP = 0.3;
 static const float DEFAULT_YAW_PID_KI = 0;
-static const float DEFAULT_YAW_PID_KD = 0.2;
+static const float DEFAULT_YAW_PID_KD = 0.15;
 
 curvature_steer_control::curvature_steer_control()
 {
