@@ -75,6 +75,11 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
         output *= -1;
     }
 
+    float error = output - this->state.steer;
+    output = this->state.steer + error * this->yaw_kp + this->yaw_pre_e * this->yaw_kd;
+
+    this->yaw_pre_e = error;
+
     return output;
 }
 
