@@ -33,6 +33,7 @@ typedef struct position_filter_context_
 
     position_filter_init_state_t init_flag;
     float last_update_time;
+    float chi_square_v;
 } position_filter_context_t;
 
 position_filter_context_t position_estimate_filter;
@@ -75,6 +76,17 @@ static float R_array_quality0[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps v
                                      0.0, 0.0,    0.002, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
                                      0.0, 0.0,    0.0,   0.0001, 0.0,    // gps x
                                      0.0, 0.0,    0.0,   0.0,   0.0001}; // gps y
+static float R_array_quality0_float[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
+                                           0.0, 0.001, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
+                                           0.0, 0.0,    0.02, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
+                                           0.0, 0.0,    0.0,   0.001, 0.0,    // gps x
+                                           0.0, 0.0,    0.0,   0.0,   0.001}; // gps y
+static float R_array_quality0_dgps[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
+                                          0.0, 0.01, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
+                                          0.0, 0.0,    0.2, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
+                                          0.0, 0.0,    0.0,   0.01, 0.0,    // gps x
+                                          0.0, 0.0,    0.0,   0.0,   0.01}; // gps y
+
 
 // Z중 YAW 제외
 static float R_array_quality1[16] = {0.1, 0, 0, 0,
@@ -177,12 +189,20 @@ position_filter_init_state_t position_filter_get_init_state()
     return position_estimate_filter.init_flag;
 }
 
-void position_filter_set_R(float R_value)
+void position_filter_set_R(int gps_quality)
 {
+    switch (gps_quality) {
+        case 4:
+            position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0);
+            break;
+        case 5:
+            position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0_float);
+            break;
+        default:
+            position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0_dgps);
+            break;
+    }
     // 효율적으로 R값 변경 방법 고민
-    position_estimate_filter.R.set(2, 2, R_value);
-    position_estimate_filter.R.set(3, 3, R_value);
-    position_estimate_filter.R.set(4, 4, R_value);
 }
 
 // void position_filter_set_R(float R_value, int mode)
@@ -265,6 +285,11 @@ pt_control_state_t position_filter_get_state()
 ModelMatrix position_filter_get_predict_x()
 {
     return position_estimate_filter.predict_x;
+}
+
+float position_filter_get_chi_square_value()
+{
+    return position_estimate_filter.chi_square_v;
 }
 
 void position_filter_set_predict_x(ModelMatrix new_x)
@@ -403,12 +428,12 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
     if (quality == POSITION_FILTER_QUALITY_ALL) {
         // no problem
         position_estimate_filter.H = ModelMatrix(5, 5, H_array_quality0);
-        position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0);
+        // position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0);
         temp_R = position_estimate_filter.R;
 
         resize_z = ModelMatrix::zero(5, 1);
         resize_z = position_estimate_filter.z;
-        sigma = 10;
+        sigma = 5;
 
         if (fabsf(z_value.gps_yaw - position_estimate_filter.predict_x.get(2, 0)) > PT_M_PI) {
             if (position_estimate_filter.predict_x.get(2, 0) > 0) {
@@ -418,17 +443,6 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
             }
             resize_z.set(2, 0, z_value.gps_yaw);
         }
-    } else if (quality == POSITION_FILTER_QUALITY_EXCEPT_YAW) {
-        position_estimate_filter.H = ModelMatrix(4, 5, H_array_quality1);
-        position_estimate_filter.R = ModelMatrix(4, 4, R_array_quality1);
-        temp_R = position_estimate_filter.R;
-
-        resize_z = ModelMatrix::zero(4, 1);
-        resize_z.set(0, 0, z_value.gps_v);
-        resize_z.set(1, 0, z_value.yaw_rate);
-        resize_z.set(2, 0, z_value.gps_x);
-        resize_z.set(3, 0, z_value.gps_y);
-        sigma = 10;
     } else {
         // imu setting
         float H_array[5] = {0, 1, 0, 0, 0};
@@ -521,6 +535,6 @@ bool position_filter_valid_gate(ModelMatrix innovation, ModelMatrix H, ModelMatr
     ModelMatrix temp = position_estimate_filter.S_inv;
 
     // Chi-Square Statistic 계산
-    float V = (innovation.transpose() * position_estimate_filter.S_inv * innovation).get(0, 0);
-    return V <= (sigma * sigma);
+    position_estimate_filter.chi_square_v = (innovation.transpose() * position_estimate_filter.S_inv * innovation).get(0, 0);
+    return position_estimate_filter.chi_square_v <= (sigma * sigma);
 }

@@ -147,6 +147,7 @@ pt_update_result_t path_tracker::update(float dt)
     remain_point = get_remain_point_num();
     if ((remain_point == 0) || (look_ahead_index[0] == goal_point_index)) {
         this->target_velocity = 0.0;
+        this->target_steer = 0;
         return PT_UPDATE_RESULT_GOAL;
     }
 
@@ -228,8 +229,6 @@ path_point_t path_tracker::get_path_circle(path_point_t point1, path_point_t poi
     } else {
         float a = slope;
         float b = point1.y - a * point1.x;
-        float c = point1.y - b;
-        float d = point2.y - b;
         x = (xx1 - 2 * b * point1.y + yy1 - xx2 + 2 * b * point2.y - yy2) / (2 * (point1.x + a * point1.y - point2.x - a * point2.y));
         y = a * x + b;
     }

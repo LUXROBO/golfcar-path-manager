@@ -80,6 +80,9 @@ void position_filter_set_last_update_time(float update_time);
  */
 void position_filter_set_yaw(float yaw);
 
+void position_filter_set_R(int gps_quality);
+
+
 /**
  * @brief 필터의 예측 값을 리턴
  * @return pt_control_state_t 필터의 예측된 차량의 상태 값
@@ -91,6 +94,9 @@ pt_control_state_t position_filter_get_state();
  * @return pt_control_state_t 필터의 예측된 차량의 상태 값
  */
 ModelMatrix position_filter_get_predict_x();
+
+float position_filter_get_chi_square_value();
+
 void position_filter_set_predict_x(ModelMatrix new_x);
 
 /**
