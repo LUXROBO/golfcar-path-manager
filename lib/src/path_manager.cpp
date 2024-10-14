@@ -95,11 +95,8 @@ pt_update_result_t path_tracker::update(float dt)
     float calculated_velocity = 0;
     std::vector<int> look_ahead_index;
     std::vector<path_point_t> look_ahead_point;
-    int front_point_index = 0;
-    int front_front_point_index = 0;
     int goal_point_index = 0;
     path_point_t front_point;
-    path_point_t front_points[2];
     size_t remain_point = 0;
 
     if (dt <= 0.0) {
@@ -148,7 +145,7 @@ pt_update_result_t path_tracker::update(float dt)
 
     // 목표지점 도착 확인
     remain_point = get_remain_point_num();
-    if (remain_point == 0 || front_point_index == goal_point_index) {
+    if ((remain_point == 0) || (look_ahead_index[0] == goal_point_index)) {
         this->target_velocity = 0.0;
         return PT_UPDATE_RESULT_GOAL;
     }
