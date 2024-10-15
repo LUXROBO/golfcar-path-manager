@@ -55,6 +55,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     path_point_t current_state_to_point = {state.x, state.y, state.yaw, 0, 0};
     std::vector<path_point_t> circle_paths;
     float new_yaw = path_tracker::pi_to_pi(state.yaw);
+    float w = 0;
     float output;
 
     // 입력 받은 목표 점들로 이동하기 위한 곡선 경도들의 곡률값의 평균을 예산

@@ -116,8 +116,6 @@ bool velocity_filter_init()
 
     velocity_estimate_filter.S_inv = 0;
 
-    velocity_estimate_filter.init_flag = 0;
-
     return true;
 }
 
