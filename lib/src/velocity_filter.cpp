@@ -29,6 +29,7 @@ typedef struct velocity_filter_context_
     uint32_t yaw_v_estimate_buf_max_size;
 
     float last_update_time;
+    float chi_square_value;
     int init_flag;
 } velocity_filter_context_t;
 
@@ -129,6 +130,11 @@ float velocity_filter_get_velocity()
     return velocity_estimate_filter.predict_x;
 }
 
+float velocity_filter_get_chi_square_value()
+{
+    return velocity_estimate_filter.chi_square_value;
+}
+
 void velocity_filter_set_velocity(float velocity)
 {
     velocity_estimate_filter.init_flag = 1;
@@ -158,7 +164,7 @@ float velocity_filter_predict_state(float accel_x, float updated_time)
 bool velocity_filter_estimate_state(float gps_velocity)
 {
     // z format = [gps v, yaw rate, gps slip+yaw, gps x, gps y]
-    float sigma = 1; // 값의 유효성 기준, 크면 클 수록 통과하기 좋음
+    float sigma = 10; // 값의 유효성 기준, 크면 클 수록 통과하기 좋음
     float innovation = 0;
     bool result = false;
 
@@ -171,12 +177,12 @@ bool velocity_filter_estimate_state(float gps_velocity)
 
     if (velocity_filter_valid_gate(innovation, velocity_estimate_filter.H, velocity_estimate_filter.R, sigma)) {
         // chi square 기준치 통과
+        estimate(gps_velocity);
         result = true;
     } else {
         // chi square 기준치 미달
         result = false;
     }
-    estimate(gps_velocity);
     return result;
 }
 
@@ -204,6 +210,6 @@ bool velocity_filter_valid_gate(float innovation, float H, float R, float sigma)
     float temp = velocity_estimate_filter.S_inv;
 
     // Chi-Square Statistic 계산
-    float V = innovation * velocity_estimate_filter.S_inv * innovation;
-    return V <= (sigma * sigma);
+    velocity_estimate_filter.chi_square_value = innovation * velocity_estimate_filter.S_inv * innovation;
+    return velocity_estimate_filter.chi_square_value <= (sigma * sigma);
 }

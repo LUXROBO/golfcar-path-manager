@@ -81,11 +81,11 @@ static float R_array_quality0_float[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    //
                                            0.0, 0.0,    0.02, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
                                            0.0, 0.0,    0.0,   0.001, 0.0,    // gps x
                                            0.0, 0.0,    0.0,   0.0,   0.001}; // gps y
-static float R_array_quality0_dgps[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
-                                          0.0, 0.01, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
-                                          0.0, 0.0,    0.2, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
-                                          0.0, 0.0,    0.0,   0.01, 0.0,    // gps x
-                                          0.0, 0.0,    0.0,   0.0,   0.01}; // gps y
+static float R_array_quality0_dgps[25] = {10, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
+                                          0.0, 10, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
+                                          0.0, 0.0,    10, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
+                                          0.0, 0.0,    0.0,   10, 0.0,    // gps x
+                                          0.0, 0.0,    0.0,   0.0,   10}; // gps y
 
 
 // Z중 YAW 제외
@@ -433,7 +433,7 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
 
         resize_z = ModelMatrix::zero(5, 1);
         resize_z = position_estimate_filter.z;
-        sigma = 5;
+        sigma = 4;
 
         if (fabsf(z_value.gps_yaw - position_estimate_filter.predict_x.get(2, 0)) > PT_M_PI) {
             if (position_estimate_filter.predict_x.get(2, 0) > 0) {
@@ -455,7 +455,7 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
         resize_z = ModelMatrix::zero(1, 1);
         resize_z.set(0, 0, z_value.yaw_rate);
 
-        sigma = 3;
+        sigma = 1.7;
     }
     // 측정 값과 예측 값 차이
     innovation = resize_z - position_estimate_filter.H * position_estimate_filter.predict_x;
@@ -467,13 +467,13 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
 
     if (position_filter_valid_gate(innovation, position_estimate_filter.H, position_estimate_filter.R, sigma)) {
         // chi square 기준치 통과
-        // estimate(resize_z);
-        // return true;
+        estimate(resize_z);
+        return true;
     } else {
         // chi square 기준치 미달
-        // return false;
+        return false;
     }
-    estimate(resize_z);
+
     return true;
 }
 

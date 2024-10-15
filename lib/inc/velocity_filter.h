@@ -50,6 +50,8 @@ void velocity_filter_set_last_update_time(float update_time);
  */
 float velocity_filter_get_velocity();
 
+float velocity_filter_get_chi_square_value();
+
 /**
  * @brief 차량의 주행 파라미터로 차량의 상태를 예측
  * @param [in] v 차량의 현재 속도
