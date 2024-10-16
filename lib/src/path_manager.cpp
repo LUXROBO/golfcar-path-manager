@@ -27,7 +27,7 @@ path_tracker::path_tracker()
 {
     this->init(DEFAULT_MAX_STEER_ANGLE, DEFAULT_MAX_SPEED, DEFAULT_WHEEL_BASE, 0);
     this->updated_time = 0;
-    this->target_index_offset = 4;
+    this->target_index_offset = 3;
     this->lf = DEFAULT_WHEEL_BASE / 2;
     this->lr = DEFAULT_WHEEL_BASE / 2;
 }
@@ -36,7 +36,7 @@ path_tracker::path_tracker(const float max_steer_angle, const float max_speed, c
 {
     this->init(max_steer_angle, max_speed, wheel_base, center_to_gps_distance);
     this->updated_time = 0;
-    this->target_index_offset = 4;
+    this->target_index_offset = 3;
     this->lf = wheel_base / 2 - center_to_gps_distance;
     this->lr = wheel_base / 2 + center_to_gps_distance;
 }
