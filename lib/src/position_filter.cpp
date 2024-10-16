@@ -164,11 +164,11 @@ bool position_filter_init()
     //                      0.0, 0.00035, -0.00034, 0.00122, -0.00001, 0.00001,
     //                      0.0, -0.00001,  0.00001, 0.00001, 0.00001, 0.00001,
     //                      0.0, 0.00001, 0.00001, 0.00001, 0.00001, 0.00017};
-    float Q_array[25] = {0.000001, 0       , 0        , 0     , 0,
-                         0       , 0.000178, 0.0      , 0.0   , 0.0,
-                         0       , 0       , 0.0001  , 0.0   , 0.0,
-                         0       , 0       , 0.0      , 0.00042, 0.0,
-                         0       , 0       , 0.0      , 0.0   , 0.00085};
+    float Q_array[25] = {0.000001, 0       , 0        , 0       , 0,
+                         0       , 0.000178, 0.0      , 0.0     , 0.0,
+                         0       , 0       , 0.0001   , 0.0     , 0.0,
+                         0       , 0       , 0.0      , 0.00042 , 0.0,
+                         0       , 0       , 0.0      , 0.0     , 0.00085};
     position_estimate_filter.Q = ModelMatrix(state_member, state_member, Q_array);
 
     position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0);
@@ -227,8 +227,8 @@ void position_filter_set_position(pt_control_state_t position)
     position_estimate_filter.estimate_state = position;
     position_estimate_filter.predict_x.set(0, 0, position.v);
     position_estimate_filter.predict_x.set(2, 0, position.yaw);
-    // position_estimate_filter.predict_x.set(4, 0, position.x);
-    // position_estimate_filter.predict_x.set(5, 0, position.y);
+    position_estimate_filter.predict_x.set(3, 0, position.x);
+    position_estimate_filter.predict_x.set(4, 0, position.y);
     position_estimate_filter.init_flag = position_filter_init_both;
 }
 

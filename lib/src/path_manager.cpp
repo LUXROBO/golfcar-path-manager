@@ -21,7 +21,7 @@ static const float DEFAULT_MAX_MOVEABLE_RANGE = 30.0 * PT_M_PI / 180.0;        /
 static const float THRESHOLD_STEER_DIFF_ANGLE = 3 * PT_M_PI / 180.0;           /**< 조향각에 따른 속도 조절을 위한 조향각 레졸루션 단위[rad] */
 static const int MAX_STEER_ERROR_LEVEL = 10;                                    /**< steer error 세분화 */
 
-static const int MAX_LOOK_AHEAD_NUM = 2;
+static const int MAX_LOOK_AHEAD_NUM = 1;
 
 path_tracker::path_tracker()
 {
@@ -140,7 +140,7 @@ pt_update_result_t path_tracker::update(float dt)
     calculated_velocity = velocity_control_depend_on_steer_error(this->state, calculated_velocity, calculated_steer);
 
     // 목표 조향각, 주행 속도 설정
-    this->target_steer = calculated_steer * 0.5 + this->target_steer * 0.5;
+    this->target_steer = calculated_steer;// * 0.5 + this->target_steer * 0.5;
     this->target_velocity = calculated_velocity;
 
     // 목표지점 도착 확인

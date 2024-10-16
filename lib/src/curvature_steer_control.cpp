@@ -10,6 +10,7 @@ static const float DEFAULT_DISTANCE_PID_KD = 0;
 static const float DEFAULT_YAW_PID_KP = 0.3;
 static const float DEFAULT_YAW_PID_KI = 0;
 static const float DEFAULT_YAW_PID_KD = 0.15;
+static const float DEFAULT_CURVATURE_LOW_PASS_FILTER_TAU = 0.3;
 
 curvature_steer_control::curvature_steer_control()
 {
@@ -57,15 +58,17 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     float new_yaw = path_tracker::pi_to_pi(state.yaw);
     float w = 0;
     float output;
+    float target_curvature = 0;
+    static float past_curvature = 0;
 
     // 입력 받은 목표 점들로 이동하기 위한 곡선 경도들의 곡률값의 평균을 예산
     for (int i = 0; i < target_point.size(); i++) {
         path_point_t circle_path = path_tracker::get_path_circle(current_state_to_point, target_point[i], tan(path_tracker::pi_to_pi(new_yaw + PT_M_PI_2)));
         circle_paths.push_back(circle_path);
-        output += circle_path.k;
+        target_curvature += circle_path.k;
     }
 
-    output /= target_point.size();
+    target_curvature /= target_point.size();
 
     // 계산된 곡률 기반으로 방향을 계산
     float circle_x_for_direction = circle_paths[0].x - state.x;
@@ -73,14 +76,17 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
 
     float rotation_y = std::sin(-state.yaw) * circle_x_for_direction + std::cos(-state.yaw) * circle_y_for_direction;
     if (rotation_y < 0) {
-        output *= -1;
+        target_curvature *= -1;
     }
 
+    target_curvature = target_curvature * DEFAULT_CURVATURE_LOW_PASS_FILTER_TAU + past_curvature * (1 - DEFAULT_CURVATURE_LOW_PASS_FILTER_TAU);
+
     // 타겟 조향 각도와 현재 조향각 에러 값을 통한 pid 계산
-    float error = output - this->state.steer;
+    float error = target_curvature - this->state.steer;
     output = this->state.steer + error * this->yaw_kp + this->yaw_pre_e * this->yaw_kd;
 
     this->yaw_pre_e = error;
+    past_curvature = target_curvature;
 
     return output;
 }
