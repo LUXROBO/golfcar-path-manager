@@ -147,7 +147,6 @@ pt_update_result_t path_tracker::update(float dt)
     remain_point = get_remain_point_num();
     if ((remain_point == 0) || (look_ahead_index[0] == goal_point_index)) {
         this->target_velocity = 0.0;
-        this->target_steer = 0;
         return PT_UPDATE_RESULT_GOAL;
     }
 
