@@ -167,8 +167,8 @@ public:
      * @brief 현재 목표점에서 예측을 위한 앞점 인덱스 반환
      * @return 현재 목표점에서 예측을 위한 앞점 인덱스
      */
-    int get_front_target_point_index(int index2) const {
-        unsigned int index = index2 + this->target_index_offset;
+    int get_front_target_point_index(int index2, int size) const {
+        unsigned int index = index2 + size;
 
         if (index >= this->points.size()) {
             index = this->points.size() - 1;
@@ -182,7 +182,7 @@ public:
      * @return 남은 경로점 개수
      */
     size_t get_remain_point_num() const {
-        return this->points.size() - this->target_point_index - 1;
+        return this->points.size() - this->close_point_index - 1;
     }
 
     /**
@@ -276,6 +276,7 @@ protected:
     float revise_target_steer;                        /** 시뮬레이션용 목표 조향 각[rad] */
 
     unsigned int target_point_index;                     /** 현재 목표 맵 위치 인덱스 */
+    unsigned int close_point_index;
     int target_index_offset;                    /** 앞점 추가 인덱스 */
     int max_look_ahead_num;
 
