@@ -82,8 +82,6 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
 
     float diff_k = fabs(target_curvature - past_curvature);
 
-    if (fabs(target_curvature) < 0.02) {
-        lpf_tau = 0.7;
     if (fabs(target_curvature) < 0.03) {
         lpf_tau = 1;
     }
