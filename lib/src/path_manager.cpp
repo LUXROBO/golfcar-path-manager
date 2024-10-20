@@ -263,7 +263,7 @@ pt_control_state_t path_tracker::update_predict_state(pt_control_state_t state, 
 
 int path_tracker::calculate_target_index(pt_control_state_t current_state, std::vector<path_point_t>& points, int start_index)
 {
-    static const int SEARCH_NUM = 5;
+    static const int SEARCH_NUM = 6;
     int max_index = start_index + SEARCH_NUM;
     int target_point_index = -1;
     float min_distance = 10000.0;
@@ -293,7 +293,7 @@ int path_tracker::calculate_target_index(pt_control_state_t current_state, std::
                 target_point_index = i;
             }
         }
-        if (distance <min_distance2) {
+        if (distance < min_distance2) {
             min_distance2 = distance;
             this->close_point_index = i;
         }
@@ -303,9 +303,7 @@ int path_tracker::calculate_target_index(pt_control_state_t current_state, std::
     // 현재 조향각 기준으로 못 찾은 경우, 최대 조향각 기준으로 다시 찾기
     if (target_point_index == -1) {
         // 목표 점을 못찾음
-        if (target_point_index == -1) {
-            return -1;
-        }
+        return -1;
     }
 
     // 거리 오차 계산
