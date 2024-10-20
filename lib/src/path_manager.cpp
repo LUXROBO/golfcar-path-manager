@@ -162,23 +162,31 @@ bool path_tracker::is_moveable_point(pt_control_state_t current, path_point_t ta
 
     double new_x = std::cos(-current.yaw) * new_point.x - std::sin(-current.yaw) * new_point.y;
     double new_y = std::sin(-current.yaw) * new_point.x + std::cos(-current.yaw) * new_point.y;
-
     float new_point_angle = std::atan2(new_y, new_x);
-    if (new_point_angle <= range && new_point_angle >= -range) {
+
+    if (fabsf(new_point_angle) <= range) {
         return true;
     }
+
     return false;
 }
 
 bool path_tracker::get_steer_at_moveable_point(pt_control_state_t current, path_point_t target, float* steer)
 {
-    float target_yaw = path_tracker::pi_to_pi(atan2(target.y - current.y, target.x - current.x));
-    float target_steer = path_tracker::pi_to_pi(target_yaw - current.yaw);
+    float target_yaw = 0.0f;
+    float target_steer = 0.0f;
 
     // 이동 가능한 목표점인지 확인
     if (!this->is_moveable_point(current, target, DEFAULT_MAX_MOVEABLE_RANGE)) {
         return false;
     }
+
+    if (current.x == target.x && current.y == target.y) {
+        target_yaw = target.yaw;
+    } else {
+        target_yaw = path_tracker::pi_to_pi(atan2(target.y - current.y, target.x - current.x));
+    }
+    target_steer = path_tracker::pi_to_pi(target_yaw - current.yaw);
 
     // 최대 조향각보다 크면 오류
     if (fabsf(target_steer) > this->max_steer_angle) {
