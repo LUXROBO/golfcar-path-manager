@@ -216,7 +216,6 @@ public:
     float get_target_velocity() {
         return this->target_velocity;
     }
-    pt_control_state_t update_predict_state2(pt_control_state_t state, float dt);
 
     /**
      * @brief 목표 주행 속도 반환

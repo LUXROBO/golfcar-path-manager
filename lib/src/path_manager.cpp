@@ -96,7 +96,7 @@ pt_update_result_t path_tracker::update(float dt)
     std::vector<int> look_ahead_index;
     std::vector<path_point_t> look_ahead_point;
     int goal_point_index = 0;
-    path_point_t front_point;
+    // path_point_t front_point;
     size_t remain_point = 0;
 
     if (dt <= 0.0) {
@@ -134,11 +134,12 @@ pt_update_result_t path_tracker::update(float dt)
         calculated_steer = -this->max_steer_angle;
     }
 
-    // 주행 속도 계산
-    calculated_velocity = velocity_control(this->state, front_point);
+    // // 주행 속도 계산
+    // calculated_velocity = velocity_control(this->state, front_point);
 
-    // 조향각에 따른 주행 속도 재계산
-    calculated_velocity = velocity_control_depend_on_steer_error(this->state, calculated_velocity, calculated_steer);
+    // // 조향각에 따른 주행 속도 재계산
+    // calculated_velocity = velocity_control_depend_on_steer_error(this->state, calculated_velocity, calculated_steer);
+    calculated_velocity = look_ahead_point[0].speed;
 
     // 목표 조향각, 주행 속도 설정
     this->target_steer = calculated_steer;
