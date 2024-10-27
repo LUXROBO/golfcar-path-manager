@@ -22,12 +22,14 @@ static const float THRESHOLD_STEER_DIFF_ANGLE = 3 * PT_M_PI / 180.0;           /
 static const int MAX_STEER_ERROR_LEVEL = 10;                                    /**< steer error 세분화 */
 
 static const int MAX_LOOK_AHEAD_NUM = 3;
+static const int DEFAULT_MAX_TARGET_INDEX_OFFSET = 3;
 
 path_tracker::path_tracker()
 {
     this->init(DEFAULT_MAX_STEER_ANGLE, DEFAULT_MAX_SPEED, DEFAULT_WHEEL_BASE, 0);
     this->updated_time = 0;
-    this->target_index_offset = 3;
+    this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
+    this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
     this->lf = DEFAULT_WHEEL_BASE / 2;
     this->lr = DEFAULT_WHEEL_BASE / 2;
 }
@@ -36,7 +38,8 @@ path_tracker::path_tracker(const float max_steer_angle, const float max_speed, c
 {
     this->init(max_steer_angle, max_speed, wheel_base, center_to_gps_distance);
     this->updated_time = 0;
-    this->target_index_offset = 3;
+    this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
+    this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
     this->lf = wheel_base / 2 - center_to_gps_distance;
     this->lr = wheel_base / 2 + center_to_gps_distance;
 }
@@ -114,6 +117,14 @@ pt_update_result_t path_tracker::update(float dt)
     }
 
     // 앞점 계산
+    if (fabsf(this->distance_error) < 0.1) {
+        this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
+        this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
+    } else {
+        this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET - 1;
+        this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
+    }
+
     int start_index = this->get_front_target_point_index();
     look_ahead_index.push_back(start_index);
     look_ahead_point.push_back(points[start_index]);
@@ -277,6 +288,7 @@ int path_tracker::calculate_target_index(pt_control_state_t current_state, std::
     int target_point_index = -1;
     float min_distance = 10000.0;
     float min_distance2 = 10000.0;
+
     path_point_t current_point = {
         .x = current_state.x,
         .y = current_state.y,
@@ -308,7 +320,6 @@ int path_tracker::calculate_target_index(pt_control_state_t current_state, std::
         }
     }
 
-
     // 현재 조향각 기준으로 못 찾은 경우, 최대 조향각 기준으로 다시 찾기
     if (target_point_index == -1) {
         // 목표 점을 못찾음
@@ -316,10 +327,20 @@ int path_tracker::calculate_target_index(pt_control_state_t current_state, std::
     }
 
     // 거리 오차 계산
-    if (this->close_point_index != 0) {
+    if (this->close_point_index == this->points.size() - 1) {
         this->distance_error = this->get_line_distance(current_point, this->points[this->close_point_index - 1], this->points[this->close_point_index]);
-    } else {
+    } else if (this->close_point_index == 0) {
         this->distance_error = this->get_line_distance(current_point, this->points[this->close_point_index], this->points[this->close_point_index + 1]);
+    } else {
+        float before_point_distance = sqrt(pow(current_point.x - this->points[this->close_point_index - 1].x, 2)
+                                                + pow(current_point.y - this->points[this->close_point_index - 1].y, 2));
+        float after_point_distance = sqrt(pow(current_point.x - this->points[this->close_point_index + 1].x, 2)
+                                                + pow(current_point.y - this->points[this->close_point_index + 1].y, 2));
+        if (before_point_distance < after_point_distance) {
+            this->distance_error = this->get_line_distance(current_point, this->points[this->close_point_index - 1], this->points[this->close_point_index]);
+        } else {
+            this->distance_error = this->get_line_distance(current_point, this->points[this->close_point_index], this->points[this->close_point_index + 1]);
+        }
     }
 
     // 방향 오차 계산
@@ -397,7 +418,6 @@ float path_tracker::get_line_distance(path_point_t current_point, path_point_t l
         if (line_point1.y > line_point2.y) {
             distance *= -1;
         }
-
         return distance;
     }
 
