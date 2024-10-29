@@ -117,12 +117,20 @@ pt_update_result_t path_tracker::update(float dt)
     }
 
     // 앞점 계산
-    if (fabsf(this->distance_error) < 0.1) {
-        this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
-        this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
-    } else {
+    // if (fabsf(this->distance_error) < 0.1) {
+    //     this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
+    //     this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
+    // } else {
+    //     this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET - 1;
+    //     this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
+    // }
+    float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));
+    if (diff_yaw < 0.1745329) {
+        this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET + 1;
+    } else if (diff_yaw > 0.34906585) {
         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET - 1;
-        this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
+    } else {
+        this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
     }
 
     int start_index = this->get_front_target_point_index();
