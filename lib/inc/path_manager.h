@@ -150,6 +150,14 @@ public:
     }
 
     /**
+     * @brief 현재 가장 가까운 포인트 인덱스 반환
+     * @return 현재 가장 가까운 포인트 인덱스
+     */
+    int get_close_point_index() const {
+        return this->close_point_index;
+    }
+
+    /**
      * @brief 현재 목표점에서 예측을 위한 앞점 인덱스 반환
      * @return 현재 목표점에서 예측을 위한 앞점 인덱스
      */
