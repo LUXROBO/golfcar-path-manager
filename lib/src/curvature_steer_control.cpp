@@ -91,11 +91,11 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     float error = target_curvature - this->state.steer;
     output = this->state.steer + error * this->yaw_kp + this->yaw_pre_e * this->yaw_kd;
 
-    if (fabsf(this->distance_error) > 0.2) {
-        output += this->distance_error * this->yaw_ki * 1.5;
-    } else {
-        output += this->distance_error * this->yaw_ki;
-    }
+    // if (fabsf(this->distance_error) > 0.2) {
+    //     output += this->distance_error * this->yaw_ki * 1.5;
+    // } else {
+    //     output += this->distance_error * this->yaw_ki;
+    // }
 
     this->yaw_pre_e = error;
     past_curvature = target_curvature;
