@@ -52,7 +52,7 @@ void curvature_steer_control::get_gain(int gain_index, float* gain_value)
     gain_value[2] = this->yaw_kd;
 }
 
-float curvature_steer_control::steering_control(pt_control_state_t state, std::vector<path_point_t> target_point)
+float curvature_steer_control::steering_control(pt_control_state_t state, std::vector<path_point_t> target_point, uint8_t mode)
 {
     path_point_t current_state_to_point = {state.x, state.y, state.yaw, 0, 0};
     std::vector<path_point_t> circle_paths;
@@ -81,7 +81,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
 
     target_curvature /= used_size;
 
-    if (fabs(target_curvature) < 0.05) {
+    if (fabs(target_curvature) < 0.05 || mode == 2) {
         lpf_tau = 1;
     }
 
@@ -94,7 +94,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     // if (fabsf(this->distance_error) > 0.2) {
     //     output += this->distance_error * this->yaw_ki * 1.5;
     // } else {
-    //     output += this->distance_error * this->yaw_ki;
+    output += this->distance_error * this->yaw_ki;
     // }
 
     this->yaw_pre_e = error;

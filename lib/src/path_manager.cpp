@@ -92,7 +92,7 @@ void path_tracker::set_path_points(pt_control_state_t init_state, std::vector<pa
     this->set_state(this->init_state);
 }
 
-pt_update_result_t path_tracker::update(float dt)
+pt_update_result_t path_tracker::update(float dt, uint8_t mode)
 {
     float calculated_steer = 0;
     float calculated_velocity = 0;
@@ -124,13 +124,17 @@ pt_update_result_t path_tracker::update(float dt)
     //     this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET - 1;
     //     this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
     // }
-    float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));
-    if (diff_yaw < 0.1745329) {
-        this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET + 1;
-    } else if (diff_yaw > 0.34906585) {
+    if (mode != 0) {
         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET - 1;
     } else {
-        this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
+        float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));
+        if (diff_yaw < 0.1745329) {
+            this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET + 2;
+        } else if (diff_yaw > 0.34906585) {
+            this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET - 1;
+        } else {
+            this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
+        }
     }
 
     int start_index = this->get_front_target_point_index();
@@ -146,7 +150,7 @@ pt_update_result_t path_tracker::update(float dt)
     goal_point_index = this->points.size() - 1;
 
     // 조향각 계산
-    calculated_steer = steering_control(this->state, look_ahead_point);
+    calculated_steer = steering_control(this->state, look_ahead_point, mode);
     if (calculated_steer > this->max_steer_angle) {
         calculated_steer = this->max_steer_angle;
     } else if (calculated_steer < -this->max_steer_angle) {

@@ -17,7 +17,7 @@ public:
     ~lqr_steer_control();
 
 public:
-    virtual float steering_control(pt_control_state_t state, std::vector<path_point_t> target_point);
+    virtual float steering_control(pt_control_state_t state, std::vector<path_point_t> target_point, uint8_t mode);
     virtual float velocity_control(pt_control_state_t state, path_point_t target_point);
 
     virtual void set_gain(int gain_index, float* gain_value);

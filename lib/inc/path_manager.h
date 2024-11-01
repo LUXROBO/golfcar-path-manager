@@ -25,7 +25,7 @@ protected:
      * @param [in] target 목표점
      * @return 목표 조향각[rad]
      */
-    virtual float steering_control(pt_control_state_t state, std::vector<path_point_t> target) = 0;
+    virtual float steering_control(pt_control_state_t state, std::vector<path_point_t> target, uint8_t mode) = 0;
 
     /**
      * @brief 목표점까지 이동할 수 있는 주행 속도 계산
@@ -56,7 +56,7 @@ public:
      * @brief 경로 추적을 위한 목표 상태 및 예측 위치 계산
      * @param [in] time 함수 호출 시간[s]
      */
-    pt_update_result_t update(float dt);
+    pt_update_result_t update(float dt, uint8_t mode = 0);
 
     /**
      * @brief 목표점으로 이동 가능한지 확인

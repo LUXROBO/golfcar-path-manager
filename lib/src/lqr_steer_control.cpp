@@ -59,7 +59,7 @@ ModelMatrix  lqr_steer_control::dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q
     return K;
 }
 
-float lqr_steer_control::steering_control(pt_control_state_t state, std::vector<path_point_t> target_point)
+float lqr_steer_control::steering_control(pt_control_state_t state, std::vector<path_point_t> target_point, uint8_t mode)
 {
     /* state matrix
     x = [position_x

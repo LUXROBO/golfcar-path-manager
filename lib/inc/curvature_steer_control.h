@@ -22,7 +22,7 @@ public:
 
     path_point_t test_function(path_point_t current, path_point_t target_point);
 private:
-    virtual float steering_control(pt_control_state_t state, std::vector<path_point_t> target_point);
+    virtual float steering_control(pt_control_state_t state, std::vector<path_point_t> target_point, uint8_t mode);
     virtual float velocity_control(pt_control_state_t state, path_point_t target_point);
 private:
     pid_controller path_yaw_pid;

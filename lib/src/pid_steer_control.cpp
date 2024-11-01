@@ -80,7 +80,7 @@ void pid_steer_control::get_gain(int gain_index, float* gain_value)
     }
 }
 
-float pid_steer_control::steering_control(pt_control_state_t state, std::vector<path_point_t> target_point)
+float pid_steer_control::steering_control(pt_control_state_t state, std::vector<path_point_t> target_point, uint8_t mode)
 {
     float th_e = pi_to_pi(this->yaw_error * this->steer_kp + (this->yaw_error - this->steer_pre_e) * this->steer_kd);
 
