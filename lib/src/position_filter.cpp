@@ -357,7 +357,7 @@ ModelMatrix state_equation_jacobi(ModelMatrix x0, ModelMatrix input)
     return jacobian;
 }
 
-pt_control_state_t position_filter_predict_state(float v, float steer, float updated_time)
+pt_control_state_t position_filter_predict_state(float v, float steer, float pitch, float updated_time)
 {
     if (position_filter_is_init()) {
         float dt = updated_time - position_estimate_filter.last_update_time;
@@ -390,8 +390,8 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float upd
         temp_x.set(0, 0, v);
         temp_x.set(1, 0, p_x.get(0, 0) * std::cos(slip_angle) * std::tan(steer) / W);
         temp_x.set(2, 0, path_tracker::pi_to_pi(p_x.get(2, 0) + dt * p_x.get(1, 0)));
-        temp_x.set(3, 0, p_x.get(3, 0) + dt * p_x.get(0, 0) * std::cos(p_x.get(2, 0) + slip_angle));
-        temp_x.set(4, 0, p_x.get(4, 0) + dt * p_x.get(0, 0) * std::sin(p_x.get(2, 0) + slip_angle));
+        temp_x.set(3, 0, p_x.get(3, 0) + dt * p_x.get(0, 0) * std::cos(pitch) * std::cos(p_x.get(2, 0) + slip_angle));
+        temp_x.set(4, 0, p_x.get(4, 0) + dt * p_x.get(0, 0) * std::cos(pitch) * std::sin(p_x.get(2, 0) + slip_angle));
 
         position_estimate_filter.predict_x = temp_x;
 

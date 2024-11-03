@@ -107,7 +107,7 @@ void position_filter_set_predict_x(ModelMatrix new_x);
  * @param [in] updated_time 현재 업데이트 된 시간 시간[s]
  * @return pt_control_state_t 예측된 x,y 위치를 path manager에서 관리하는 형태로 리턴
  */
-pt_control_state_t position_filter_predict_state(float v, float steer, float updated_time);
+pt_control_state_t position_filter_predict_state(float v, float steer, float pitch, float updated_time);
 
 /**
  * @brief GPS의 위치 값으로 실 차량의 위치를 추종
