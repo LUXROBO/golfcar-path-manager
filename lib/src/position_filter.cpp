@@ -57,16 +57,19 @@ static float H_array_quality0[25] = {1, 0, 0, 0, 0,
                                      0, 0, 0, 1, 0,
                                      0, 0, 0, 0, 1}; /** */
 
-static float H_array_quality1[20] = {1, 0, 0, 0, 0,
-                                     0, 1, 0, 0, 0,
-                                     0, 0, 0, 1, 0,
-                                     0, 0, 0, 0, 1};
+// static float H_array_quality1[20] = {1, 0, 0, 0, 0,
+//                                      0, 1, 0, 0, 0,
+//                                      0, 0, 0, 1, 0,
+//                                      0, 0, 0, 0, 1};
 
-static float H_array_quality2[18] = {0, 0, 1, 0, 0, 0,
-                             0, 0, 0, 0, 1, 0,
-                             0, 0, 0, 0, 0, 1};
+// static float H_array_quality2[18] = {0, 0, 1, 0, 0, 0,
+//                              0, 0, 0, 0, 1, 0,
+//                              0, 0, 0, 0, 0, 1};
 
-static float H_array_quality3[6] = {0, 1, 0, 0, 0};
+static float H_array_quality3[5] = {0, 1, 0, 0, 0};
+
+static float H_array_imu_ins[10] = {0, 1, 0, 0, 0,
+                                    0, 0, 1, 0, 0};
 
 
 // Z 모두
@@ -100,6 +103,9 @@ static float R_array_quality2[9] = {0, 0, 0,
                              0, 0, 0};
 
 static float R_array_quality3[1] = {0.00001};
+
+static float R_array_quality_imu_ins[4] = {0.00001, 0,
+                                           0,       0.00001};
 
 // float R_array_quality3[1] = {0.01};
 
@@ -440,6 +446,23 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
                 z_value.gps_yaw -= PT_M_PI * 2;
             }
             resize_z.set(2, 0, z_value.gps_yaw);
+        }
+    } else if (quality == POSITION_FILTER_QUALITY_ONLY_IMU_WITH_YAW) {
+        position_estimate_filter.H = ModelMatrix(2, 5, H_array_imu_ins);
+        position_estimate_filter.R = ModelMatrix(2, 2, R_array_quality_imu_ins);
+
+        resize_z = ModelMatrix::zero(2, 1);
+        resize_z.set(0, 0, z_value.yaw_rate);
+        resize_z.set(1, 0, z_value.gps_yaw);
+        sigma = 1.5;
+
+        if (fabsf(z_value.gps_yaw - position_estimate_filter.predict_x.get(2, 0)) > PT_M_PI) {
+            if (position_estimate_filter.predict_x.get(2, 0) > 0) {
+                z_value.gps_yaw += PT_M_PI * 2;
+            } else {
+                z_value.gps_yaw -= PT_M_PI * 2;
+            }
+            resize_z.set(1, 0, z_value.gps_yaw);
         }
     } else {
         // imu setting

@@ -17,6 +17,7 @@
 #define POSITION_FILTER_QUALITY_EXCEPT_YAW              1 /**< GPS로 계산한 YAW만 사용하지 않음*/
 #define POSITION_FILTER_QUALITY_EXCEPT_GPS_DERIVATIVE   2 /**< GPS로 계산한 속도와 YAW를 사용하지 않음*/
 #define POSITION_FILTER_QUALITY_ONLY_IMU                3 /**< IMU만 사용(GPS 데이터 모두 무시)*/
+#define POSITION_FILTER_QUALITY_ONLY_IMU_WITH_YAW       4 /**< IMU만 사용(GPS 데이터 모두 무시)*/
 
 typedef struct position_filter_z_format_
 {
