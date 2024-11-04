@@ -126,6 +126,7 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
     // }
     if (mode != 0) {
         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET - 1;
+        this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
     } else {
         float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));
         if (diff_yaw < 0.1745329) {
@@ -135,12 +136,13 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
         } else {
             this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
         }
+        this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
     }
 
     int start_index = this->get_front_target_point_index();
     look_ahead_index.push_back(start_index);
     look_ahead_point.push_back(points[start_index]);
-    for (int i = 0; i < MAX_LOOK_AHEAD_NUM - 1; i++) {
+    for (int i = 0; i < this->max_look_ahead_num - 1; i++) {
         look_ahead_index.push_back(this->get_front_target_point_index(start_index, 1));
         look_ahead_point.push_back(points[look_ahead_index[i + 1]]);
         start_index = look_ahead_index[i + 1];
