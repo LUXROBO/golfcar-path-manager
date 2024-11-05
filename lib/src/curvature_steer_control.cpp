@@ -61,6 +61,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     float output;
     float target_curvature = 0;
     float lpf_tau = DEFAULT_CURVATURE_LOW_PASS_FILTER_TAU;
+    float new_p_gain = this->yaw_kp;
     static float past_curvature = 0;
     int used_size = target_point.size();
 
@@ -75,27 +76,30 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
         if (rotation_y < 0) {
             circle_path.k *= -1;
         }
-        // circle_paths.push_back(circle_path);
         target_curvature += circle_path.k;
     }
 
     target_curvature /= used_size;
 
-    if (fabs(target_curvature) < 0.05 || mode == 2) {
+    if (fabs(target_curvature) < 0.05) {
         lpf_tau = 1;
+    }
+
+    if (mode != 0) {
+        lpf_tau = 1;
+        this->yaw_ki = 0.1;
+        new_p_gain = this->yaw_kp - 0.3;
+    } else {
+        this->yaw_ki = 0;
     }
 
     target_curvature = target_curvature * lpf_tau + past_curvature * (1 - lpf_tau);
 
     // 타겟 조향 각도와 현재 조향각 에러 값을 통한 pid 계산
     float error = target_curvature - this->state.steer;
-    output = this->state.steer + error * this->yaw_kp + this->yaw_pre_e * this->yaw_kd;
+    output = this->state.steer + error * new_p_gain + this->yaw_pre_e * this->yaw_kd;
 
-    // if (fabsf(this->distance_error) > 0.2) {
-    //     output += this->distance_error * this->yaw_ki * 1.5;
-    // } else {
     output += this->distance_error * this->yaw_ki;
-    // }
 
     this->yaw_pre_e = error;
     past_curvature = target_curvature;
