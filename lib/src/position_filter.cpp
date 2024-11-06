@@ -81,9 +81,9 @@ static float R_array_quality0[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps v
                                      0.0, 0.0,    0.0,   0.0,   0.0003}; // gps y
 static float R_array_quality0_float[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
                                            0.0, 0.01, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
-                                           0.0, 0.0,    0.25, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
-                                           0.0, 0.0,    0.0,   0.3, 0.0,    // gps x
-                                           0.0, 0.0,    0.0,   0.0,   0.3}; // gps y
+                                           0.0, 0.0,    0.08, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
+                                           0.0, 0.0,    0.0,   0.01, 0.0,    // gps x
+                                           0.0, 0.0,    0.0,   0.0,   0.01}; // gps y
 static float R_array_quality0_dgps[25] = {10, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
                                           0.0, 10, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
                                           0.0, 0.0, 10, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
@@ -105,7 +105,7 @@ static float R_array_quality2[9] = {0, 0, 0,
 static float R_array_quality3[1] = {0.00001};
 
 static float R_array_quality_imu_ins[4] = {0.00001, 0,
-                                           0,       0.01};
+                                           0,       0.03};
 
 // float R_array_quality3[1] = {0.01};
 
