@@ -94,8 +94,6 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
             debug_p_gain = 0.8;
         }
         target_curvature = target_curvature * debug_p_gain;
-    } else {
-        this->yaw_ki = 0;
     }
 
     target_curvature = target_curvature * lpf_tau + past_curvature * (1 - lpf_tau);

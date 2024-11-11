@@ -105,7 +105,7 @@ static float R_array_quality2[9] = {0, 0, 0,
 static float R_array_quality3[1] = {0.00001};
 
 static float R_array_quality_imu_ins[4] = {0.00001, 0,
-                                           0,       0.03};
+                                           0,       0.015};
 
 // float R_array_quality3[1] = {0.01};
 
