@@ -36,7 +36,7 @@ bool velocity_filter_is_init();
  * @brief 필터의 예측 값을 초기화
  * @param [in] velocity 차량의 현재 상태
  */
-void velocity_filter_set_velocity(float velocity);
+void velocity_filter_set_velocity(float v_x, float v_y);
 
 /**
  * @brief 필터의 마지막 업데이트 시간을 수정
@@ -59,7 +59,7 @@ float velocity_filter_get_chi_square_value();
  * @param [in] updated_time 현재 업데이트 된 시간 시간[s]
  * @return pt_control_state_t 예측된 x,y 위치를 path manager에서 관리하는 형태로 리턴
  */
-float velocity_filter_predict_state(float accel_x, float updated_time);
+float velocity_filter_predict_state(float accel_x, float accel_y, float updated_time);
 
 /**
  * @brief GPS의 위치 값으로 실 차량의 위치를 추종
@@ -67,7 +67,7 @@ float velocity_filter_predict_state(float accel_x, float updated_time);
  * @param [in] quality position filter의 quality @ref POSITION_FILTER_QUALITY
  * @return bool 유효한 추정을 진행했는지에 대한 여부
  */
-bool velocity_filter_estimate_state(float gps_velocity);
+bool velocity_filter_estimate_state(float gps_v_x, float gps_v_y);
 
 /**
  * @brief 필터의 측정 값의 유효성을 검사
@@ -76,4 +76,4 @@ bool velocity_filter_estimate_state(float gps_velocity);
  * @param [in] sigma 유효성 기준치
  * @return pt_control_state_t 추종된 차량의 위치
  */
-bool velocity_filter_valid_gate(float innovation, float H, float R, float sigma);
+bool velocity_filter_valid_gate(ModelMatrix innovation, ModelMatrix H, ModelMatrix R, float sigma);
