@@ -105,7 +105,7 @@ static float R_array_quality2[9] = {0, 0, 0,
 static float R_array_quality3[1] = {0.00001};
 
 static float R_array_quality_imu_ins[4] = {0.00001, 0,
-                                           0,       0.015};
+                                           0,       0.021};
 
 // float R_array_quality3[1] = {0.01};
 
@@ -361,7 +361,7 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float pit
 {
     if (position_filter_is_init()) {
         float dt = updated_time - position_estimate_filter.last_update_time;
-        float slip_angle = std::atan(std::tan(steer) / 2);
+        float slip_angle = std::atan(std::tan(steer) * 0.437788);
         float temp_input[4] = {v, steer, slip_angle, dt};
         position_estimate_filter.last_update_time = updated_time;
 
@@ -437,7 +437,7 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
 
         resize_z = ModelMatrix::zero(5, 1);
         resize_z = position_estimate_filter.z;
-        sigma = 4;
+        sigma = 2;
 
         if (fabsf(z_value.gps_yaw - position_estimate_filter.predict_x.get(2, 0)) > PT_M_PI) {
             if (position_estimate_filter.predict_x.get(2, 0) > 0) {
@@ -454,7 +454,7 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
         resize_z = ModelMatrix::zero(2, 1);
         resize_z.set(0, 0, z_value.yaw_rate);
         resize_z.set(1, 0, z_value.gps_yaw);
-        sigma = 1.5;
+        sigma = 1;
 
         if (fabsf(z_value.gps_yaw - position_estimate_filter.predict_x.get(2, 0)) > PT_M_PI) {
             if (position_estimate_filter.predict_x.get(2, 0) > 0) {
@@ -476,7 +476,7 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
         resize_z = ModelMatrix::zero(1, 1);
         resize_z.set(0, 0, z_value.yaw_rate);
 
-        sigma = 1.7;
+        sigma = 1;
     }
     // 측정 값과 예측 값 차이
     innovation = resize_z - position_estimate_filter.H * position_estimate_filter.predict_x;
