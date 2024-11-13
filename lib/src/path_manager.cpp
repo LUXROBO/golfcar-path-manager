@@ -24,6 +24,9 @@ static const int MAX_STEER_ERROR_LEVEL = 10;                                    
 static const int MAX_LOOK_AHEAD_NUM = 3;
 static const int DEFAULT_MAX_TARGET_INDEX_OFFSET = 3;
 
+static const float DEFAULT_FRONT_CHECK_YAW_DIFF1 = 7.0 * PT_M_PI / 180.0;
+static const float DEFAULT_FRONT_CHECK_YAW_DIFF2 = 15.0 * PT_M_PI / 180.0;
+
 path_tracker::path_tracker()
 {
     this->init(DEFAULT_MAX_STEER_ANGLE, DEFAULT_MAX_SPEED, DEFAULT_WHEEL_BASE, 0);
@@ -129,10 +132,10 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
     } else {
         float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));
-        if (diff_yaw < 0.1745329) {
+        if (diff_yaw < DEFAULT_FRONT_CHECK_YAW_DIFF1) {
             this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET + 1;
             this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
-        } else if (diff_yaw > 0.34906585) {
+        } else if (diff_yaw > DEFAULT_FRONT_CHECK_YAW_DIFF2) {
             this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
             this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
         } else {
