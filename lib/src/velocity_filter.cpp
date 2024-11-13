@@ -79,9 +79,9 @@ void velocity_filter_set_velocity(float v_x, float v_y)
 {
     velocity_estimate_filter.init_flag = 1;
     velocity_estimate_filter.x.set(0, 0, v_x);
-    velocity_estimate_filter.x.set(0, 0, v_y);
+    velocity_estimate_filter.x.set(1, 0, v_y);
     velocity_estimate_filter.velocity = std::sqrt(pow(v_x, 2) + pow(v_y, 2));
-    velocity_estimate_filter.P = 0;
+    velocity_estimate_filter.P = ModelMatrix::zero(2, 2);
 }
 
 float velocity_filter_predict_state(float accel_x, float accel_y, float updated_time)
@@ -91,12 +91,14 @@ float velocity_filter_predict_state(float accel_x, float accel_y, float updated_
         velocity_estimate_filter.last_update_time = updated_time;
 
         float A = 1;
-        velocity_estimate_filter.x.set(0, 0, velocity_estimate_filter.x.get(0, 0) + accel_x * dt);
-        velocity_estimate_filter.x.set(1, 0, velocity_estimate_filter.x.get(1, 0) + accel_y * dt);
+        float v_x = velocity_estimate_filter.x.get(0, 0) + accel_x * dt;
+        float v_y = velocity_estimate_filter.x.get(1, 0) + accel_y * dt;
+        velocity_estimate_filter.x.set(0, 0, v_x);
+        velocity_estimate_filter.x.set(1, 0, v_y);
 
 
-        velocity_estimate_filter.velocity = std::sqrt(pow(velocity_estimate_filter.x.get(0, 0), 2)
-                                                      + pow(velocity_estimate_filter.x.get(1, 0), 2));
+        velocity_estimate_filter.velocity = std::sqrt(pow(v_x, 2)
+                                                      + pow(v_y, 2));
 
         // 오차 공분산 계산
         velocity_estimate_filter.P = velocity_estimate_filter.P + velocity_estimate_filter.Q;
