@@ -46,6 +46,7 @@ bool velocity_filter_init()
     velocity_estimate_filter.Q = ModelMatrix::zero(2, 2);//0.005;
     velocity_estimate_filter.K = ModelMatrix::zero(2, 2);//0;
     velocity_estimate_filter.H = ModelMatrix::identity(2, 2);//1;
+    velocity_estimate_filter.z = ModelMatrix::zero(2, 1);
 
     velocity_estimate_filter.S_inv = ModelMatrix::identity(2, 2);//;
 
@@ -53,8 +54,8 @@ bool velocity_filter_init()
                          0   , 0.005};
     velocity_estimate_filter.Q = ModelMatrix(2, 2, Q_array);
 
-    float R_array[4] = {0.07, 0,
-                         0   , 0.07};
+    float R_array[4] = {0.03, 0,
+                         0   , 0.03};
     velocity_estimate_filter.R = ModelMatrix(2, 2, R_array);
 
     return true;
@@ -97,8 +98,8 @@ float velocity_filter_predict_state(float accel_x, float accel_y, float updated_
         velocity_estimate_filter.x.set(1, 0, v_y);
 
 
-        velocity_estimate_filter.velocity = std::sqrt(pow(v_x, 2)
-                                                      + pow(v_y, 2));
+        velocity_estimate_filter.velocity = std::sqrt(powf(v_x, 2)
+                                                      + powf(v_y, 2));
 
         // 오차 공분산 계산
         velocity_estimate_filter.P = velocity_estimate_filter.P + velocity_estimate_filter.Q;
@@ -106,10 +107,10 @@ float velocity_filter_predict_state(float accel_x, float accel_y, float updated_
 
     return velocity_estimate_filter.velocity;
 }
-
+float debug_sigma = 10;
 bool velocity_filter_estimate_state(float gps_v_x, float gps_v_y)
 {
-    float sigma = 10; // 값의 유효성 기준, 크면 클 수록 통과하기 좋음
+    float sigma = debug_sigma;//10; // 값의 유효성 기준, 크면 클 수록 통과하기 좋음
     ModelMatrix innovation = ModelMatrix::zero(2, 1);
     bool result = false;
 

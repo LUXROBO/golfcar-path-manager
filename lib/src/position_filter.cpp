@@ -361,7 +361,7 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float pit
 {
     if (position_filter_is_init()) {
         float dt = updated_time - position_estimate_filter.last_update_time;
-        float slip_angle = std::atan(std::tan(steer) * 0.437788);
+        float slip_angle = std::atan(std::tan(steer) * 0.95 / 2.18);
         float temp_input[4] = {v, steer, slip_angle, dt};
         position_estimate_filter.last_update_time = updated_time;
 
