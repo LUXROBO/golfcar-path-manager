@@ -65,6 +65,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     float lpf_tau = DEFAULT_CURVATURE_LOW_PASS_FILTER_TAU;
     float new_p_gain = this->yaw_kp;
     static float past_curvature = 0;
+    static float past_distance_error = 0;
     int used_size = target_point.size();
 
     // 입력 받은 목표 점들로 이동하기 위한 곡선 경도들의 곡률값의 평균을 예산
@@ -86,14 +87,17 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     if (fabs(target_curvature) < 0.05) {
         lpf_tau = 1;
     }
+    // 조향 = atan(곡률 * W)
+    // 현재 GPS위치 기준 전방 거리가 더 정확
+    target_curvature = std::atan(target_curvature * 1.15);
 
     if (mode != 0) {
-        if (mode == 2) {
-            debug_p_gain = 0.9;
-        } else {
-            debug_p_gain = 0.8;
-        }
-        target_curvature = target_curvature * debug_p_gain;
+        // if (mode == 2) {
+        //     debug_p_gain = 0.9;
+        // } else {
+        //     debug_p_gain = 0.8;
+        // }
+        // target_curvature = target_curvature * debug_p_gain;
     } else {
         this->yaw_ki = 0;
     }
@@ -102,9 +106,12 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
 
     // 타겟 조향 각도와 현재 조향각 에러 값을 통한 pid 계산
     float error = target_curvature - this->state.steer;
-    output = this->state.steer + error * new_p_gain + this->yaw_pre_e * this->yaw_kd;
+    output = this->state.steer + error * new_p_gain;// + this->yaw_pre_e * this->yaw_kd;
 
-    output += this->distance_error * this->yaw_ki;
+    // 거리 에러 적용 @Todo gain 변수 이름이 혼동
+    output += this->distance_error * this->yaw_ki + (this->distance_error - past_distance_error) * this->yaw_kd;
+
+    past_distance_error = this->distance_error;
 
     this->yaw_pre_e = error;
     past_curvature = target_curvature;
