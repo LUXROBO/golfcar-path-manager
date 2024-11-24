@@ -125,21 +125,22 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
     //     this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
     // }
     if (mode != 0) {
-        this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET - 1;
+        this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
-    } else {
-        float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));
-        if (diff_yaw < 0.1745329) {
-            this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET + 1;
-            this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
-        } else if (diff_yaw > 0.34906585) {
-            this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
-            this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
-        } else {
-            this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
-            this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
-        }
     }
+    // else {
+    //     float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));
+    //     if (diff_yaw < 0.1745329) {
+    //         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET + 1;
+    //         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
+    //     } else if (diff_yaw > 0.34906585) {
+    //         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
+    //         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
+    //     } else {
+    //         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
+    //         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
+    //     }
+    // }
 
     int start_index = this->get_front_target_point_index();
     look_ahead_index.push_back(start_index);
@@ -348,9 +349,9 @@ int path_tracker::calculate_target_index(pt_control_state_t current_state, std::
     } else if (this->close_point_index == 0) {
         this->distance_error = this->get_line_distance(current_point, this->points[this->close_point_index], this->points[this->close_point_index + 1]);
     } else {
-        float before_point_distance = sqrt(pow(current_point.x - this->points[this->close_point_index - 1].x, 2)
+        double before_point_distance = sqrt(pow(current_point.x - this->points[this->close_point_index - 1].x, 2)
                                                 + pow(current_point.y - this->points[this->close_point_index - 1].y, 2));
-        float after_point_distance = sqrt(pow(current_point.x - this->points[this->close_point_index + 1].x, 2)
+        double after_point_distance = sqrt(pow(current_point.x - this->points[this->close_point_index + 1].x, 2)
                                                 + pow(current_point.y - this->points[this->close_point_index + 1].y, 2));
         if (before_point_distance < after_point_distance) {
             this->distance_error = this->get_line_distance(current_point, this->points[this->close_point_index - 1], this->points[this->close_point_index]);
@@ -422,10 +423,10 @@ float path_tracker::get_point_distance(path_point_t current_point, path_point_t 
 
 float path_tracker::get_line_distance(path_point_t current_point, path_point_t line_point1, path_point_t line_point2)
 {
-    float distance = 0.0;
-    float a = 0.0;
-    float b = -1.0;
-    float c = 0.0;
+    double distance = 0.0;
+    double a = 0.0;
+    double b = -1.0;
+    double c = 0.0;
 
     if (line_point1.x == line_point2.x) {
         distance = (current_point.x - line_point1.x);

@@ -10,7 +10,7 @@ static const float DEFAULT_DISTANCE_PID_KD = 0;
 static const float DEFAULT_YAW_PID_KP = 0.3;
 static const float DEFAULT_YAW_PID_KI = 0;
 static const float DEFAULT_YAW_PID_KD = 0.15;
-static const float DEFAULT_CURVATURE_LOW_PASS_FILTER_TAU = 0.3;
+static const float DEFAULT_CURVATURE_LOW_PASS_FILTER_TAU = 0.35;
 static const float MAX_CURVATURE_LOW_PASS_FILTER_TAU = 0.4;
 
 curvature_steer_control::curvature_steer_control()
@@ -63,7 +63,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     float output;
     float target_curvature = 0;
     float lpf_tau = DEFAULT_CURVATURE_LOW_PASS_FILTER_TAU;
-    float new_p_gain = this->yaw_kp;
+    float new_p_gain = this->yaw_ki; // debugging을 위해 i gain을 사용 중이나 p로 변경 필요
     static float past_curvature = 0;
     static float past_distance_error = 0;
     int used_size = target_point.size();
@@ -88,28 +88,23 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
         lpf_tau = 1;
     }
     // 조향 = atan(곡률 * W)
-    // 현재 GPS위치 기준 전방 거리가 더 정확
-    target_curvature = std::atan(target_curvature * 1.15);
+    // 현재 차량 중앙 기준 거리 값이 더 적확
+    target_curvature = std::atan(target_curvature * 1.09);
 
     if (mode != 0) {
-        // if (mode == 2) {
-        //     debug_p_gain = 0.9;
-        // } else {
-        //     debug_p_gain = 0.8;
-        // }
-        // target_curvature = target_curvature * debug_p_gain;
     } else {
-        this->yaw_ki = 0;
+        // 특별 구간이 아닌 경우 거리 오차 반영 x
+        new_p_gain = 0;
     }
 
     target_curvature = target_curvature * lpf_tau + past_curvature * (1 - lpf_tau);
 
     // 타겟 조향 각도와 현재 조향각 에러 값을 통한 pid 계산
     float error = target_curvature - this->state.steer;
-    output = this->state.steer + error * new_p_gain;// + this->yaw_pre_e * this->yaw_kd;
+    output = this->state.steer + error * 0.5;
 
     // 거리 에러 적용 @Todo gain 변수 이름이 혼동
-    output += this->distance_error * this->yaw_ki + (this->distance_error - past_distance_error) * this->yaw_kd;
+    output += this->distance_error * new_p_gain + (this->distance_error - past_distance_error) * this->yaw_kd;
 
     past_distance_error = this->distance_error;
 
