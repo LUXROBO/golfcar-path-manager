@@ -128,19 +128,20 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
     }
-    // else {
-    //     float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));
-    //     if (diff_yaw < 0.1745329) {
-    //         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET + 1;
-    //         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
-    //     } else if (diff_yaw > 0.34906585) {
-    //         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
-    //         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
-    //     } else {
-    //         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
-    //         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
-    //     }
-    // }
+    else {
+        float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));
+        // if (diff_yaw < 0.1745329) {
+        //     this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET + 1;
+        //     this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
+        // } else
+        if (diff_yaw > 0.34906585) {
+            this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
+            this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
+        } else {
+            this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
+            this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
+        }
+    }
 
     int start_index = this->get_front_target_point_index();
     look_ahead_index.push_back(start_index);
