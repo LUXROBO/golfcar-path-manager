@@ -63,7 +63,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     float output;
     float target_curvature = 0;
     float lpf_tau = DEFAULT_CURVATURE_LOW_PASS_FILTER_TAU;
-    float new_p_gain = this->yaw_ki; // debugging을 위해 i gain을 사용 중이나 p로 변경 필요
+    float new_p_gain = this->yaw_kp; // debugging을 위해 i gain을 사용 중이나 p로 변경 필요
     static float past_curvature = 0;
     static float past_distance_error = 0;
     int used_size = target_point.size();
@@ -81,17 +81,16 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
         }
         target_curvature += circle_path.k;
     }
-
     target_curvature /= used_size;
 
-    if (fabs(target_curvature) < 0.05) {
-        lpf_tau = 1;
-    }
     // 조향 = atan(곡률 * W)
     // 현재 차량 중앙 기준 거리 값이 더 적확
     target_curvature = std::atan(target_curvature * 1.09);
 
     if (mode != 0) {
+        if (mode == 2) {
+            target_curvature = target_curvature * this->yaw_ki;
+        }
     } else {
         // 특별 구간이 아닌 경우 거리 오차 반영 x
         new_p_gain = 0;
