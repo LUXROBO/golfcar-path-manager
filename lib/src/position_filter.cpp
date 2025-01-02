@@ -34,11 +34,13 @@ typedef struct position_filter_context_
     position_filter_init_state_t init_flag;
     float last_update_time;
     float chi_square_v;
+
+    float wheel_base;
+    float gps_from_rear;
 } position_filter_context_t;
 
 position_filter_context_t position_estimate_filter;
 
-const float W = 2.18;
 const float state_member = 5;
 
 
@@ -142,7 +144,7 @@ static ModelMatrix state_equation_jacobi(ModelMatrix x0, ModelMatrix input);
  */
 static pt_control_state_t estimate(ModelMatrix z);
 
-bool position_filter_init()
+bool position_filter_init(float wheel_base, float gps_from_rear)
 {
     // @todo
     position_estimate_filter.v_estimate_buf_max_size = 16;
@@ -178,6 +180,9 @@ bool position_filter_init()
     position_estimate_filter.Q = ModelMatrix(state_member, state_member, Q_array);
 
     position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0);
+
+    position_estimate_filter.wheel_base = wheel_base;
+    position_estimate_filter.gps_from_rear = gps_from_rear;
 
     return true;
 }
@@ -316,7 +321,7 @@ ModelMatrix state_equation_jacobi(ModelMatrix x0, ModelMatrix input)
 
         v = v
         slip = atan(tan(steer) / 2)
-        yaw_rate = pre_v * cos(pre_slip) * tan(steer) / W
+        yaw_rate = pre_v * cos(pre_slip) * tan(steer) / position_estimate_filter.wheel_base
         yaw = pre_yaw + dt * pre_yaw_rate
         x = pre_x + pre_v * cos(pre_yaw + pre_slip)
         x = pre_y + pre_v * sin(pre_yaw + pre_slip)
@@ -338,7 +343,7 @@ ModelMatrix state_equation_jacobi(ModelMatrix x0, ModelMatrix input)
     jacobian.set(0, 0, 0.0);
 
     // w
-    jacobian.set(1, 0, std::cos(slip) * std::tan(steer) / W);
+    jacobian.set(1, 0, std::cos(slip) * std::tan(steer) / position_estimate_filter.wheel_base);
 
     // yaw
     jacobian.set(2, 1, dt);
@@ -361,7 +366,7 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float pit
 {
     if (position_filter_is_init()) {
         float dt = updated_time - position_estimate_filter.last_update_time;
-        float slip_angle = std::atan(std::tan(steer) / 2);
+        float slip_angle = std::atan(std::tan(steer) * position_estimate_filter.gps_from_rear / position_estimate_filter.wheel_base);
         float temp_input[4] = {v, steer, slip_angle, dt};
         position_estimate_filter.last_update_time = updated_time;
 
@@ -380,7 +385,7 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float pit
 
         v = v
         slip = atan(tan(steer) / 2)
-        yaw_rate = pre_v * cos(pre_slip) * tan(steer) / W
+        yaw_rate = pre_v * cos(pre_slip) * tan(steer) / position_estimate_filter.wheel_base
         yaw = pre_yaw + dt * pre_yaw_rate
         x = pre_x + pre_v * cos(pre_yaw + pre_slip)
         x = pre_y + pre_v * sin(pre_yaw + pre_slip)
@@ -388,7 +393,7 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float pit
 
         // kinematic 식 계산
         temp_x.set(0, 0, v);
-        temp_x.set(1, 0, p_x.get(0, 0) * std::cos(slip_angle) * std::tan(steer) / W);
+        temp_x.set(1, 0, p_x.get(0, 0) * std::cos(slip_angle) * std::tan(steer) / position_estimate_filter.wheel_base);
         temp_x.set(2, 0, path_tracker::pi_to_pi(p_x.get(2, 0) + dt * p_x.get(1, 0)));
         temp_x.set(3, 0, p_x.get(3, 0) + dt * p_x.get(0, 0) * std::cos(pitch) * std::cos(p_x.get(2, 0) + slip_angle));
         temp_x.set(4, 0, p_x.get(4, 0) + dt * p_x.get(0, 0) * std::cos(pitch) * std::sin(p_x.get(2, 0) + slip_angle));
@@ -399,18 +404,8 @@ pt_control_state_t position_filter_predict_state(float v, float steer, float pit
         position_estimate_filter.predict_P = A * position_estimate_filter.predict_P * A.transpose() + position_estimate_filter.Q;
         // position_estimate_filter.predict_P = position_estimate_filter.predict_P + position_estimate_filter.Q;
 
-        // double theta1 = std::atan2(position_estimate_filter.predict_x.get(3, 0), position_estimate_filter.predict_x.get(4, 0));
-        // double theta2 = position_estimate_filter.predict_state.yaw - theta1;
-        // double L1 = std::sqrt(powf(position_estimate_filter.predict_x.get(3, 0), 2) +
-        //                    powf(position_estimate_filter.predict_x.get(4, 0), 2));
-
-        // double delta_x_w = std::cos(theta2) * L1;
-        // double delta_y_w = std::sin(theta2) * L1;
-
         position_estimate_filter.predict_state.v = v;
         position_estimate_filter.predict_state.steer = steer;
-        // position_estimate_filter.predict_state.x += delta_x_w;
-        // position_estimate_filter.predict_state.y += delta_y_w;
         position_estimate_filter.predict_state.x = position_estimate_filter.predict_x.get(3, 0);
         position_estimate_filter.predict_state.y = position_estimate_filter.predict_x.get(4, 0);
         position_estimate_filter.predict_state.yaw = position_estimate_filter.predict_x.get(2, 0);

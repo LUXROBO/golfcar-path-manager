@@ -40,7 +40,7 @@ typedef enum position_filter_init_state_
  * @return true 초기화에 성공한 경우
  * @return false 초기화에 실패한 경우
  */
-bool position_filter_init();
+bool position_filter_init(float wheel_base, float gps_from_rear);
 
 /**
  * @brief 필터 상태 초기화 여부 확인
