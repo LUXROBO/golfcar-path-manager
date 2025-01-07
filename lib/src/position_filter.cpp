@@ -78,14 +78,14 @@ static float H_array_imu_ins[10] = {0, 1, 0, 0, 0,
 // 현재 대각 값 외에는 설정하지 않음
 static float R_array_quality0[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
                                      0.0, 0.0001, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
-                                     0.0, 0.0,    0.002, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
+                                     0.0, 0.0,    0.01, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
                                      0.0, 0.0,    0.0,   0.0003, 0.0,    // gps x
                                      0.0, 0.0,    0.0,   0.0,   0.0003}; // gps y
 static float R_array_quality0_float[25] = {0.1, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
-                                           0.0, 0.01, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
-                                           0.0, 0.0,    0.08, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
-                                           0.0, 0.0,    0.0,   0.01, 0.0,    // gps x
-                                           0.0, 0.0,    0.0,   0.0,   0.01}; // gps y
+                                           0.0, 1, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
+                                           0.0, 0.0,    0.5, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
+                                           0.0, 0.0,    0.0,   0.5, 0.0,    // gps x
+                                           0.0, 0.0,    0.0,   0.0,   0.5}; // gps y
 static float R_array_quality0_dgps[25] = {10, 0.0,    0.0,   0.0,   0.0,    // gps velocity -> 정확도가 높지 않음
                                           0.0, 10, 0.0,   0.0,   0.0,    // yaw rate -> imu로 정확도가 높음
                                           0.0, 0.0, 10, 0.0,   0.0,    // gps yaw (yaw + slip) -> gps quality가 높을 경우 정확도가 올라감)
@@ -174,9 +174,9 @@ bool position_filter_init(float wheel_base, float gps_from_rear)
     //                      0.0, 0.00001, 0.00001, 0.00001, 0.00001, 0.00017};
     float Q_array[25] = {0.000001, 0       , 0        , 0       , 0,
                          0       , 0.000178, 0.0      , 0.0     , 0.0,
-                         0       , 0       , 0.0001   , 0.0     , 0.0,
-                         0       , 0       , 0.0      , 0.00042 , 0.0,
-                         0       , 0       , 0.0      , 0.0     , 0.00085};
+                         0       , 0       , 0.00005   , 0.0     , 0.0,
+                         0       , 0       , 0.0      , 0.0002 , 0.0,
+                         0       , 0       , 0.0      , 0.0     , 0.0002};
     position_estimate_filter.Q = ModelMatrix(state_member, state_member, Q_array);
 
     position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0);
@@ -200,8 +200,11 @@ position_filter_init_state_t position_filter_get_init_state()
     return position_estimate_filter.init_flag;
 }
 
-void position_filter_set_R(int gps_quality)
+void position_filter_set_R(int gps_quality, float gain)
 {
+    static int past_gps_quality = -1;
+    static float past_gain = 0;
+
     switch (gps_quality) {
         case 4:
             position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0);
@@ -213,6 +216,7 @@ void position_filter_set_R(int gps_quality)
             position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0_dgps);
             break;
     }
+    position_estimate_filter.R = position_estimate_filter.R * gain;
     // 효율적으로 R값 변경 방법 고민
 }
 
@@ -444,6 +448,7 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
         }
     } else if (quality == POSITION_FILTER_QUALITY_ONLY_IMU_WITH_YAW) {
         position_estimate_filter.H = ModelMatrix(2, 5, H_array_imu_ins);
+
         position_estimate_filter.R = ModelMatrix(2, 2, R_array_quality_imu_ins);
 
         resize_z = ModelMatrix::zero(2, 1);

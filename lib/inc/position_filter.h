@@ -81,7 +81,7 @@ void position_filter_set_last_update_time(float update_time);
  */
 void position_filter_set_yaw(float yaw);
 
-void position_filter_set_R(int gps_quality);
+void position_filter_set_R(int gps_quality, float gain = 1);
 
 
 /**
