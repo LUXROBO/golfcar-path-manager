@@ -85,7 +85,8 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
 
     // 조향 = atan(곡률 * W)
     // 현재 차량 중앙 기준 거리 값이 더 적확
-    target_curvature = std::atan(target_curvature * 1.29);
+    // target_curvature = std::atan(target_curvature * 1.29);
+    target_curvature = std::atan(target_curvature * this->yaw_kd);
 
     if (mode != 0) {
         if (mode == 2) {
@@ -103,7 +104,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     output = this->state.steer + error * 0.5;
 
     // 거리 에러 적용 @Todo gain 변수 이름이 혼동
-    output += this->distance_error * new_p_gain + (this->distance_error - past_distance_error) * this->yaw_kd;
+    output += this->distance_error * new_p_gain;// + (this->distance_error - past_distance_error) * this->yaw_kd;
 
     past_distance_error = this->distance_error;
 
