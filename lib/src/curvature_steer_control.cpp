@@ -86,7 +86,13 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     // 조향 = atan(곡률 * W)
     // 현재 차량 중앙 기준 거리 값이 더 적확
     // target_curvature = std::atan(target_curvature * 1.29);
-    target_curvature = std::atan(target_curvature * this->yaw_kd);
+    // target_curvature = std::atan(target_curvature * this->yaw_kd);
+    float curvature_cal_val = (0.5 + state.v * this->yaw_kd);
+    if (curvature_cal_val > 1) {
+        target_curvature = std::atan(target_curvature * 2.18 / curvature_cal_val);
+    } else {
+        target_curvature = std::atan(target_curvature * 2.18);
+    }
 
     if (mode != 0) {
         if (mode == 2) {
