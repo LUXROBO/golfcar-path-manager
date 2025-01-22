@@ -142,6 +142,10 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
         }
     }
 
+    if (this->state.v > 2.3) {
+        this->target_index_offset += 1;
+    }
+
     int start_index = this->get_front_target_point_index();
     look_ahead_index.push_back(start_index);
     look_ahead_point.push_back(points[start_index]);
