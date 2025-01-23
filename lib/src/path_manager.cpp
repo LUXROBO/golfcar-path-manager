@@ -142,8 +142,10 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
         }
     }
 
+    // 고속 주행 용 디버깅 중
     if (this->state.v > 2.3) {
-        this->target_index_offset += 1;
+        this->target_index_offset = 2;
+        this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
     }
 
     int start_index = this->get_front_target_point_index();

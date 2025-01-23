@@ -83,28 +83,26 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     }
     target_curvature /= used_size;
 
-    // 조향 = atan(곡률 * W)
-    // 현재 차량 중앙 기준 거리 값이 더 정확
-    float curvature_cal_val = (0.5 + state.v * this->yaw_kd);
-    float max_curvature_with_velocity_param = 1.8166; // 1.2
-    float min_curvature_with_velocity_param = 1.3625; // 1.6
+    // 조향 = atan(곡률 * W / (v * k))
+    float curvature_cal_val = 0;
+    float max_curvature_gain = 1.5;
+    float min_curvature_gain = 1.2;
+    float velocity_for_max_curvature_velocity = 1.25;
+    float velocity_for_min_curvature_gain = 2.1;
 
-    if (curvature_cal_val > max_curvature_with_velocity_param) {
-        curvature_cal_val = max_curvature_with_velocity_param;
-    } else if (curvature_cal_val > min_curvature_with_velocity_param) {
-        curvature_cal_val = min_curvature_with_velocity_param;
+    float a = (max_curvature_gain - min_curvature_gain) / (velocity_for_max_curvature_velocity - velocity_for_min_curvature_gain);
+    float b = max_curvature_gain - a * velocity_for_max_curvature_velocity;
+
+    curvature_cal_val = a * state.v + b;
+
+    if (curvature_cal_val > max_curvature_gain) {
+        curvature_cal_val = max_curvature_gain;
+    } else if (curvature_cal_val < 1) {
+        curvature_cal_val = 1;
     }
 
-    target_curvature = std::atan(target_curvature * 2.18 / curvature_cal_val);
-
-    if (mode != 0) {
-        if (mode == 2) {
-            target_curvature = target_curvature * this->yaw_ki;
-        }
-    } else {
-        // 특별 구간이 아닌 경우 거리 오차 반영 x
-        new_p_gain = 0;
-    }
+    // target_curvature = std::atan(target_curvature * 2.18 / curvature_cal_val);
+    target_curvature = std::atan(target_curvature * curvature_cal_val);
 
     target_curvature = target_curvature * lpf_tau + past_curvature * (1 - lpf_tau);
 
@@ -113,7 +111,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     output = this->state.steer + error * 0.5;
 
     // 거리 에러 적용 @Todo gain 변수 이름이 혼동
-    output += this->distance_error * new_p_gain;// + (this->distance_error - past_distance_error) * this->yaw_kd;
+    output += this->distance_error * new_p_gain + (this->distance_error - past_distance_error) * this->yaw_kd;
 
     past_distance_error = this->distance_error;
 
