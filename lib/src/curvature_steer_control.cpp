@@ -86,7 +86,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     // 조향 = atan(곡률 * W / (v * k))
     float curvature_cal_val = 0;
     float max_curvature_gain = 1.5;
-    float min_curvature_gain = 1.2;
+    float min_curvature_gain = 1.3;
     float velocity_for_max_curvature_velocity = 1.25;
     float velocity_for_min_curvature_gain = 2.1;
 
@@ -95,10 +95,9 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
 
     curvature_cal_val = a * state.v + b;
 
-    if (curvature_cal_val > max_curvature_gain) {
-        curvature_cal_val = max_curvature_gain;
-    } else if (curvature_cal_val < 1) {
-        curvature_cal_val = 1;
+    
+    if (curvature_cal_val < min_curvature_gain) {
+        curvature_cal_val = min_curvature_gain;
     }
 
     // target_curvature = std::atan(target_curvature * 2.18 / curvature_cal_val);
@@ -108,7 +107,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
 
     // 타겟 조향 각도와 현재 조향각 에러 값을 통한 pid 계산
     float error = target_curvature - this->state.steer;
-    output = this->state.steer + error * 0.5;
+    output = this->state.steer + error * 0.75;
 
     // 거리 에러 적용 @Todo gain 변수 이름이 혼동
     output += this->distance_error * new_p_gain + (this->distance_error - past_distance_error) * this->yaw_kd;
