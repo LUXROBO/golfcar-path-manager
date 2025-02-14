@@ -126,7 +126,7 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
     // }
     if (mode != 0) {
         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
-        this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
+        this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
     }
     else {
         float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));

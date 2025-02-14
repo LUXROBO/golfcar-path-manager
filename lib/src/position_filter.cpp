@@ -436,7 +436,7 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
 
         resize_z = ModelMatrix::zero(5, 1);
         resize_z = position_estimate_filter.z;
-        sigma = 4;
+        sigma = 5;
 
         if (fabsf(z_value.gps_yaw - position_estimate_filter.predict_x.get(2, 0)) > PT_M_PI) {
             if (position_estimate_filter.predict_x.get(2, 0) > 0) {
@@ -454,7 +454,7 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
         resize_z = ModelMatrix::zero(2, 1);
         resize_z.set(0, 0, z_value.yaw_rate);
         resize_z.set(1, 0, z_value.gps_yaw);
-        sigma = 1.5;
+        sigma = 2;
 
         if (fabsf(z_value.gps_yaw - position_estimate_filter.predict_x.get(2, 0)) > PT_M_PI) {
             if (position_estimate_filter.predict_x.get(2, 0) > 0) {
@@ -476,7 +476,7 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
         resize_z = ModelMatrix::zero(1, 1);
         resize_z.set(0, 0, z_value.yaw_rate);
 
-        sigma = 1.7;
+        sigma = 2;
     }
     // 측정 값과 예측 값 차이
     innovation = resize_z - position_estimate_filter.H * position_estimate_filter.predict_x;

@@ -86,7 +86,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     // 조향 = atan(곡률 * W / (v * k))
     float curvature_cal_val = 0;
     float max_curvature_gain = 1.5;
-    float min_curvature_gain = 1.3;
+    float min_curvature_gain = 1.25;
     float velocity_for_max_curvature_velocity = 1.25;
     float velocity_for_min_curvature_gain = 2.1;
 
