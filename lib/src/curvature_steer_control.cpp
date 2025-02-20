@@ -107,7 +107,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
 
     // 타겟 조향 각도와 현재 조향각 에러 값을 통한 pid 계산
     float error = target_curvature - this->state.steer;
-    output = this->state.steer + error * 0.75;
+    output = this->state.steer + error * 0.65;
 
     // 거리 에러 적용 @Todo gain 변수 이름이 혼동
     output += this->distance_error * new_p_gain + (this->distance_error - past_distance_error) * this->yaw_kd;
