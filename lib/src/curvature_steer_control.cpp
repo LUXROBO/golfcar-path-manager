@@ -52,18 +52,14 @@ void curvature_steer_control::get_gain(int gain_index, float* gain_value)
     gain_value[2] = this->yaw_kd;
 }
 
-float debug_p_gain = 0.8f;
-
 float curvature_steer_control::steering_control(pt_control_state_t state, std::vector<path_point_t> target_point, uint8_t mode)
 {
     path_point_t current_state_to_point = {state.x, state.y, state.yaw, 0, 0};
     std::vector<path_point_t> circle_paths;
     float new_yaw = path_tracker::pi_to_pi(state.yaw);
-    float w = 0;
     float output;
     float target_curvature = 0;
     float lpf_tau = DEFAULT_CURVATURE_LOW_PASS_FILTER_TAU;
-    float new_p_gain = this->yaw_kp; // debugging을 위해 i gain을 사용 중이나 p로 변경 필요
     static float past_curvature = 0;
     static float past_distance_error = 0;
     int used_size = target_point.size();
@@ -95,12 +91,11 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
 
     curvature_cal_val = a * state.v + b;
 
-    
+
     if (curvature_cal_val < min_curvature_gain) {
         curvature_cal_val = min_curvature_gain;
     }
 
-    // target_curvature = std::atan(target_curvature * 2.18 / curvature_cal_val);
     target_curvature = std::atan(target_curvature * curvature_cal_val);
 
     target_curvature = target_curvature * lpf_tau + past_curvature * (1 - lpf_tau);
@@ -109,8 +104,7 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     float error = target_curvature - this->state.steer;
     output = this->state.steer + error * 0.65;
 
-    // 거리 에러 적용 @Todo gain 변수 이름이 혼동
-    output += this->distance_error * new_p_gain + (this->distance_error - past_distance_error) * this->yaw_kd;
+    output += this->distance_error * this->yaw_kp + (this->distance_error - past_distance_error) * this->yaw_kd;
 
     past_distance_error = this->distance_error;
 

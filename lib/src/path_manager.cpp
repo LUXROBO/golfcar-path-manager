@@ -21,6 +21,10 @@ static const float DEFAULT_MAX_MOVEABLE_RANGE = 60.0 * PT_M_PI / 180.0;        /
 static const float THRESHOLD_STEER_DIFF_ANGLE = 3 * PT_M_PI / 180.0;           /**< 조향각에 따른 속도 조절을 위한 조향각 레졸루션 단위[rad] */
 static const int MAX_STEER_ERROR_LEVEL = 10;                                    /**< steer error 세분화 */
 
+static const float THRESHOLD_YAW_DIFF_FOR_LOOK_AHEAD_POINT_1STEP = 10 * PT_M_PI / 180.0;  /**< 목표 지점 설정 시 YAW 변화량 기준 1단계 */
+static const float THRESHOLD_STEER_DIFF_FOR_LOOK_AHEAD_POINT_1STEP = 3 * PT_M_PI / 180.0;  /**< 목표 지점 설정 시 YAW 변화량 기준 1단계 */
+static const float THRESHOLD_YAW_DIFF_FOR_LOOK_AHEAD_POINT_2STEP = 20 * PT_M_PI / 180.0;  /**< 목표 지점 설정 시 YAW 변화량 기준 2단계 */
+
 static const int MAX_LOOK_AHEAD_NUM = 3;
 static const int DEFAULT_MAX_TARGET_INDEX_OFFSET = 3;
 
@@ -117,39 +121,24 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
     }
 
     // 앞점 계산
-    // if (fabsf(this->distance_error) < 0.1) {
-    //     this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
-    //     this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
-    // } else {
-    //     this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET - 1;
-    //     this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
-    // }
     if (mode != 0) {
         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
     }
     else {
         float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));
-        if (diff_yaw < 0.1745329 && fabsf(state.steer) < 0.052359) {
+        if (diff_yaw < THRESHOLD_YAW_DIFF_FOR_LOOK_AHEAD_POINT_1STEP && fabsf(state.steer) < THRESHOLD_YAW_STEER_FOR_LOOK_AHEAD_POINT_1STEP) {
             this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET + 1;
             this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
-        } else 
-        if (diff_yaw > 0.34906585) {
+        } else
+        if (diff_yaw > THRESHOLD_YAW_DIFF_FOR_LOOK_AHEAD_POINT_2STEP) {
             this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
             this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
         } else {
             this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
             this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
         }
-        // this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
-        // this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM ;
     }
-
-    // 고속 주행 용 디버깅 중
-    // if (this->state.v > 2.3) {
-    //     this->target_index_offset = 2;
-    //     this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
-    // }
 
     int start_index = this->get_front_target_point_index();
     look_ahead_index.push_back(start_index);
@@ -171,11 +160,10 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
         calculated_steer = -this->max_steer_angle;
     }
 
-    // // 주행 속도 계산
+    // 주행 속도 계산
     // calculated_velocity = velocity_control(this->state, front_point);
 
-    // // 조향각에 따른 주행 속도 재계산
-    // calculated_velocity = velocity_control_depend_on_steer_error(this->state, calculated_velocity, calculated_steer);
+    // 조향각에 따른 주행 속도 재계산
     calculated_velocity = look_ahead_point[0].speed;
 
     // 목표 조향각, 주행 속도 설정
