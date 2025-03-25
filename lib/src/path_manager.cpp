@@ -21,9 +21,9 @@ static const float DEFAULT_MAX_MOVEABLE_RANGE = 60.0 * PT_M_PI / 180.0;        /
 static const float THRESHOLD_STEER_DIFF_ANGLE = 3 * PT_M_PI / 180.0;           /**< 조향각에 따른 속도 조절을 위한 조향각 레졸루션 단위[rad] */
 static const int MAX_STEER_ERROR_LEVEL = 10;                                    /**< steer error 세분화 */
 
-static const float THRESHOLD_YAW_DIFF_FOR_LOOK_AHEAD_POINT_1STEP = 10 * PT_M_PI / 180.0;  /**< 목표 지점 설정 시 YAW 변화량 기준 1단계 */
-static const float THRESHOLD_STEER_DIFF_FOR_LOOK_AHEAD_POINT_1STEP = 3 * PT_M_PI / 180.0;  /**< 목표 지점 설정 시 YAW 변화량 기준 1단계 */
-static const float THRESHOLD_YAW_DIFF_FOR_LOOK_AHEAD_POINT_2STEP = 20 * PT_M_PI / 180.0;  /**< 목표 지점 설정 시 YAW 변화량 기준 2단계 */
+static const float THRESHOLD_YAW_DIFF_FOR_LOOK_AHEAD_POINT_1STEP = 5 * PT_M_PI / 180.0;  /**< 목표 지점 설정 시 YAW 변화량 기준 1단계 */
+static const float THRESHOLD_STEER_DIFF_FOR_LOOK_AHEAD_POINT_1STEP = 3 * PT_M_PI / 180.0;  /**< 목표 지점 설정 시 조향각 기준 1단계 */
+static const float THRESHOLD_YAW_DIFF_FOR_LOOK_AHEAD_POINT_2STEP = 15 * PT_M_PI / 180.0;  /**< 목표 지점 설정 시 YAW 변화량 기준 2단계 */
 
 static const int MAX_LOOK_AHEAD_NUM = 3;
 static const int DEFAULT_MAX_TARGET_INDEX_OFFSET = 3;
@@ -126,10 +126,11 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
     }
     else {
-        float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET)].yaw - state.yaw));
+        float diff_yaw = fabsf(path_tracker::pi_to_pi(this->points[this->get_front_target_point_index(this->target_point_index, DEFAULT_MAX_TARGET_INDEX_OFFSET + 5)].yaw - state.yaw));
         if (diff_yaw < THRESHOLD_YAW_DIFF_FOR_LOOK_AHEAD_POINT_1STEP 
             && fabsf(state.steer) < THRESHOLD_STEER_DIFF_FOR_LOOK_AHEAD_POINT_1STEP
-            && state.v < 2.2) {
+            // && state.v < 2.2) {
+        ) {
             this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET + 1;
             this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM;
         } else if (diff_yaw > THRESHOLD_YAW_DIFF_FOR_LOOK_AHEAD_POINT_2STEP) {
