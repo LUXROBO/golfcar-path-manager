@@ -60,9 +60,14 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     float output;
     float target_curvature = 0;
     float lpf_tau = DEFAULT_CURVATURE_LOW_PASS_FILTER_TAU;
+    int used_size = target_point.size();
+    float curvature_cal_val = 0;
+    float max_curvature_gain = 1.5;
+    float min_curvature_gain = 1.25;
+    float velocity_for_max_curvature_velocity = 1.25;
+    float velocity_for_min_curvature_gain = 2.1;
     static float past_curvature = 0;
     static float past_distance_error = 0;
-    int used_size = target_point.size();
 
     // 입력 받은 목표 점들로 이동하기 위한 곡선 경도들의 곡률값의 평균을 예산
     for (int i = 0; i < target_point.size(); i++) {
@@ -79,18 +84,25 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
     }
     target_curvature /= used_size;
 
-    // 조향 = atan(곡률 * W / (v * k))
-    float curvature_cal_val = 0;
-    float max_curvature_gain = 1.5;
-    float min_curvature_gain = 1.25;
-    float velocity_for_max_curvature_velocity = 1.25;
-    float velocity_for_min_curvature_gain = 2.1;
+    /*
+    curvature_cal_val = W / (v * k)
+    조향 = atan(곡률 * curvature_cal_val)
+    차량 속도 증가 -> gain 감소, 차량 속도 감소 -> gain 증가
 
+     max gain - |----/
+                |   /:
+     min gain - |--/ :
+                |  : :
+                +--------
+                   : :
+                   : min v
+                 max v
+
+    */
     float a = (max_curvature_gain - min_curvature_gain) / (velocity_for_max_curvature_velocity - velocity_for_min_curvature_gain);
     float b = max_curvature_gain - a * velocity_for_max_curvature_velocity;
 
     curvature_cal_val = a * state.v + b;
-
 
     if (curvature_cal_val < min_curvature_gain) {
         curvature_cal_val = min_curvature_gain;
@@ -98,12 +110,14 @@ float curvature_steer_control::steering_control(pt_control_state_t state, std::v
 
     target_curvature = std::atan(target_curvature * curvature_cal_val);
 
+    // 조향각 진동 제거용 LPF
     target_curvature = target_curvature * lpf_tau + past_curvature * (1 - lpf_tau);
 
     // 타겟 조향 각도와 현재 조향각 에러 값을 통한 pid 계산
     float error = target_curvature - this->state.steer;
     output = this->state.steer + error * 0.65;
 
+    // 차량 거리 오차 PID
     output += this->distance_error * this->yaw_kp + (this->distance_error - past_distance_error) * this->yaw_kd;
 
     past_distance_error = this->distance_error;

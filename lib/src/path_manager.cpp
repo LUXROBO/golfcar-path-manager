@@ -100,16 +100,14 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
 {
     float calculated_steer = 0;
     float calculated_velocity = 0;
+    int goal_point_index = 0;
     std::vector<int> look_ahead_index;
     std::vector<path_point_t> look_ahead_point;
-    int goal_point_index = 0;
-    // path_point_t front_point;
     size_t remain_point = 0;
 
     if (dt <= 0.0) {
         return PT_UPDATE_RESULT_INVAILED_TIME;
     }
-
     this->dt = dt;
 
     // 목표 경로점 찾기
@@ -120,8 +118,9 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
         return PT_UPDATE_RESULT_NOT_FOUND_TARGET;
     }
 
-    // 앞점 계산
+    // 차량 목표 지점 선택
     if (mode != 0) {
+        // 특수 경우 차량 바로 앞을 보고 주행(현재 사용 X)
         this->target_index_offset = DEFAULT_MAX_TARGET_INDEX_OFFSET;
         this->max_look_ahead_num = MAX_LOOK_AHEAD_NUM - 1;
     }
@@ -237,7 +236,6 @@ path_point_t path_tracker::get_point_cross_two_line(path_point_t point1, float s
 
 path_point_t path_tracker::get_path_circle(path_point_t point1, path_point_t point2, float slope)
 {
-    // double orthogonal_yaw = path_tracker::pi_to_pi(yaw + PT_M_PI_2);
     double x = 0;
     double y = 0;
     double xx1 = pow(point1.x, 2);
