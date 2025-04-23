@@ -1,5 +1,4 @@
-#ifndef QFORMAT_H
-#define QFORMAT_H
+#pragma once
 
 #include <iostream>
 #include "stdint.h"
@@ -62,9 +61,3 @@ public:
 
     double to_double() const;
 };
-
-
-
-
-
-#endif

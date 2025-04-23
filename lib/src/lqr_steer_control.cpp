@@ -6,12 +6,14 @@
 #include <algorithm>
 
 
-static const double DEFAULT_MAX_STEER = 45.0 * M_PI / 180.0;     // [rad] 45deg
-static const double DEFAULT_MAX_SPEED = 10.0 / 3.6;              // [ms] 10km/h
-static const double DEFAULT_WHEEL_BASE = 0.41;                   // 앞 뒤 바퀴 사이 거리 [m]
-static const double DEFAULT_PID_GAIN = 1;                      // gain
-
 lqr_steer_control::lqr_steer_control()
+{
+    this->Q = ModelMatrix::identity(3, 3);
+    this->R = ModelMatrix::identity(1, 1);
+}
+
+lqr_steer_control::lqr_steer_control(const float max_steer_angle, const float max_speed, const float wheel_base, const float center_to_gps_distance = 0)
+: path_tracker(max_steer_angle, max_speed, wheel_base, center_to_gps_distance)
 {
     this->Q = ModelMatrix::identity(3, 3);
     this->R = ModelMatrix::identity(1, 1);
@@ -26,16 +28,16 @@ ModelMatrix lqr_steer_control::solve_DARE(ModelMatrix A, ModelMatrix B, ModelMat
 {
     ModelMatrix X = Q;
     int maxiter = 10;
-    q_format eps = 0.01;
+    double eps = 0.01;
 
     for (int i = 0; i < maxiter; i++) {
         // Xn =          A.T @ X @ A           - A.T @ X @ B @ la.inv(R + B.T @ X @ B) @ B.T @ X @ A + Q
         ModelMatrix Xn = (A.transpose() * X * A) - A.transpose() * X * B * (R + (B.transpose() * X * B)).inverse() * B.transpose() * X * A + Q;
         ModelMatrix riccati_equ = Xn - X;
-        q_format max = 0;
+        double max = 0;
         for (uint32_t j = 0; j < riccati_equ.row(); j++) {
             for (uint32_t k = 0; k < riccati_equ.column(); k++) {
-                q_format element = riccati_equ.get(j, k).abs();
+                double element = fabsf(riccati_equ.get(j, k));
                 if (max < element) {
                     max = element;
                 }
@@ -57,14 +59,8 @@ ModelMatrix  lqr_steer_control::dlqr(ModelMatrix A, ModelMatrix B, ModelMatrix Q
     return K;
 }
 
-int lqr_steer_control::steering_control(ControlState state, double& steer)
+float lqr_steer_control::steering_control(pt_control_state_t state, std::vector<path_point_t> target_point, uint8_t mode)
 {
-    this->target_ind = this->calculate_target_index(state, this->points, this->target_ind);
-    int jump_point = this->target_ind + this->jumping_point;
-    if (jump_point > (this->points.size() - this->jumping_point)) {
-        jump_point = this->target_ind;
-    }
-
     /* state matrix
     x = [position_x
          position_y
@@ -78,9 +74,9 @@ int lqr_steer_control::steering_control(ControlState state, double& steer)
     */
     ModelMatrix A = ModelMatrix::zero(3, 3);
     A.set(0, 0, 1.0);
-    A.set(0, 2, -sin(state.yaw) * this->points[jump_point].speed * dt);
+    A.set(0, 2, -sin(state.yaw) * target_point[0].speed * this->dt);
     A.set(1, 1, 1.0);
-    A.set(1, 2, cos(state.yaw) * this->points[jump_point].speed * dt);
+    A.set(1, 2, cos(state.yaw) * target_point[0].speed * this->dt);
     A.set(2, 2, 1);
 
     ModelMatrix B = ModelMatrix::zero(3, 1);
@@ -88,45 +84,45 @@ int lqr_steer_control::steering_control(ControlState state, double& steer)
     ModelMatrix K = dlqr(A, B, this->Q, this->R);
     ModelMatrix x = ModelMatrix::zero(3, 1);
 
-    x.set(0, 0, this->points[jump_point].x - state.x);
-    x.set(1, 0, this->points[jump_point].y - state.y);
-    x.set(2, 0, pi_2_pi(this->points[jump_point].yaw - state.yaw));
+    x.set(0, 0, target_point[0].x - state.x);
+    x.set(1, 0, target_point[0].y - state.y);
+    x.set(2, 0, pi_to_pi(target_point[0].yaw - state.yaw));
 
-    double target_angular_velocity = (K * x).get(0, 0).to_double();
-    steer = atan(target_angular_velocity * this->wheel_base / state.v);
+    float target_angular_velocity = (K * x).get(0, 0);
+    float steer = atan(target_angular_velocity * this->wheel_base / state.v);
 
-    return this->target_ind;
+    return steer;
 }
 
-int lqr_steer_control::velocity_control(ControlState state, double& accel)
+float lqr_steer_control::velocity_control(pt_control_state_t state, path_point_t target_point)
 {
-    accel = this->points[this->target_ind].speed - state.v;
+    float accel = target_point.speed - state.v;
 
-    return 0;
+    return accel;
 }
 
-void lqr_steer_control::set_gain(int gain_index, double* gain_value)
+void lqr_steer_control::set_gain(int gain_index, float* gain_value)
 {
-    if (gain_index == PATH_TRACKER_LQR_TYPE_Q) {
-        for (int i = 0; i < this->Q.row(); i++) {
+    if (gain_index == PT_GAIN_TYPE_LQR_Q) {
+        for (unsigned int i = 0; i < this->Q.row(); i++) {
             this->Q.set(i, i, gain_value[i]);
         }
-    } else if (gain_index == PATH_TRACKER_LQR_TYPE_R)  {
-        for (int i = 0; i < this->R.row(); i++) {
+    } else if (gain_index == PT_GAIN_TYPE_LQR_R)  {
+        for (unsigned int i = 0; i < this->R.row(); i++) {
             this->R.set(i, i, gain_value[i]);
         }
     }
 }
 
-void lqr_steer_control::get_gain(int gain_index, double* gain_value)
+void lqr_steer_control::get_gain(int gain_index, float* gain_value)
 {
-    if (gain_index == PATH_TRACKER_LQR_TYPE_Q) {
-        for (int i = 0; i < this->Q.row(); i++) {
-            gain_value[i] = this->Q.get(i, i).to_double();
+    if (gain_index == PT_GAIN_TYPE_LQR_Q) {
+        for (unsigned int i = 0; i < this->Q.row(); i++) {
+            gain_value[i] = this->Q.get(i, i);
         }
-    } else if (gain_index == PATH_TRACKER_LQR_TYPE_R)  {
-        for (int i = 0; i < this->R.row(); i++) {
-            gain_value[i] = this->R.get(i, i).to_double();
+    } else if (gain_index == PT_GAIN_TYPE_LQR_R)  {
+        for (unsigned int i = 0; i < this->R.row(); i++) {
+            gain_value[i] = this->R.get(i, i);
         }
     }
 }

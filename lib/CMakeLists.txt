@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.0)
 
-project (golfcar_path_manager)
+project (golfcar_path_manager LANGUAGES CXX)
 
 SET(CMAKE_COLOR_MAKEFILE ON)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
