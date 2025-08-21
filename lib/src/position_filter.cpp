@@ -41,7 +41,7 @@ typedef struct position_filter_context_
 
 position_filter_context_t position_estimate_filter;
 
-const float state_member = 5;
+const unsigned int state_member = 5;
 
 
 // z format = [gps v, yaw rate, gps slip+yaw, gps x, gps y]
@@ -58,15 +58,6 @@ static float H_array_quality0[25] = {1, 0, 0, 0, 0,
                                      0, 0, 1, 0, 0,
                                      0, 0, 0, 1, 0,
                                      0, 0, 0, 0, 1}; /** */
-
-// static float H_array_quality1[20] = {1, 0, 0, 0, 0,
-//                                      0, 1, 0, 0, 0,
-//                                      0, 0, 0, 1, 0,
-//                                      0, 0, 0, 0, 1};
-
-// static float H_array_quality2[18] = {0, 0, 1, 0, 0, 0,
-//                              0, 0, 0, 0, 1, 0,
-//                              0, 0, 0, 0, 0, 1};
 
 static float H_array_quality3[5] = {0, 1, 0, 0, 0};
 
@@ -98,17 +89,6 @@ static float R_array_quality0_dgps[25] = {10, 0.0,    0.0,   0.0,   0.0,    // g
                                           0.0, 0.0, 0.0,   10, 0.0,    // gps x
                                           0.0, 0.0, 0.0,   0.0,   10}; // gps y
 
-
-// Z중 YAW 제외
-static float R_array_quality1[16] = {0.1, 0, 0, 0,
-                               0, 0.0001, 0, 0,
-                               0, 0, 0.0001, 0,
-                               0, 0, 0, 0.0001};
-
-// Z중 V, YAW 제외
-static float R_array_quality2[9] = {0, 0, 0,
-                             0, 0, 0,
-                             0, 0, 0};
 
 static float R_array_quality3[1] = {0.00001};
 
@@ -221,22 +201,6 @@ void position_filter_set_R(int gps_quality, float gain)
     position_estimate_filter.R = position_estimate_filter.R * gain;
     // 효율적으로 R값 변경 방법 고민
 }
-
-// void position_filter_set_R(float R_value, int mode)
-// {
-//     switch (mode) {
-//     case 0: // RTK Quality 4 -> RTK fixed
-//         //  어떤 값이든 기존 R로 롤백
-//         position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0);
-//         break;
-//     case 1: // RTK Quality 5 -> RTK float
-//         position_estimate_filter.R = ModelMatrix(5, 5, R_array_quality0);
-
-//         position_estimate_filter.R.set(3, 3, R_value);
-//         position_estimate_filter.R.set(4, 4, R_value);
-//         break;
-//     }
-// }
 
 void position_filter_set_position(pt_control_state_t position)
 {
@@ -460,7 +424,6 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
         }
     } else {
         // imu setting
-        float H_array[5] = {0, 1, 0, 0, 0};
         position_estimate_filter.H = ModelMatrix(1, 5, H_array_quality3);
         position_estimate_filter.R = ModelMatrix(1, 1, R_array_quality3);
 
@@ -489,7 +452,6 @@ bool position_filter_estimate_state(position_filter_z_format_t z_value, int qual
         return false;
     }
 
-    return true;
 }
 
 pt_control_state_t estimate(ModelMatrix z)
