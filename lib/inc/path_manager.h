@@ -27,6 +27,15 @@ protected:
      */
     virtual float steering_control(pt_control_state_t state, std::vector<path_point_t> target, uint8_t mode) = 0;
 
+        /**
+     * @brief 목표점까지 이동할 수 있는 조향각 계산
+     * @param [in] state 현재 상태
+     * @param [in] target 목표점
+     * @param [in] dt 시간 간격[s]
+     * @return 목표 조향각[rad]
+     */
+    virtual float constrained_steering_control(pt_control_state_t state, std::vector<path_point_t> target, uint8_t mode, float dt) = 0;
+
     /**
      * @brief 목표점까지 이동할 수 있는 주행 속도 계산
      * @param [in] state 현재 상태

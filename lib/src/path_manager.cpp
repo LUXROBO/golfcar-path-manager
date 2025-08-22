@@ -153,7 +153,7 @@ pt_update_result_t path_tracker::update(float dt, uint8_t mode)
     goal_point_index = this->points.size() - 1;
 
     // 조향각 계산
-    calculated_steer = steering_control(this->state, look_ahead_point, mode);
+    calculated_steer = constrained_steering_control(this->state, look_ahead_point, mode, dt);
     if (calculated_steer > this->max_steer_angle) {
         calculated_steer = this->max_steer_angle;
     } else if (calculated_steer < -this->max_steer_angle) {
