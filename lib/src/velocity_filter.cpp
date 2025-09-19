@@ -88,7 +88,6 @@ float velocity_filter_predict_state(float accel_x, float updated_time)
         float dt = updated_time - velocity_estimate_filter.last_update_time;
         velocity_estimate_filter.last_update_time = updated_time;
 
-        float A = 1;
         float predict_velocity = velocity_estimate_filter.predict_x + accel_x * dt;
 
         velocity_estimate_filter.predict_x = predict_velocity;
@@ -144,7 +143,6 @@ bool velocity_filter_valid_gate(float innovation, float H, float R, float sigma)
 {
     // innovation 공분산 계산 후
     velocity_estimate_filter.S_inv = 1 / (velocity_estimate_filter.predict_P + R);
-    float temp = velocity_estimate_filter.S_inv;
 
     // Chi-Square Statistic 계산
     velocity_estimate_filter.chi_square_value = innovation * velocity_estimate_filter.S_inv * innovation;
